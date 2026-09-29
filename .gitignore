@@ -1,0 +1,22 @@
+# Ignore everything by default
+/*
+
+# But allow the .gitignore file itself
+!.gitignore
+
+# Allow the dofiles/ folder and everything inside it
+!/dofiles/
+!/dofiles/**
+
+# Allow the logfiles/ folder and everything inside it
+!/logfiles/
+!/logfiles/**
+
+# Allow project documentation
+!/README.md
+!/CLAUDE.md
+#!/main_graphs.tex
+
+# Allow also all figures
+#!/graphs/
+#!/graphs/**

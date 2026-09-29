@@ -1,0 +1,230 @@
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_cr_dataset_ea.txt
+  log type:  text
+ opened on:  29 Sep 2026, 15:17:57
+
+. 
+. * Dati CNQ Eurostat
+. use anno trim wageHT* compHT* deflT* clupHT* using ${source_na}/CN_dataset_dest.dta, clear
+
+. keep anno trim *DE *IT *FR *ES *NL *EA
+
+. gen int year    = round(anno)
+
+. gen int quarter    = round(trim)
+
+. gen int timeq = yq(year, quarter)
+
+. format timeq %tq
+
+. drop anno trim
+
+. reshape long wageHT compHT deflT clupHT, j(geo) i(timeq year quarter) string
+(j = DE EA ES FR IT NL)
+
+Data                               Wide   ->   Long
+-----------------------------------------------------------------------------
+Number of observations              126   ->   756         
+Number of variables                  27   ->   8           
+j variable (6 values)                     ->   geo
+xij variables:
+         wageHTDE wageHTEA ... wageHTNL   ->   wageHT
+         compHTDE compHTEA ... compHTNL   ->   compHT
+            deflTDE deflTEA ... deflTNL   ->   deflT
+         clupHTDE clupHTEA ... clupHTNL   ->   clupHT
+-----------------------------------------------------------------------------
+
+. rename *T *
+
+. tempfile cnq_ea
+
+. save `cnq_ea'
+file /tmp/work/m029601/St1297590.000001 saved as .dta format
+
+. 
+. * Dati contrattuali ECB pubblici PNA
+. use anno month EA_INWR ES IT FR NL DE_INWR using ${source_contr}/dati_retr_pubblici_1.dta, clear
+
+. gen int year    = round(anno)
+
+. gen int quarter = ceil(month / 3)
+
+. gen int timeq = yq(year, quarter)
+
+. format timeq %tq
+
+. foreach v in EA_INWR ES IT FR NL DE_INWR {
+  2.         rename `v' contr`v'
+  3. }
+
+. rename *_INWR *
+
+. reshape long contr, j(geo) i(timeq year quarter anno month) string
+(j = DE EA ES FR IT NL)
+
+Data                               Wide   ->   Long
+-----------------------------------------------------------------------------
+Number of observations              380   ->   2,280       
+Number of variables                  11   ->   7           
+j variable (6 values)                     ->   geo
+xij variables:
+            contrDE contrEA ... contrNL   ->   contr
+-----------------------------------------------------------------------------
+
+. collapse (mean) contr, by(year quarter timeq geo*)
+
+. tempfile contr_ea
+
+. save `contr_ea'
+file /tmp/work/m029601/St1297590.000002 saved as .dta format
+
+. 
+. * Dati shock prezzi energetici
+. import excel ${home}/rawdata/Data_OIL_ELE_GAS.xlsx, clear first
+(8 vars, 397 obs)
+
+. destring _all, replace
+Date: contains nonnumeric characters; no replace
+OilSpotUSDBarrel already numeric; no replace
+TTFSpotEURMWH already numeric; no replace
+ELE_GermanyEURMWH already numeric; no replace
+ELE_FranceEURMWH already numeric; no replace
+ELE_ItalyEURMWH already numeric; no replace
+ELE_SpainEURMWH already numeric; no replace
+ELE_NetherlandsEURMWH already numeric; no replace
+
+. gen timem=monthly(Date,"YM")
+(18 missing values generated)
+
+. drop if timem==.
+(18 observations deleted)
+
+. format timem %tm
+
+. drop Date
+
+. gen timeq=qofd(dofm(timem))
+
+. collapse (mean) Oil* TTF* ELE*, by(timeq)
+
+. format timeq %tq
+
+. tsset timeq
+
+Time variable: timeq, 1995q1 to 2026q3
+        Delta: 1 quarter
+
+. foreach v of varlist Oil* TTF* ELE* {
+  2.         gen _`v' = 100*`v'/l4.`v'-100 if _n>4
+  3.         drop `v'
+  4.         rename _`v' `v'
+  5. }
+(4 missing values generated)
+(48 missing values generated)
+(44 missing values generated)
+(44 missing values generated)
+(44 missing values generated)
+(44 missing values generated)
+(44 missing values generated)
+
+. rename ELE_GermanyEURMWH ELEEURMWHDE
+
+. rename ELE_FranceEURMWH ELEEURMWHFR
+
+. rename ELE_ItalyEURMWH ELEEURMWHIT
+
+. rename ELE_SpainEURMWH ELEEURMWHES
+
+. rename ELE_NetherlandsEURMWH ELEEURMWHNL
+
+. reshape long ELEEURMWH, i(timeq) j(geo) string
+(j = DE ES FR IT NL)
+
+Data                               Wide   ->   Long
+-----------------------------------------------------------------------------
+Number of observations              127   ->   635         
+Number of variables                   8   ->   5           
+j variable (5 values)                     ->   geo
+xij variables:
+ELEEURMWHDE ELEEURMWHES ... ELEEURMWHNL   ->   ELEEURMWH
+-----------------------------------------------------------------------------
+
+. gen year=year(dofq(timeq))
+
+. gen quarter=quarter(dofq(timeq))
+
+. tempfile prices
+
+. save `prices'
+file /tmp/work/m029601/St1297590.000003 saved as .dta format
+
+. 
+. * Merge
+. use `cnq_ea', clear
+
+. merge 1:1 timeq geo using `prices', nogen
+(variable timeq was int, now float to accommodate using data's values)
+(variable year was int, now float to accommodate using data's values)
+(variable quarter was int, now float to accommodate using data's values)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                           131
+        from master                       126  
+        from using                          5  
+
+    Matched                               630  
+    -----------------------------------------
+
+. merge 1:1 timeq geo using `contr_ea', nogen
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             1
+        from master                         0  
+        from using                          1  
+
+    Matched                               761  
+    -----------------------------------------
+
+. encode geo, gen(geocode)
+
+. xtset geocode timeq
+
+Panel variable: geocode (strongly balanced)
+ Time variable: timeq, 1995q1 to 2026q3
+         Delta: 1 quarter
+
+. foreach v of varlist wageH compH defl clupH {
+  2.         gen _`v' = 100*`v'/l4.`v'-100 if _n>4
+  3.         drop `v'
+  4.         rename _`v' `v'
+  5. }
+(31 missing values generated)
+(31 missing values generated)
+(38 missing values generated)
+(39 missing values generated)
+
+. 
+. * Save dataset
+. order timeq year quarter geo geocode contr
+
+. compress
+  variable timeq was float now int
+  variable year was float now int
+  variable quarter was float now byte
+  variable geocode was long now byte
+  (7,620 bytes saved)
+
+. save ${home}/data/dataset_ea.dta, replace
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/data/dataset_ea.dta not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/data/dataset_ea.dta saved
+
+. 
+. log close
+      name:  <unnamed>
+       log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_cr_dataset_ea.txt
+  log type:  text
+ closed on:  29 Sep 2026, 15:17:57
+------------------------------------------------------------------------------------------------------------------------------------------------------------
