@@ -8,7 +8,7 @@ Three wage/price measures are compared:
 
 - **negotiated wages** (ECB indicator of negotiated wage rates, `contr`);
 - **national accounts wages per hour** (`wageH`) and **compensation per hour** (`compH`);
-- the **deflator** (`defl`).
+- the **GDP deflator** (`defl`) and **HICP inflation** (`hicp`).
 
 The gap between negotiated wages and national accounts wages is the *wage drift*,
 which gives the note its name.
@@ -20,7 +20,6 @@ dofiles/
   master.do              paths, parameters, runs the whole project
   cr_dataset_ea.do       builds the quarterly country panel  -> data/dataset_ea.dta
   an_lp_energy_ea.do     Local Projections of energy shocks -> output/, graphs/
-  EA_retribuzioni_q .do  stand-alone ECB download script (NOT part of the project)
 logfiles/                one text log per dofile (log_<dofile name>.txt)
 ```
 
@@ -49,8 +48,10 @@ Requirements:
 
 | Variable | Description | Source |
 |---|---|---|
-| `wageH`, `compH`, `defl`, `clupH` | National accounts: wages per hour, compensation of employees per hour, deflator, unit labour cost per hour | Eurostat quarterly national accounts, from the internal file `${source_na}/CN_dataset_dest.dta` (variables `*HT*`, `deflT*`) |
-| `contr` | Indicator of negotiated wage rates (INWR), quarterly | ECB, STS dataset. Downloaded with `getTimeSeries`: `STS_PUB/Q.{I10,IT,DE,ES,NL}.N.INWR.000000.{1..5}.000`, and `Q.FR.N.INWR.000000.2.000` for France |
+| `wageH`, `compH`, `defl`, `clupH` | National accounts: wages per hour, compensation of employees per hour, GDP deflator, unit labour cost per hour (year-on-year % change) | Eurostat quarterly national accounts, from the internal file `${source_na}/CN_dataset_dest.dta` (variables `*HT*`, `deflT*`) |
+| `vagh` | Total economy value added, quarter-on-quarter % change | same file (variables `vaghT*`) |
+| `contr` | Indicator of negotiated wage rates (INWR), total economy, annual growth rate (`GY`), quarterly | ECB INW dataset, downloaded with `getTimeSeries ECB_RESTR INW/.......`. For DE and FR the national provider series (`DE2`, `FR2`) are used |
+| `hicp` | HICP all items (index 2015=100), year-on-year % change of the quarterly average | Eurostat `prc_hicp_midx`, downloaded with `getTimeSeries`; EA = EA20 |
 | `OilSpotUSDBarrel` | Oil spot price, USD per barrel | `rawdata/Data_OIL_ELE_GAS.xlsx` (monthly) |
 | `TTFSpotEURMWH` | Dutch TTF natural gas spot price, EUR/MWh | same file |
 | `ELEEURMWH` | Wholesale electricity price, EUR/MWh, country-specific (not available for EA) | same file |
@@ -58,28 +59,26 @@ Requirements:
 Steps:
 
 1. National accounts series are reshaped into a long panel (`geo` × `timeq`).
-2. Negotiated wages: the ECB quarterly INWR series are downloaded directly. The
-   earlier block that averaged the monthly file `dati_retr_pubblici_1.dta` to quarterly
-   frequency is kept but commented out. EA and four countries come in one query; France
-   is downloaded separately with institution code 2, because otherwise the series is
-   duplicated. The raw download is saved to `${data}/ecb_inwr_q.dta`.
-3. Energy prices: the monthly data are averaged to quarterly, turned into year-on-year
+2. Negotiated wages: the ECB quarterly INWR annual growth rates are downloaded
+   directly and saved to `${data}/ecb_inwr_q.dta`. The earlier block that averaged
+   the monthly file `dati_retr_pubblici_1.dta` to quarterly frequency is kept but
+   commented out.
+3. HICP: monthly indices are averaged over complete quarters, turned into
+   year-on-year % changes and saved to `${data}/eurostat_hicp_ea_q.dta`.
+4. Energy prices: the monthly data are averaged to quarterly, turned into year-on-year
    % changes, and reshaped by country. Oil and gas are common to all countries.
    Electricity is country-specific. EA gets an empty electricity column so that oil and
    gas are also available for EA.
-4. The three sources are merged. `wageH compH defl clupH contr` are turned into
-   year-on-year % changes: `100*x/L4.x - 100`.
-5. The result is saved to `${data}/dataset_ea.dta`.
-
-> **Check:** the INWR series are downloaded with suffix `000`. The code treats this as an
-> index level and computes year-on-year growth rates. If the series is already an annual
-> rate of change (the ECB suffix for that is `ANR`), remove `contr` from the growth-rate
-> loop in `cr_dataset_ea.do`.
+5. The four sources are merged. `wageH compH defl clupH` are turned into
+   year-on-year % changes (`100*x/L4.x - 100`) and `vagh` into a quarter-on-quarter
+   % change (`100*x/L.x - 100`).
+6. The result is saved to `${data}/dataset_ea.dta`.
 
 ## Analysis (`an_lp_energy_ea.do`)
 
 Local Projections (Jordà, 2005). Each energy price is used as a shock on its own, and
-the deflator, `wageH` and `compH` are each used as the outcome on their own, for
+each variable in `$lp_outcomes` (`contr hicp defl wageH compH`) is used as the outcome
+on its own, for
 horizons h = 0, …, 12 quarters (`$hmax`):
 
 ```
@@ -100,15 +99,35 @@ y(i,t+h) = a(i,h) + b(h) s(i,t) + Σ_{l=1..p} [ c(l,h) y(i,t-l) + d(l,h) s(i,t-l
   Newey–West standard errors (Newey and West, 1987) and h+1 lags. Electricity is
   skipped for EA because there is no series for it.
 - **Covid**: with `$covid_dum = 1`, observations whose outcome date t+h falls in
-  2020q1–2021q4 are dropped.
+  2020q1–2021q4 are dropped (currently `$covid_dum = 0`).
+- **Sample period**: every panel of every figure shows in its title the first and
+  last shock date t used in the h = 0 regression (stored as `tmin`/`tmax`).
+
+### High vs low growth at the time of the shock (section 4)
+
+A quarter t is **high growth** (`hg = 1`) if `vagh(t)` is above the country's
+historical average of `vagh` **and** `vagh(t+1) > 0` **and** `vagh(t+2) > 0`. All other
+quarters are **low growth** (`hg = 0`). `hg` is missing when `vagh` is missing in t,
+t+1 or t+2. The LPs above are re-estimated with every regressor (shock and lags)
+interacted with `hg` and `1-hg`, plus `hg` itself, as in Ramey and Zubairy (2018).
+This gives one response for shocks that hit in high-growth quarters (`bH`) and one for
+low-growth quarters (`bL`), with a test of their equality (`pdiff`).
+
+Note that the state uses `vagh(t+1)` and `vagh(t+2)`, i.e. information from after the
+shock, as requested for this first pass.
 
 Outputs:
 
 - `${out}/lp_energy_ea.dta` and `${out}/lp_energy_ea.xlsx`: one row per
   `spec` (panel/ts) × `geo` × `shock` × `outcome` × `h`, with `b`, `se`, `N` and
   68% / 90% bands.
-- `${gph}/lp_<shock>_<outcome>.png`: 9 figures, one per shock–outcome pair. Each
+- `${gph}/lp_<shock>_<outcome>.png`: one figure per shock–outcome pair. Each
   figure shows the panel response and one panel per country.
+- `${out}/lp_energy_growthstate_ea.dta` / `.xlsx`: state-dependent results, with
+  `bH seH bL seL pdiff N NH tmin tmax` (`NH` = high-growth observations in the sample)
+  and 90% bands.
+- `${gph}/lp_growthstate_<shock>_<outcome>.png`: high-growth (red) and low-growth
+  (blue, dashed) responses with 90% bands, panel plus one panel per country.
 
 Caveat: the "shocks" are observed energy price changes, conditioned on their own lags
 and on lags of the outcome. They are not identified structural shocks, so the
@@ -125,11 +144,16 @@ responses should be read as conditional reduced-form pass-through.
 - Hoechle, D. (2007), "Robust standard errors for panel regressions with
   cross-sectional dependence", *Stata Journal*, 7(3), 281–312.
   <https://doi.org/10.1177/1536867X0700700301>
+- Ramey, V. A. and Zubairy, S. (2018), "Government Spending Multipliers in Good
+  Times and in Bad: Evidence from US Historical Data", *Journal of Political Economy*,
+  126(2), 850–901. <https://doi.org/10.1086/696277>
 - Newey, W. K. and West, K. D. (1987), "A Simple, Positive Semi-Definite,
   Heteroskedasticity and Autocorrelation Consistent Covariance Matrix",
   *Econometrica*, 55(3), 703–708. <https://doi.org/10.2307/1913610>
 - ECB Data Portal, Negotiated wages:
   <https://data.ecb.europa.eu/data/data-categories/prices-macroeconomic-and-sectoral-statistics/other-prices-and-costs/labour-costs/negotiated-wages>
+- Eurostat, HICP monthly data (index) (`prc_hicp_midx`):
+  <https://ec.europa.eu/eurostat/databrowser/view/prc_hicp_midx/default/table>
 - ECB Data Portal, INWR series (example, euro area annual rate):
   <https://data.ecb.europa.eu/data/datasets/STS/STS.Q.I9.N.INWR.000000.3.ANR>
 - ECB Data Portal, Indicator of negotiated wage rates (INW) dataset:

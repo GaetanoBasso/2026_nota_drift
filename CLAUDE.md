@@ -22,8 +22,7 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   with `log close`. Logs are committed to git.
 - **Git tracks only** `dofiles/`, `logfiles/`, `README.md`, `CLAUDE.md` (`.gitignore`
   ignores everything else). Never commit data, output or graphs.
-- `EA_retribuzioni_q .do` is **not part of the project**. It is kept only as a reference
-  for the ECB download. Do not call it from `master.do`.
+- Do not commit Stata swap files (`~*.stswp`).
 - Raw sources on the shared drive (`${source_*}`, `${home}/rawdata`) are **read-only**.
   Never save into them.
 - **Line endings**: dofiles use Windows line endings (CRLF). Keep them when editing, so
@@ -52,7 +51,10 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
 - LP conventions (`an_lp_energy_ea.do`): horizon `0/$hmax`; the shock is scaled to
   +10 pp; `$lp_lags` lags of the outcome and the shock; panel = country FE +
   Driscoll–Kraay (`xtscc`, lag h+1); country time series = `newey`, lag h+1. Results
-  go to a `postfile` dataset.
+  go to a `postfile` dataset. The estimation sample is marked explicitly
+  (`smp` + `markout`), its period is posted as `tmin`/`tmax` and shown in every graph
+  title. State-dependent variants interact all regressors with the state dummy and
+  carry the state in the output name (e.g. `lp_energy_growthstate_ea`).
 
 ## Karpathy guidelines
 
