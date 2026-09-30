@@ -12,6 +12,10 @@
 !/logfiles/
 !/logfiles/**
 
+# Allow the graphs/ folder and everything inside it
+!/graphs/
+!/graphs/**
+
 # Allow project documentation
 !/README.md
 !/CLAUDE.md
