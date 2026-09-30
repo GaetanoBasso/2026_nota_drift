@@ -12,8 +12,8 @@ log using ${log}/log_an_lp_energy_ea.txt, t replace
 *   y(i,t+h) = a(i,h) + b(h)*s(i,t) + sum_{l=1..p} [c(l,h)*y(i,t-l) + d(l,h)*s(i,t-l)] + e(i,t+h)
 * - y, s: variazioni % tendenziali; s è diviso per 10, quindi b(h) è l'effetto
 *   (in pp) di un aumento di 10 pp della variazione tendenziale del prezzo
-* - Panel: effetti fissi paese sui paesi in $lp_panel, ponderato con gli
-*   occupati del paese in t (occP, aweight), errori standard Driscoll-Kraay
+* - Panel: effetti fissi paese sui paesi in $lp_panel, ponderato con pesi fissi
+*   (media degli occupati del paese sul periodo, wP, aweight), errori standard Driscoll-Kraay
 *   (xtscc >= 1.4, necessario per aweight con fe) con lag h+1
 * - Serie storiche: una regressione per paese in $countries, errori standard
 *   Newey-West con lag h+1
@@ -47,6 +47,9 @@ gen byte inpanel = 0
 foreach c of global lp_panel {
 	replace inpanel = 1 if geo == "`c'"
 }
+* Pesi fissi del panel: occupati medi del paese sul periodo
+egen wP = mean(occP), by(geocode)
+xtset geocode timeq
 tempfile lpdata
 save `lpdata'
 
@@ -69,11 +72,11 @@ foreach s of global lp_shocks {
 			cap drop lhs smp
 			qui gen lhs = F`h'.`y'
 			qui gen byte smp = inpanel `cov'
-			markout smp lhs `s' `ctrl' occP
+			markout smp lhs `s' `ctrl' wP
 			qui su timeq if smp
 			local t0 = r(min)
 			local t1 = r(max)
-			qui xtscc lhs `s' `ctrl' if smp [aw=occP], fe lag(`=`h'+1')
+			qui xtscc lhs `s' `ctrl' if smp [aw=wP], fe lag(`=`h'+1')
 			post `pf' ("panel") ("PANEL") ("`s'") ("`y'") (`h') (_b[`s']) (_se[`s']) (e(N)) (`t0') (`t1')
 		}
 		di as txt "Panel LP: `s' -> `y' fatto"
@@ -209,13 +212,13 @@ foreach s of global lp_shocks {
 			cap drop lhs smp
 			qui gen lhs = F`h'.`y'
 			qui gen byte smp = inpanel `cov'
-			markout smp lhs hg `rhs' occP
+			markout smp lhs hg `rhs' wP
 			qui su timeq if smp
 			local t0 = r(min)
 			local t1 = r(max)
 			qui count if smp & hg == 1
 			local nh = r(N)
-			qui xtscc lhs hg `rhs' if smp [aw=occP], fe lag(`=`h'+1')
+			qui xtscc lhs hg `rhs' if smp [aw=wP], fe lag(`=`h'+1')
 			qui test hi_`s' = lo_`s'
 			post `pf' ("panel") ("PANEL") ("`s'") ("`y'") (`h') (_b[hi_`s']) (_se[hi_`s']) (_b[lo_`s']) (_se[lo_`s']) (r(p)) (e(N)) (`nh') (`t0') (`t1')
 		}

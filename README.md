@@ -50,7 +50,7 @@ Requirements:
 |---|---|---|
 | `wageH`, `compH`, `defl`, `clupH` | National accounts: wages per hour, compensation of employees per hour, GDP deflator, unit labour cost per hour (year-on-year % change) | Eurostat quarterly national accounts, from the internal file `${source_na}/CN_dataset_dest.dta` (variables `*HT*`, `deflT*`) |
 | `vagh` | Total economy value added, quarter-on-quarter % change | same file (variables `vaghT*`) |
-| `occP` | Employment (persons), level; weight of the panel LPs | same file (variables `occP*`) |
+| `occP` | Employment (persons), level; weight of the panel LPs | same file (variables `occPT*`) |
 | `contr` | Indicator of negotiated wage rates (INWR), total economy, annual growth rate (`GY`), quarterly | ECB INW dataset, downloaded with `getTimeSeries ECB_RESTR INW/.......`. For DE and FR the national provider series (`DE2`, `FR2`) are used |
 | `hicp` | HICP all items (index 2015=100), year-on-year % change of the quarterly average | Eurostat `prc_hicp_midx`, downloaded with `getTimeSeries`; EA = EA20 |
 | `OilSpotUSDBarrel` | Oil spot price, USD per barrel | `rawdata/Data_OIL_ELE_GAS.xlsx` (monthly) |
@@ -92,8 +92,9 @@ y(i,t+h) = a(i,h) + b(h) s(i,t) + Σ_{l=1..p} [ c(l,h) y(i,t-l) + d(l,h) s(i,t-l
 - `p = $lp_lags` (default 4 quarters) lags of both the outcome and the shock are used
   as controls.
 - **Panel LP**: pooled over `$lp_panel` (DE IT NL ES FR BE). EA is left out because it
-  is the aggregate of the other countries. The regression is weighted by each
-  country's employment at the shock date t (`occP`, analytic weights), includes country
+  is the aggregate of the other countries. The regression is weighted by fixed
+  country weights, equal to each country's average employment over the whole period
+  (`wP`, the country mean of `occP`; analytic weights), includes country
   fixed effects and uses Driscoll–Kraay standard errors (Driscoll and Kraay, 1998) with h+1
   lags, via `xtscc` (version 1.4 or later is needed for weights with fixed effects;
   `which xtscc` prints the installed version in the log). Oil and gas are common to all countries, so time fixed effects

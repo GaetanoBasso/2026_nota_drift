@@ -50,7 +50,7 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
 - Minimal code: no wrappers or programs unless they are used more than once.
 - LP conventions (`an_lp_energy_ea.do`): horizon `0/$hmax`; the shock is scaled to
   +10 pp; `$lp_lags` lags of the outcome and the shock; panel = country FE +
-  Driscoll–Kraay (`xtscc`, lag h+1), weighted by employment `[aw=occP]`; country time series = `newey`, lag h+1. Results
+  Driscoll–Kraay (`xtscc`, lag h+1), weighted by fixed country weights `[aw=wP]` (country mean of employment `occP`); country time series = `newey`, lag h+1. Results
   go to a `postfile` dataset. The estimation sample is marked explicitly
   (`smp` + `markout`), its period is posted as `tmin`/`tmax` and shown in every graph
   title. State-dependent variants interact all regressors with the state dummy and
