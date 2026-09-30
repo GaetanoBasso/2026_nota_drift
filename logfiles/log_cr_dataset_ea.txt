@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_cr_dataset_ea.txt
   log type:  text
- opened on:  29 Sep 2026, 15:17:57
+ opened on:  30 Sep 2026, 14:39:26
 
 . 
 . * Dati CNQ Eurostat
@@ -40,10 +40,10 @@ xij variables:
 . tempfile cnq_ea
 
 . save `cnq_ea'
-file /tmp/work/m029601/St1297590.000001 saved as .dta format
+file /tmp/work/m029601/St480945.000001 saved as .dta format
 
 . 
-. * Dati contrattuali ECB pubblici PNA
+. * Dati contrattuali ECB pubblici PNA - versione mensile (sostituita dal download trimestrale sotto)
 . use anno month EA_INWR ES IT FR NL DE_INWR using ${source_contr}/dati_retr_pubblici_1.dta, clear
 
 . gen int year    = round(anno)
@@ -65,7 +65,7 @@ file /tmp/work/m029601/St1297590.000001 saved as .dta format
 
 Data                               Wide   ->   Long
 -----------------------------------------------------------------------------
-Number of observations              380   ->   2,280       
+Number of observations              381   ->   2,286       
 Number of variables                  11   ->   7           
 j variable (6 values)                     ->   geo
 xij variables:
@@ -77,8 +77,39 @@ xij variables:
 . tempfile contr_ea
 
 . save `contr_ea'
-file /tmp/work/m029601/St1297590.000002 saved as .dta format
+file /tmp/work/m029601/St480945.000002 saved as .dta format
 
+. 
+. /*
+> * Dati contrattuali ECB (INWR, trimestrali) scaricati con getTimeSeries
+> * EA IT DE ES NL: codici istituzione 1-5; FR scaricata a parte con codice 2 (altrimenti dati duplicati)
+> clear
+> getTimeSeries ECB STS_PUB/Q.I10+IT+DE+ES+NL.N.INWR.000000.3+4+5+1+2.000 "" "" 0 0
+> tempfile inwr
+> save `inwr'
+> clear
+> getTimeSeries ECB STS_PUB/Q.FR.N.INWR.000000.2.000 "" "" 0 0
+> append using `inwr'
+> rename *, low replace
+> gen anno=real(substr(date,1,4))
+> gen trim=real(substr(date,7,1))
+> drop if anno<1995
+> gen name=subinstr(tsname, "ECB_STS1.Q.", "", .)
+> gen l=length(name)
+> gen geo=substr(name,`l'-22,2)
+> replace geo="EA" if geo=="I10"
+> assert inlist(geo, "EA", "DE", "IT", "ES", "NL", "FR")
+> gen int year    = round(anno)
+> gen int quarter = round(trim)
+> gen int timeq = yq(year, quarter)
+> format timeq %tq
+> rename value contr
+> keep timeq year quarter geo contr
+> isid geo timeq
+> save ${data}/ecb_inwr_q.dta, replace
+> tempfile contr_ea
+> save `contr_ea'
+> */
 . 
 . * Dati shock prezzi energetici
 . import excel ${home}/rawdata/Data_OIL_ELE_GAS.xlsx, clear first
@@ -138,16 +169,19 @@ Time variable: timeq, 1995q1 to 2026q3
 
 . rename ELE_NetherlandsEURMWH ELEEURMWHNL
 
+. gen ELEEURMWHEA = .     // EA senza prezzo elettrico: serve per avere Oil e TTF anche per EA
+(127 missing values generated)
+
 . reshape long ELEEURMWH, i(timeq) j(geo) string
-(j = DE ES FR IT NL)
+(j = DE EA ES FR IT NL)
 
 Data                               Wide   ->   Long
 -----------------------------------------------------------------------------
-Number of observations              127   ->   635         
-Number of variables                   8   ->   5           
-j variable (5 values)                     ->   geo
+Number of observations              127   ->   762         
+Number of variables                   9   ->   5           
+j variable (6 values)                     ->   geo
 xij variables:
-ELEEURMWHDE ELEEURMWHES ... ELEEURMWHNL   ->   ELEEURMWH
+ELEEURMWHDE ELEEURMWHEA ... ELEEURMWHNL   ->   ELEEURMWH
 -----------------------------------------------------------------------------
 
 . gen year=year(dofq(timeq))
@@ -157,7 +191,7 @@ ELEEURMWHDE ELEEURMWHES ... ELEEURMWHNL   ->   ELEEURMWH
 . tempfile prices
 
 . save `prices'
-file /tmp/work/m029601/St1297590.000003 saved as .dta format
+file /tmp/work/m029601/St480945.000003 saved as .dta format
 
 . 
 . * Merge
@@ -170,22 +204,19 @@ file /tmp/work/m029601/St1297590.000003 saved as .dta format
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                           131
-        from master                       126  
-        from using                          5  
+    Not matched                             6
+        from master                         0  
+        from using                          6  
 
-    Matched                               630  
+    Matched                               756  
     -----------------------------------------
 
 . merge 1:1 timeq geo using `contr_ea', nogen
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                             1
-        from master                         0  
-        from using                          1  
-
-    Matched                               761  
+    Not matched                             0
+    Matched                               762  
     -----------------------------------------
 
 . encode geo, gen(geocode)
@@ -196,7 +227,7 @@ Panel variable: geocode (strongly balanced)
  Time variable: timeq, 1995q1 to 2026q3
          Delta: 1 quarter
 
-. foreach v of varlist wageH compH defl clupH {
+. foreach v of varlist wageH compH defl clupH contr {
   2.         gen _`v' = 100*`v'/l4.`v'-100 if _n>4
   3.         drop `v'
   4.         rename _`v' `v'
@@ -205,6 +236,7 @@ Panel variable: geocode (strongly balanced)
 (31 missing values generated)
 (38 missing values generated)
 (39 missing values generated)
+(237 missing values generated)
 
 . 
 . * Save dataset
@@ -218,7 +250,6 @@ Panel variable: geocode (strongly balanced)
   (7,620 bytes saved)
 
 . save ${home}/data/dataset_ea.dta, replace
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/data/dataset_ea.dta not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/data/dataset_ea.dta saved
 
 . 
@@ -226,5 +257,5 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/data/dataset_ea.dta save
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_cr_dataset_ea.txt
   log type:  text
- closed on:  29 Sep 2026, 15:17:57
+ closed on:  30 Sep 2026, 14:39:26
 ------------------------------------------------------------------------------------------------------------------------------------------------------------

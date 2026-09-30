@@ -1,0 +1,311 @@
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lp_energy_ea.txt
+  log type:  text
+ opened on:  30 Sep 2026, 14:39:35
+
+. 
+. *******************************************************************************
+. * Local Projections (Jordà, 2005) degli shock ai prezzi energetici
+. *
+. * Per ogni shock s, outcome y e orizzonte h = 0,...,$hmax:
+. *   y(i,t+h) = a(i,h) + b(h)*s(i,t) + sum_{l=1..p} [c(l,h)*y(i,t-l) + d(l,h)*s(i,t-l)] + e(i,t+h)
+. * - y, s: variazioni % tendenziali; s è diviso per 10, quindi b(h) è l'effetto
+. *   (in pp) di un aumento di 10 pp della variazione tendenziale del prezzo
+. * - Panel: effetti fissi paese sui paesi in $lp_panel, errori standard
+. *   Driscoll-Kraay (xtscc) con lag h+1
+. * - Serie storiche: una regressione per paese in $countries, errori standard
+. *   Newey-West con lag h+1
+. * - Se $covid_dum == 1 si escludono le osservazioni con t+h in 2020q1-2021q4
+. *******************************************************************************
+. 
+. cap which xtscc
+
+. if _rc ssc install xtscc
+checking xtscc consistency and verifying not already installed...
+installing into /home/user/m029601/ado/plus/...
+installation complete.
+
+. 
+. use ${data}/dataset_ea.dta, clear
+
+. xtset geocode timeq
+
+Panel variable: geocode (strongly balanced)
+ Time variable: timeq, 1995q1 to 2026q3
+         Delta: 1 quarter
+
+. 
+. * Shock scalati a 10 pp
+. foreach s of global lp_shocks {
+  2.         replace `s' = `s'/10
+  3. }
+(738 real changes made)
+(474 real changes made)
+(415 real changes made)
+
+. 
+. * Ritardi di shock e outcome (costruiti all'interno del paese)
+. foreach v in $lp_shocks $lp_outcomes {
+  2.         forv l = 1/$lp_lags {
+  3.                 gen L`l'_`v' = L`l'.`v'
+  4.         }
+  5. }
+(30 missing values generated)
+(36 missing values generated)
+(42 missing values generated)
+(48 missing values generated)
+(294 missing values generated)
+(300 missing values generated)
+(306 missing values generated)
+(312 missing values generated)
+(352 missing values generated)
+(357 missing values generated)
+(362 missing values generated)
+(367 missing values generated)
+(38 missing values generated)
+(44 missing values generated)
+(50 missing values generated)
+(56 missing values generated)
+(31 missing values generated)
+(36 missing values generated)
+(42 missing values generated)
+(48 missing values generated)
+(31 missing values generated)
+(36 missing values generated)
+(42 missing values generated)
+(48 missing values generated)
+
+. 
+. * Paesi del panel
+. gen byte inpanel = 0
+
+. foreach c of global lp_panel {
+  2.         replace inpanel = 1 if geo == "`c'"
+  3. }
+(127 real changes made)
+(127 real changes made)
+(127 real changes made)
+(127 real changes made)
+(127 real changes made)
+
+. 
+. tempname pf
+
+. postfile `pf' str5 spec str5 geo str20 shock str8 outcome byte h double(b se) int N using ${out}/lp_energy_ea.dta, replace
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_ea.dta not found)
+
+. 
+. *******************************************************************************
+. * 1) LP panel
+. *******************************************************************************
+. 
+. foreach s of global lp_shocks {
+  2.         foreach y of global lp_outcomes {
+  3.                 local ctrl ""
+  4.                 forv l = 1/$lp_lags {
+  5.                         local ctrl "`ctrl' L`l'_`y' L`l'_`s'"
+  6.                 }
+  7.                 forv h = 0/$hmax {
+  8.                         local cov ""
+  9.                         if $covid_dum == 1 local cov "& !inrange(timeq+`h', tq(2020q1), tq(2021q4))"
+ 10.                         cap drop lhs
+ 11.                         qui gen lhs = F`h'.`y'
+ 12.                         qui xtscc lhs `s' `ctrl' if inpanel `cov', fe lag(`=`h'+1')
+ 13.                         post `pf' ("panel") ("PANEL") ("`s'") ("`y'") (`h') (_b[`s']) (_se[`s']) (e(N))
+ 14.                 }
+ 15.                 di as txt "Panel LP: `s' -> `y' fatto"
+ 16.         }
+ 17. }
+Panel LP: OilSpotUSDBarrel -> defl fatto
+Panel LP: OilSpotUSDBarrel -> wageH fatto
+Panel LP: OilSpotUSDBarrel -> compH fatto
+Panel LP: TTFSpotEURMWH -> defl fatto
+Panel LP: TTFSpotEURMWH -> wageH fatto
+Panel LP: TTFSpotEURMWH -> compH fatto
+Panel LP: ELEEURMWH -> defl fatto
+Panel LP: ELEEURMWH -> wageH fatto
+Panel LP: ELEEURMWH -> compH fatto
+
+. 
+. *******************************************************************************
+. * 2) LP serie storiche, un paese alla volta
+. *******************************************************************************
+. 
+. foreach c of global countries {
+  2.         preserve
+  3.         keep if geo == "`c'"
+  4.         tsset timeq
+  5.         foreach s of global lp_shocks {
+  6.                 foreach y of global lp_outcomes {
+  7.                         local ctrl ""
+  8.                         forv l = 1/$lp_lags {
+  9.                                 local ctrl "`ctrl' L`l'_`y' L`l'_`s'"
+ 10.                         }
+ 11.                         forv h = 0/$hmax {
+ 12.                                 local cov ""
+ 13.                                 if $covid_dum == 1 local cov "& !inrange(timeq+`h', tq(2020q1), tq(2021q4))"
+ 14.                                 cap drop lhs
+ 15.                                 qui gen lhs = F`h'.`y'
+ 16.                                 * ELEEURMWH non esiste per EA: la stima fallisce e si salta
+.                                 cap newey lhs `s' `ctrl' if 1 `cov', lag(`=`h'+1') force
+ 17.                                 if _rc {
+ 18.                                         di as txt "Salto: `c' `s' -> `y', h=`h' (rc=" _rc ")"
+ 19.                                         continue
+ 20.                                 }
+ 21.                                 post `pf' ("ts") ("`c'") ("`s'") ("`y'") (`h') (_b[`s']) (_se[`s']) (e(N))
+ 22.                         }
+ 23.                 }
+ 24.         }
+ 25.         restore
+ 26. }
+(635 observations deleted)
+
+Time variable: timeq, 1995q1 to 2026q3
+        Delta: 1 quarter
+(635 observations deleted)
+
+Time variable: timeq, 1995q1 to 2026q3
+        Delta: 1 quarter
+(635 observations deleted)
+
+Time variable: timeq, 1995q1 to 2026q3
+        Delta: 1 quarter
+(635 observations deleted)
+
+Time variable: timeq, 1995q1 to 2026q3
+        Delta: 1 quarter
+(635 observations deleted)
+
+Time variable: timeq, 1995q1 to 2026q3
+        Delta: 1 quarter
+(635 observations deleted)
+
+Time variable: timeq, 1995q1 to 2026q3
+        Delta: 1 quarter
+Salto: EA ELEEURMWH -> defl, h=0 (rc=2000)
+Salto: EA ELEEURMWH -> defl, h=1 (rc=2000)
+Salto: EA ELEEURMWH -> defl, h=2 (rc=2000)
+Salto: EA ELEEURMWH -> defl, h=3 (rc=2000)
+Salto: EA ELEEURMWH -> defl, h=4 (rc=2000)
+Salto: EA ELEEURMWH -> defl, h=5 (rc=2000)
+Salto: EA ELEEURMWH -> defl, h=6 (rc=2000)
+Salto: EA ELEEURMWH -> defl, h=7 (rc=2000)
+Salto: EA ELEEURMWH -> defl, h=8 (rc=2000)
+Salto: EA ELEEURMWH -> defl, h=9 (rc=2000)
+Salto: EA ELEEURMWH -> defl, h=10 (rc=2000)
+Salto: EA ELEEURMWH -> defl, h=11 (rc=2000)
+Salto: EA ELEEURMWH -> defl, h=12 (rc=2000)
+Salto: EA ELEEURMWH -> wageH, h=0 (rc=2000)
+Salto: EA ELEEURMWH -> wageH, h=1 (rc=2000)
+Salto: EA ELEEURMWH -> wageH, h=2 (rc=2000)
+Salto: EA ELEEURMWH -> wageH, h=3 (rc=2000)
+Salto: EA ELEEURMWH -> wageH, h=4 (rc=2000)
+Salto: EA ELEEURMWH -> wageH, h=5 (rc=2000)
+Salto: EA ELEEURMWH -> wageH, h=6 (rc=2000)
+Salto: EA ELEEURMWH -> wageH, h=7 (rc=2000)
+Salto: EA ELEEURMWH -> wageH, h=8 (rc=2000)
+Salto: EA ELEEURMWH -> wageH, h=9 (rc=2000)
+Salto: EA ELEEURMWH -> wageH, h=10 (rc=2000)
+Salto: EA ELEEURMWH -> wageH, h=11 (rc=2000)
+Salto: EA ELEEURMWH -> wageH, h=12 (rc=2000)
+Salto: EA ELEEURMWH -> compH, h=0 (rc=2000)
+Salto: EA ELEEURMWH -> compH, h=1 (rc=2000)
+Salto: EA ELEEURMWH -> compH, h=2 (rc=2000)
+Salto: EA ELEEURMWH -> compH, h=3 (rc=2000)
+Salto: EA ELEEURMWH -> compH, h=4 (rc=2000)
+Salto: EA ELEEURMWH -> compH, h=5 (rc=2000)
+Salto: EA ELEEURMWH -> compH, h=6 (rc=2000)
+Salto: EA ELEEURMWH -> compH, h=7 (rc=2000)
+Salto: EA ELEEURMWH -> compH, h=8 (rc=2000)
+Salto: EA ELEEURMWH -> compH, h=9 (rc=2000)
+Salto: EA ELEEURMWH -> compH, h=10 (rc=2000)
+Salto: EA ELEEURMWH -> compH, h=11 (rc=2000)
+Salto: EA ELEEURMWH -> compH, h=12 (rc=2000)
+
+. 
+. postclose `pf'
+
+. 
+. *******************************************************************************
+. * 3) Risultati: intervalli di confidenza, Excel e grafici
+. *******************************************************************************
+. 
+. use ${out}/lp_energy_ea.dta, clear
+
+. gen lo90 = b - invnormal(0.95)*se
+
+. gen hi90 = b + invnormal(0.95)*se
+
+. gen lo68 = b - se
+
+. gen hi68 = b + se
+
+. save ${out}/lp_energy_ea.dta, replace
+file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_ea.dta saved
+
+. export excel using ${out}/lp_energy_ea.xlsx, firstrow(var) replace
+file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_ea.xlsx saved
+
+. 
+. local lab_OilSpotUSDBarrel "Petrolio (USD)"
+
+. local lab_TTFSpotEURMWH    "Gas TTF"
+
+. local lab_ELEEURMWH        "Elettricità"
+
+. local lab_defl             "deflatore"
+
+. local lab_wageH            "retribuzione oraria (CN)"
+
+. local lab_compH            "redditi da lavoro dip. per ora (CN)"
+
+. 
+. * Un grafico per coppia shock-outcome: panel + un riquadro per paese
+. foreach s of global lp_shocks {
+  2.         foreach y of global lp_outcomes {
+  3.                 local gl ""
+  4.                 foreach g in PANEL $countries {
+  5.                         qui count if geo == "`g'" & shock == "`s'" & outcome == "`y'"
+  6.                         if r(N) == 0 continue
+  7.                         local cond `"if geo == "`g'" & shock == "`s'" & outcome == "`y'""'
+  8.                         twoway (rarea lo90 hi90 h `cond', color(gs13)) ///
+>                                 (rarea lo68 hi68 h `cond', color(gs10)) ///
+>                                 (line b h `cond', lcolor(navy) lwidth(medthick)), ///
+>                                 yline(0, lcolor(black)) legend(off) title("`g'") ///
+>                                 xtitle("Trimestri") ytitle("pp") xlabel(0(2)$hmax) ///
+>                                 graphregion(color(white)) name(g_`g', replace) nodraw
+  9.                         local gl "`gl' g_`g'"
+ 10.                 }
+ 11.                 graph combine `gl', title("`lab_`s'' -> `lab_`y''") ///
+>                         note("Risposta a +10 pp della var. tendenziale del prezzo; bande 68% e 90%") ///
+>                         graphregion(color(white)) name(comb, replace)
+ 12.                 graph export ${gph}/lp_`s'_`y'.png, replace
+ 13.         }
+ 14. }
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_OilSpotUSDBarrel_defl.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_OilSpotUSDBarrel_defl.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_OilSpotUSDBarrel_wageH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_OilSpotUSDBarrel_wageH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_OilSpotUSDBarrel_compH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_OilSpotUSDBarrel_compH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_TTFSpotEURMWH_defl.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_TTFSpotEURMWH_defl.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_TTFSpotEURMWH_wageH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_TTFSpotEURMWH_wageH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_TTFSpotEURMWH_compH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_TTFSpotEURMWH_compH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ELEEURMWH_defl.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ELEEURMWH_defl.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ELEEURMWH_wageH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ELEEURMWH_wageH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ELEEURMWH_compH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ELEEURMWH_compH.png saved as PNG format
+
+. 
+. log close
+      name:  <unnamed>
+       log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lp_energy_ea.txt
+  log type:  text
+ closed on:  30 Sep 2026, 14:40:56
+------------------------------------------------------------------------------------------------------------------------------------------------------------

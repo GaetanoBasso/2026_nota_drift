@@ -36,8 +36,8 @@ global countries "DE IT NL ES FR EA"
 * minobs    : numero minimo di osservazioni per stimare un modello
 * covid_dum : 1 = esclude dalle LP le osservazioni con t+h in 2020q1-2021q4 (lockdown)
 global hmax      = 12
-global oos_start = tm(1995q1)
-global covid_dum = 1
+global oos_start = tq(1995q1)
+global covid_dum = 0
 
 * --- Parametri delle Local Projections (an_lp_energy_ea.do) ------------------
 * lp_lags     : numero di ritardi di outcome e shock inclusi come controlli
