@@ -34,8 +34,31 @@ global countries "DE IT NL ES FR EA"
 * hmax      : orizzonte massimo in trimestri rispetto all'ultimo disponibile
 * oos_start : primo forecast origin della valutazione ricorsiva
 * minobs    : numero minimo di osservazioni per stimare un modello
-* covid_dum : 1 = include una dummy per i mesi di lockdown nelle stime in-sample
+* covid_dum : 1 = esclude dalle LP le osservazioni con t+h in 2020q1-2021q4 (lockdown)
 global hmax      = 12
 global oos_start = tm(1995q1)
+global covid_dum = 1
 
+* --- Parametri delle Local Projections (an_lp_energy_ea.do) ------------------
+* lp_lags     : numero di ritardi di outcome e shock inclusi come controlli
+* lp_shocks   : prezzi energetici (var. % tendenziali); lo shock è scalato a 10 pp
+* lp_outcomes : variabili di risposta (var. % tendenziali)
+* lp_panel    : paesi del panel (EA esclusa: è l'aggregato degli altri)
+global lp_lags     = 4
+global lp_shocks   "OilSpotUSDBarrel TTFSpotEURMWH ELEEURMWH"
+global lp_outcomes "defl wageH compH"
+global lp_panel    "DE IT NL ES FR"
 
+*******************************************************************************
+* 1) CREAZIONE DATASET
+*******************************************************************************
+
+* Dataset panel trimestrale: CN Eurostat, retribuzioni contrattuali BCE, prezzi energetici
+do ${do}/cr_dataset_ea.do
+
+*******************************************************************************
+* 2) ANALISI
+*******************************************************************************
+
+* Local Projections (Jordà, 2005): shock dei prezzi energetici su deflatore, wageH, compH
+do ${do}/an_lp_energy_ea.do
