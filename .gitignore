@@ -22,8 +22,8 @@
 !/main_graphs.tex
 
 # Allow also all figures
-#!/graphs/
-#!/graphs/**
+!/graphs/
+!/graphs/**
 
 # Stata swap files
 /dofiles/~*.stswp
