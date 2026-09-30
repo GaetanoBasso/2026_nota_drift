@@ -1,7 +1,7 @@
 # 2026_nota_drift
 
 Note on the pass-through of energy price shocks (oil, gas, electricity) to wages
-in the main euro area countries (DE, FR, IT, ES, NL) and the euro area aggregate (EA),
+in the main euro area countries (DE, FR, IT, ES, NL, BE) and the euro area aggregate (EA),
 at quarterly frequency.
 
 Three wage/price measures are compared:
@@ -50,11 +50,12 @@ Requirements:
 |---|---|---|
 | `wageH`, `compH`, `defl`, `clupH` | National accounts: wages per hour, compensation of employees per hour, GDP deflator, unit labour cost per hour (year-on-year % change) | Eurostat quarterly national accounts, from the internal file `${source_na}/CN_dataset_dest.dta` (variables `*HT*`, `deflT*`) |
 | `vagh` | Total economy value added, quarter-on-quarter % change | same file (variables `vaghT*`) |
+| `occP` | Employment (persons), level; weight of the panel LPs | same file (variables `occP*`) |
 | `contr` | Indicator of negotiated wage rates (INWR), total economy, annual growth rate (`GY`), quarterly | ECB INW dataset, downloaded with `getTimeSeries ECB_RESTR INW/.......`. For DE and FR the national provider series (`DE2`, `FR2`) are used |
 | `hicp` | HICP all items (index 2015=100), year-on-year % change of the quarterly average | Eurostat `prc_hicp_midx`, downloaded with `getTimeSeries`; EA = EA20 |
 | `OilSpotUSDBarrel` | Oil spot price, USD per barrel | `rawdata/Data_OIL_ELE_GAS.xlsx` (monthly) |
 | `TTFSpotEURMWH` | Dutch TTF natural gas spot price, EUR/MWh | same file |
-| `ELEEURMWH` | Wholesale electricity price, EUR/MWh, country-specific (not available for EA) | same file |
+| `ELEEURMWH` | Wholesale electricity price, EUR/MWh, country-specific (not available for EA; for BE only if the file has a column `ELE_BelgiumEURMWH`) | same file |
 
 Steps:
 
@@ -90,10 +91,12 @@ y(i,t+h) = a(i,h) + b(h) s(i,t) + Σ_{l=1..p} [ c(l,h) y(i,t-l) + d(l,h) s(i,t-l
   **+10 pp increase in the year-on-year growth of the energy price**.
 - `p = $lp_lags` (default 4 quarters) lags of both the outcome and the shock are used
   as controls.
-- **Panel LP**: pooled over `$lp_panel` (DE IT NL ES FR). EA is left out because it
-  is the aggregate of the other countries. The regression includes country fixed
-  effects and uses Driscoll–Kraay standard errors (Driscoll and Kraay, 1998) with h+1
-  lags, via `xtscc`. Oil and gas are common to all countries, so time fixed effects
+- **Panel LP**: pooled over `$lp_panel` (DE IT NL ES FR BE). EA is left out because it
+  is the aggregate of the other countries. The regression is weighted by each
+  country's employment at the shock date t (`occP`, analytic weights), includes country
+  fixed effects and uses Driscoll–Kraay standard errors (Driscoll and Kraay, 1998) with h+1
+  lags, via `xtscc` (version 1.4 or later is needed for weights with fixed effects;
+  `which xtscc` prints the installed version in the log). Oil and gas are common to all countries, so time fixed effects
   cannot be included.
 - **Time-series LP**: one regression per country in `$countries` (including EA), with
   Newey–West standard errors (Newey and West, 1987) and h+1 lags. Electricity is

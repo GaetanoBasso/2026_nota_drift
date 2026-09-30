@@ -6,14 +6,14 @@ cap log close
 log using ${log}/log_cr_dataset_ea.txt, t replace
 
 * Dati CNQ Eurostat
-use anno trim wageHT* compHT* deflT* clupHT* vaghT* using ${source_na}/CN_dataset_dest.dta, clear
-keep anno trim *DE *IT *FR *ES *NL *EA
+use anno trim wageHT* compHT* deflT* clupHT* vaghT* occP* using ${source_na}/CN_dataset_dest.dta, clear
+keep anno trim *DE *IT *FR *ES *NL *BE *EA
 gen int year    = round(anno)
 gen int quarter    = round(trim)
 gen int timeq = yq(year, quarter)
 format timeq %tq
 drop anno trim
-reshape long wageHT compHT deflT clupHT vaghT, j(geo) i(timeq year quarter) string
+reshape long wageHT compHT deflT clupHT vaghT occP, j(geo) i(timeq year quarter) string
 rename *T *
 tempfile cnq_ea
 save `cnq_ea'
@@ -36,7 +36,7 @@ save `contr_ea'
 */
 
 * Dati contrattuali ECB (INWR, trimestrali) scaricati con getTimeSeries; tassi di crescita annuali
-* EA IT ES NL: senza restrizioni particolari; DE e FR: prediligo le fonti nazionali a ECB
+* EA IT ES NL BE: senza restrizioni particolari (isid sotto verifica una sola serie per paese); DE e FR: prediligo le fonti nazionali a ECB
 clear
 getTimeSeries ECB_RESTR INW/....... "" "" 0 0
 rename *,l
@@ -50,8 +50,8 @@ keep if freq=="Q"
 drop tsname
 rename tsname3 geo 
 replace geo="EA" if geo=="I10"
-keep if inlist(geo, "EA", "DE", "IT", "ES", "NL", "FR")
-assert inlist(geo, "EA", "DE", "IT", "ES", "NL", "FR")
+keep if inlist(geo, "EA", "DE", "IT", "ES", "NL", "FR", "BE")
+assert inlist(geo, "EA", "DE", "IT", "ES", "NL", "FR", "BE")
 replace date=subinstr(date,"-"," ",.)
 gen year=real(word(date,1))
 replace date=subinstr(date,"Q","",.)
@@ -73,7 +73,7 @@ save `contr_ea'
 
 * Dati IPCA vari paesi
 clear
-getTimeSeries EUROSTAT PRC_HICP_MIDX/.I15.CP00.DE+FR+NL+IT+ES+EA20 "" "" 0 0
+getTimeSeries EUROSTAT PRC_HICP_MIDX/.I15.CP00.DE+FR+NL+IT+ES+BE+EA20 "" "" 0 0
 rename *, low replace
 replace tsname=subinstr(tsname,"."," ",.)
 gen country=word(tsname,5)
@@ -92,7 +92,7 @@ egen ctrlm=max(mese), by(anno trim)
 drop if ((trim==1 & ctrlm!=3) | (trim==2& ctrlm!=6) | (trim==3 & ctrlm!=9) | (trim==4 & ctrlm!=12))
 sort anno 
 rename hicp_EA20 hicp_EA
-collapse (mean) hicp_DE hicp_EA hicp_ES hicp_FR hicp_IT hicp_NL, by (anno trim)
+collapse (mean) hicp_DE hicp_EA hicp_ES hicp_FR hicp_IT hicp_NL hicp_BE, by (anno trim)
 reshape long hicp_, i(anno trim) j(geo) string
 rename hicp_ hicp
 rename anno year
@@ -131,6 +131,10 @@ rename ELE_FranceEURMWH ELEEURMWHFR
 rename ELE_ItalyEURMWH ELEEURMWHIT
 rename ELE_SpainEURMWH ELEEURMWHES
 rename ELE_NetherlandsEURMWH ELEEURMWHNL
+* BE: prezzo elettrico non presente nel file Excel (colonna attesa: ELE_BelgiumEURMWH)
+cap confirm var ELE_BelgiumEURMWH
+if !_rc rename ELE_BelgiumEURMWH ELEEURMWHBE
+else gen ELEEURMWHBE = .
 gen ELEEURMWHEA = .	// EA senza prezzo elettrico: serve per avere Oil e TTF anche per EA
 reshape long ELEEURMWH, i(timeq) j(geo) string
 gen year=year(dofq(timeq))
