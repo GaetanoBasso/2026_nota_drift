@@ -1,0 +1,370 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage[margin=2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\graphicspath{{graphs/}}
+
+\title{Shock energetici, prezzi e retribuzioni nell'area dell'euro: grafici}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\clearpage
+
+%==============================================================================
+\section{Specificazione}
+%==============================================================================
+
+\subsection{Variabili}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+Simbolo & Variabile & Definizione & Fonte \\
+\midrule
+\multicolumn{4}{l}{\emph{Shock} $s_{i,t}$ (var.\ \% tendenziale della media trimestrale, divisa per 10)} \\
+ & \texttt{OilSpotUSDBarrel} & Petrolio spot, USD/barile & \texttt{Data\_OIL\_ELE\_GAS.xlsx} \\
+ & \texttt{TTFSpotEURMWH} & Gas TTF spot, EUR/MWh & \texttt{Data\_OIL\_ELE\_GAS.xlsx} \\
+ & \texttt{ELEEURMWH} & Elettricità all'ingrosso, EUR/MWh (non disp.\ per BE, EA) & \texttt{Data\_OIL\_ELE\_GAS.xlsx} \\
+\midrule
+\multicolumn{4}{l}{\emph{Outcome} $y_{i,t}$ (var.\ \% tendenziale)} \\
+ & \texttt{hicp} & Indice armonizzato dei prezzi al consumo & Eurostat \\
+ & \texttt{defl} & Deflatore del PIL & Eurostat, CN trimestrali \\
+ & \texttt{contr} & Retribuzioni contrattuali (INWR), totale economia & BCE \\
+ & \texttt{wageH} & Retribuzioni lorde per ora lavorata & Eurostat, CN trimestrali \\
+ & \texttt{compH} & Redditi da lavoro dipendente per ora lavorata & Eurostat, CN trimestrali \\
+\midrule
+\multicolumn{4}{l}{\emph{Altre variabili}} \\
+$g_{i,t}$ & \texttt{vagh} & Valore aggiunto totale, var.\ \% congiunturale & Eurostat, CN trimestrali \\
+$w_i$ & \texttt{wP} & Media degli occupati del paese (\texttt{occP}) sul periodo & Eurostat, CN trimestrali \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent Paesi: panel $i \in \{\text{DE, IT, NL, ES, FR, BE}\}$; serie storiche
+per DE, IT, NL, ES, FR, BE, EA. Frequenza trimestrale; orizzonte $h = 0,\dots,12$;
+$p = 4$ ritardi.
+
+\subsection{Local Projections: risposte medie}
+
+\noindent Panel (effetti fissi paese, pesi $w_i$, errori standard Driscoll--Kraay con $h+1$ ritardi):
+\begin{equation}
+y_{i,t+h} = \alpha_i^h + \beta^h s_{i,t}
+ + \sum_{l=1}^{p} \left( \gamma_l^h y_{i,t-l} + \delta_l^h s_{i,t-l} \right)
+ + \varepsilon_{i,t+h},
+\qquad w_i = \frac{1}{T_i} \sum_{t} \mathit{occP}_{i,t}
+\end{equation}
+
+\noindent Serie storiche, un paese alla volta (errori standard Newey--West con $h+1$ ritardi):
+\begin{equation}
+y_{t+h} = \alpha^h + \beta^h s_{t}
+ + \sum_{l=1}^{p} \left( \gamma_l^h y_{t-l} + \delta_l^h s_{t-l} \right)
+ + \varepsilon_{t+h}
+\end{equation}
+
+\noindent Grafici: $\hat\beta^h$ per $h=0,\dots,12$, bande al 68\% e al 90\%.
+
+\subsection{Local Projections: alta e bassa crescita allo shock}
+
+\noindent Stato allo shock:
+\begin{equation}
+HG_{i,t} = \mathbb{1}\left[ g_{i,t} > \bar g_i \right] \cdot
+ \mathbb{1}\left[ g_{i,t+1} > 0 \right] \cdot
+ \mathbb{1}\left[ g_{i,t+2} > 0 \right],
+\qquad \bar g_i = \text{media storica di } g_{i,t}
+\end{equation}
+
+\noindent Specificazione completamente interagita (panel con effetti fissi e pesi $w_i$;
+serie storiche analoghe per paese):
+\begin{equation}
+\begin{aligned}
+y_{i,t+h} = \; & \alpha_i^h + \theta^h HG_{i,t} \\
+ & + HG_{i,t} \Big[ \beta_H^h s_{i,t} + \sum_{l=1}^{p} \left( \gamma_{H,l}^h y_{i,t-l} + \delta_{H,l}^h s_{i,t-l} \right) \Big] \\
+ & + (1-HG_{i,t}) \Big[ \beta_L^h s_{i,t} + \sum_{l=1}^{p} \left( \gamma_{L,l}^h y_{i,t-l} + \delta_{L,l}^h s_{i,t-l} \right) \Big]
+ + \varepsilon_{i,t+h}
+\end{aligned}
+\end{equation}
+
+\noindent Grafici: $\hat\beta_H^h$ (rosso) e $\hat\beta_L^h$ (blu tratteggiato), bande al 90\%.
+
+\clearpage
+%==============================================================================
+\section{Risposte medie}
+%==============================================================================
+
+\subsection{Prezzi}
+
+\subsubsection{HICP}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_OilSpotUSDBarrel_hicp.png}
+  \caption{Petrolio (USD) $\rightarrow$ HICP}
+  \label{fig:base_OilSpotUSDBarrel_hicp}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_TTFSpotEURMWH_hicp.png}
+  \caption{Gas TTF $\rightarrow$ HICP}
+  \label{fig:base_TTFSpotEURMWH_hicp}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_ELEEURMWH_hicp.png}
+  \caption{Elettricità $\rightarrow$ HICP}
+  \label{fig:base_ELEEURMWH_hicp}
+\end{figure}
+
+\clearpage
+
+\subsubsection{Deflatore del PIL}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_OilSpotUSDBarrel_defl.png}
+  \caption{Petrolio (USD) $\rightarrow$ Deflatore del PIL}
+  \label{fig:base_OilSpotUSDBarrel_defl}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_TTFSpotEURMWH_defl.png}
+  \caption{Gas TTF $\rightarrow$ Deflatore del PIL}
+  \label{fig:base_TTFSpotEURMWH_defl}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_ELEEURMWH_defl.png}
+  \caption{Elettricità $\rightarrow$ Deflatore del PIL}
+  \label{fig:base_ELEEURMWH_defl}
+\end{figure}
+
+\clearpage
+
+\subsection{Retribuzioni contrattuali}
+
+\subsubsection{Retribuzioni contrattuali}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_OilSpotUSDBarrel_contr.png}
+  \caption{Petrolio (USD) $\rightarrow$ Retribuzioni contrattuali}
+  \label{fig:base_OilSpotUSDBarrel_contr}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_TTFSpotEURMWH_contr.png}
+  \caption{Gas TTF $\rightarrow$ Retribuzioni contrattuali}
+  \label{fig:base_TTFSpotEURMWH_contr}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_ELEEURMWH_contr.png}
+  \caption{Elettricità $\rightarrow$ Retribuzioni contrattuali}
+  \label{fig:base_ELEEURMWH_contr}
+\end{figure}
+
+\clearpage
+
+\subsection{Retribuzioni di contabilità nazionale}
+
+\subsubsection{Retribuzione oraria}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_OilSpotUSDBarrel_wageH.png}
+  \caption{Petrolio (USD) $\rightarrow$ Retribuzione oraria}
+  \label{fig:base_OilSpotUSDBarrel_wageH}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_TTFSpotEURMWH_wageH.png}
+  \caption{Gas TTF $\rightarrow$ Retribuzione oraria}
+  \label{fig:base_TTFSpotEURMWH_wageH}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_ELEEURMWH_wageH.png}
+  \caption{Elettricità $\rightarrow$ Retribuzione oraria}
+  \label{fig:base_ELEEURMWH_wageH}
+\end{figure}
+
+\clearpage
+
+\subsubsection{Redditi da lavoro dipendente per ora}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_OilSpotUSDBarrel_compH.png}
+  \caption{Petrolio (USD) $\rightarrow$ Redditi da lavoro dipendente per ora}
+  \label{fig:base_OilSpotUSDBarrel_compH}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_TTFSpotEURMWH_compH.png}
+  \caption{Gas TTF $\rightarrow$ Redditi da lavoro dipendente per ora}
+  \label{fig:base_TTFSpotEURMWH_compH}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_ELEEURMWH_compH.png}
+  \caption{Elettricità $\rightarrow$ Redditi da lavoro dipendente per ora}
+  \label{fig:base_ELEEURMWH_compH}
+\end{figure}
+
+\clearpage
+
+%==============================================================================
+\section{Eterogeneità: alta e bassa crescita allo shock}
+%==============================================================================
+
+\subsection{Prezzi}
+
+\subsubsection{HICP}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_growthstate_OilSpotUSDBarrel_hicp.png}
+  \caption{Petrolio (USD) $\rightarrow$ HICP}
+  \label{fig:gs_OilSpotUSDBarrel_hicp}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_growthstate_TTFSpotEURMWH_hicp.png}
+  \caption{Gas TTF $\rightarrow$ HICP}
+  \label{fig:gs_TTFSpotEURMWH_hicp}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_growthstate_ELEEURMWH_hicp.png}
+  \caption{Elettricità $\rightarrow$ HICP}
+  \label{fig:gs_ELEEURMWH_hicp}
+\end{figure}
+
+\clearpage
+
+\subsubsection{Deflatore del PIL}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_growthstate_OilSpotUSDBarrel_defl.png}
+  \caption{Petrolio (USD) $\rightarrow$ Deflatore del PIL}
+  \label{fig:gs_OilSpotUSDBarrel_defl}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_growthstate_TTFSpotEURMWH_defl.png}
+  \caption{Gas TTF $\rightarrow$ Deflatore del PIL}
+  \label{fig:gs_TTFSpotEURMWH_defl}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_growthstate_ELEEURMWH_defl.png}
+  \caption{Elettricità $\rightarrow$ Deflatore del PIL}
+  \label{fig:gs_ELEEURMWH_defl}
+\end{figure}
+
+\clearpage
+
+\subsection{Retribuzioni contrattuali}
+
+\subsubsection{Retribuzioni contrattuali}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_growthstate_OilSpotUSDBarrel_contr.png}
+  \caption{Petrolio (USD) $\rightarrow$ Retribuzioni contrattuali}
+  \label{fig:gs_OilSpotUSDBarrel_contr}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_growthstate_TTFSpotEURMWH_contr.png}
+  \caption{Gas TTF $\rightarrow$ Retribuzioni contrattuali}
+  \label{fig:gs_TTFSpotEURMWH_contr}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_growthstate_ELEEURMWH_contr.png}
+  \caption{Elettricità $\rightarrow$ Retribuzioni contrattuali}
+  \label{fig:gs_ELEEURMWH_contr}
+\end{figure}
+
+\clearpage
+
+\subsection{Retribuzioni di contabilità nazionale}
+
+\subsubsection{Retribuzione oraria}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_growthstate_OilSpotUSDBarrel_wageH.png}
+  \caption{Petrolio (USD) $\rightarrow$ Retribuzione oraria}
+  \label{fig:gs_OilSpotUSDBarrel_wageH}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_growthstate_TTFSpotEURMWH_wageH.png}
+  \caption{Gas TTF $\rightarrow$ Retribuzione oraria}
+  \label{fig:gs_TTFSpotEURMWH_wageH}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_growthstate_ELEEURMWH_wageH.png}
+  \caption{Elettricità $\rightarrow$ Retribuzione oraria}
+  \label{fig:gs_ELEEURMWH_wageH}
+\end{figure}
+
+\clearpage
+
+\subsubsection{Redditi da lavoro dipendente per ora}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_growthstate_OilSpotUSDBarrel_compH.png}
+  \caption{Petrolio (USD) $\rightarrow$ Redditi da lavoro dipendente per ora}
+  \label{fig:gs_OilSpotUSDBarrel_compH}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_growthstate_TTFSpotEURMWH_compH.png}
+  \caption{Gas TTF $\rightarrow$ Redditi da lavoro dipendente per ora}
+  \label{fig:gs_TTFSpotEURMWH_compH}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{lp_growthstate_ELEEURMWH_compH.png}
+  \caption{Elettricità $\rightarrow$ Redditi da lavoro dipendente per ora}
+  \label{fig:gs_ELEEURMWH_compH}
+\end{figure}
+
+\clearpage
+
+\end{document}

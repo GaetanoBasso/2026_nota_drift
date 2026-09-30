@@ -15,7 +15,7 @@
 # Allow project documentation
 !/README.md
 !/CLAUDE.md
-#!/main_graphs.tex
+!/main_graphs.tex
 
 # Allow also all figures
 #!/graphs/

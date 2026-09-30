@@ -20,7 +20,7 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
 - **Each dofile opens its own log**:
   `cap log close` then `log using ${log}/log_<dofile name>.txt, t replace`, and ends
   with `log close`. Logs are committed to git.
-- **Git tracks only** `dofiles/`, `logfiles/`, `README.md`, `CLAUDE.md` (`.gitignore`
+- **Git tracks only** `dofiles/`, `logfiles/`, `README.md`, `CLAUDE.md`, `main_graphs.tex` (`.gitignore`
   ignores everything else). Never commit data, output or graphs.
 - Do not commit Stata swap files (`~*.stswp`).
 - Raw sources on the shared drive (`${source_*}`, `${home}/rawdata`) are **read-only**.
