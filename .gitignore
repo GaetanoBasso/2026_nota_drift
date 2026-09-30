@@ -20,3 +20,6 @@
 # Allow also all figures
 #!/graphs/
 #!/graphs/**
+
+# Stata swap files
+/dofiles/~*.stswp
