@@ -28,7 +28,7 @@ capture mkdir "$log"
 capture mkdir "$data"
 
 * --- Paesi analizzati ---
-global countries "DE IT NL ES FR EA"
+global countries "DE IT NL ES FR BE EA"
 
 * --- Parametri dell'esercizio ------------------------------------------------
 * hmax      : orizzonte massimo in trimestri rispetto all'ultimo disponibile
@@ -43,11 +43,12 @@ global covid_dum = 0
 * lp_lags     : numero di ritardi di outcome e shock inclusi come controlli
 * lp_shocks   : prezzi energetici (var. % tendenziali); lo shock è scalato a 10 pp
 * lp_outcomes : variabili di risposta (var. % tendenziali)
-* lp_panel    : paesi del panel (EA esclusa: è l'aggregato degli altri)
+* lp_panel    : paesi del panel (EA esclusa: è l'aggregato degli altri);
+*               le stime panel sono ponderate per gli occupati medi del paese (occP)
 global lp_lags     = 4
 global lp_shocks   "OilSpotUSDBarrel TTFSpotEURMWH ELEEURMWH"
 global lp_outcomes "contr hicp defl wageH compH"
-global lp_panel    "DE IT NL ES FR"
+global lp_panel    "DE IT NL ES FR BE"
 
 *******************************************************************************
 * 1) CREAZIONE DATASET
