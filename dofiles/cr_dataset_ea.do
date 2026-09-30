@@ -145,11 +145,16 @@ merge 1:1 timeq geo using `contr_ea', nogen
 merge 1:1 timeq geo using `hicp_ea', nogen
 encode geo, gen(geocode)
 xtset geocode timeq
-foreach v of varlist wageH compH defl clupH vagh { 
+foreach v of varlist wageH compH defl clupH { 
 	gen _`v' = 100*`v'/l4.`v'-100 if _n>4
 	drop `v'
 	rename _`v' `v'
 }
+xtset
+gen _vagh = 100*vagh/l.vagh-100 if _n>1
+drop vagh
+rename _vagh vagh
+
 
 * Save dataset
 order timeq year quarter geo geocode contr

@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_cr_dataset_ea.txt
   log type:  text
- opened on:  30 Sep 2026, 16:16:37
+ opened on:  30 Sep 2026, 16:18:29
 
 . 
 . * Dati CNQ Eurostat
@@ -66,13 +66,13 @@ file /tmp/work/m029601/St480945.000001 saved as .dta format
 . clear
 
 . getTimeSeries ECB_RESTR INW/....... "" "" 0 0
-Sep 30, 2026 4:16:38 PM REPL.$JShell$12C SgetTimeSeries
+Sep 30, 2026 4:18:29 PM REPL.$JShell$12C SgetTimeSeries
 INFO: METADATA is disabled.
-Sep 30, 2026 4:16:38 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Sep 30, 2026 4:18:29 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://esb-ws-scde.eu.escb.eu/ws/SDW21/REST/service/data/ECB,INW,1.0/.......
-Sep 30, 2026 4:16:40 PM REPL.$JShell$12C SgetTimeSeries
+Sep 30, 2026 4:18:32 PM REPL.$JShell$12C SgetTimeSeries
 INFO: The query returned 650 time series.
-Sep 30, 2026 4:16:40 PM REPL.$JShell$12C SgetTimeSeries
+Sep 30, 2026 4:18:32 PM REPL.$JShell$12C SgetTimeSeries
 INFO: The query returned 87479 observations.
 
 . rename *,l
@@ -156,13 +156,13 @@ file /tmp/work/m029601/St480945.000002 saved as .dta format
 . clear
 
 . getTimeSeries EUROSTAT PRC_HICP_MIDX/.I15.CP00.DE+FR+NL+IT+ES+EA20 "" "" 0 0
-Sep 30, 2026 4:16:41 PM REPL.$JShell$12C SgetTimeSeries
+Sep 30, 2026 4:18:33 PM REPL.$JShell$12C SgetTimeSeries
 INFO: METADATA is disabled.
-Sep 30, 2026 4:16:41 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Sep 30, 2026 4:18:33 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/ESTAT,PRC_HICP_MIDX,1.0/.I15.CP00.DE+FR+NL+IT+ES+EA20
-Sep 30, 2026 4:16:42 PM REPL.$JShell$12C SgetTimeSeries
+Sep 30, 2026 4:18:33 PM REPL.$JShell$12C SgetTimeSeries
 INFO: The query returned 6 time series.
-Sep 30, 2026 4:16:42 PM REPL.$JShell$12C SgetTimeSeries
+Sep 30, 2026 4:18:33 PM REPL.$JShell$12C SgetTimeSeries
 INFO: The query returned 2113 observations.
 
 . rename *, low replace
@@ -397,7 +397,7 @@ Panel variable: geocode (unbalanced)
  Time variable: timeq, 1983q1 to 2026q3
          Delta: 1 quarter
 
-. foreach v of varlist wageH compH defl clupH vagh { 
+. foreach v of varlist wageH compH defl clupH { 
   2.         gen _`v' = 100*`v'/l4.`v'-100 if _n>4
   3.         drop `v'
   4.         rename _`v' `v'
@@ -406,8 +406,21 @@ Panel variable: geocode (unbalanced)
 (191 missing values generated)
 (198 missing values generated)
 (199 missing values generated)
-(198 missing values generated)
 
+. xtset
+
+Panel variable: geocode (unbalanced)
+ Time variable: timeq, 1983q1 to 2026q3
+         Delta: 1 quarter
+
+. gen _vagh = 100*vagh/l.vagh-100 if _n>1
+(180 missing values generated)
+
+. drop vagh
+
+. rename _vagh vagh
+
+. 
 . 
 . * Save dataset
 . order timeq year quarter geo geocode contr
@@ -428,5 +441,5 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/data/dataset_ea.dta save
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_cr_dataset_ea.txt
   log type:  text
- closed on:  30 Sep 2026, 16:16:42
+ closed on:  30 Sep 2026, 16:18:33
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
