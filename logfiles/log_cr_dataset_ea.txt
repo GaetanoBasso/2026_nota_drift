@@ -2,11 +2,11 @@
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_cr_dataset_ea.txt
   log type:  text
- opened on:  30 Sep 2026, 15:58:08
+ opened on:  30 Sep 2026, 16:16:37
 
 . 
 . * Dati CNQ Eurostat
-. use anno trim wageHT* compHT* deflT* clupHT* using ${source_na}/CN_dataset_dest.dta, clear
+. use anno trim wageHT* compHT* deflT* clupHT* vaghT* using ${source_na}/CN_dataset_dest.dta, clear
 
 . keep anno trim *DE *IT *FR *ES *NL *EA
 
@@ -20,19 +20,20 @@
 
 . drop anno trim
 
-. reshape long wageHT compHT deflT clupHT, j(geo) i(timeq year quarter) string
+. reshape long wageHT compHT deflT clupHT vaghT, j(geo) i(timeq year quarter) string
 (j = DE EA ES FR IT NL)
 
 Data                               Wide   ->   Long
 -----------------------------------------------------------------------------
 Number of observations              126   ->   756         
-Number of variables                  27   ->   8           
+Number of variables                  33   ->   9           
 j variable (6 values)                     ->   geo
 xij variables:
          wageHTDE wageHTEA ... wageHTNL   ->   wageHT
          compHTDE compHTEA ... compHTNL   ->   compHT
             deflTDE deflTEA ... deflTNL   ->   deflT
          clupHTDE clupHTEA ... clupHTNL   ->   clupHT
+            vaghTDE vaghTEA ... vaghTNL   ->   vaghT
 -----------------------------------------------------------------------------
 
 . rename *T *
@@ -65,19 +66,13 @@ file /tmp/work/m029601/St480945.000001 saved as .dta format
 . clear
 
 . getTimeSeries ECB_RESTR INW/....... "" "" 0 0
-Sep 30, 2026 3:58:08 PM it.bancaditalia.oss.sdmx.util.Configuration init
-INFO: Class configuration found: it.bancaditalia.oss.sdmx.util.SdmxConfiguration
-Sep 30, 2026 3:58:08 PM REPL.$JShell$12 SgetTimeSeries
+Sep 30, 2026 4:16:38 PM REPL.$JShell$12C SgetTimeSeries
 INFO: METADATA is disabled.
-Sep 30, 2026 3:58:20 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
-INFO: Contacting web service with query: https://esb-ws-scde.eu.escb.eu/ws/SDW21/REST/service/dataflow/all/INW/latest
-Sep 30, 2026 3:58:20 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
-INFO: Contacting web service with query: https://esb-ws-scde.eu.escb.eu/ws/SDW21/REST/service/datastructure/ECB/ECB_BCS1/1.0?references=descendants
-Sep 30, 2026 3:58:21 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Sep 30, 2026 4:16:38 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://esb-ws-scde.eu.escb.eu/ws/SDW21/REST/service/data/ECB,INW,1.0/.......
-Sep 30, 2026 3:58:24 PM REPL.$JShell$12 SgetTimeSeries
+Sep 30, 2026 4:16:40 PM REPL.$JShell$12C SgetTimeSeries
 INFO: The query returned 650 time series.
-Sep 30, 2026 3:58:24 PM REPL.$JShell$12 SgetTimeSeries
+Sep 30, 2026 4:16:40 PM REPL.$JShell$12C SgetTimeSeries
 INFO: The query returned 87479 observations.
 
 . rename *,l
@@ -161,18 +156,13 @@ file /tmp/work/m029601/St480945.000002 saved as .dta format
 . clear
 
 . getTimeSeries EUROSTAT PRC_HICP_MIDX/.I15.CP00.DE+FR+NL+IT+ES+EA20 "" "" 0 0
-Sep 30, 2026 3:58:24 PM REPL.$JShell$12 SgetTimeSeries
+Sep 30, 2026 4:16:41 PM REPL.$JShell$12C SgetTimeSeries
 INFO: METADATA is disabled.
-Sep 30, 2026 3:58:24 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
-INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/dataflow/all/PRC_HICP_MIDX/latest
-Sep 30, 2026 3:58:25 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
-INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/datastructure/ESTAT/PRC_HICP_MIDX/108.0?references=descend
-> ants
-Sep 30, 2026 3:58:26 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Sep 30, 2026 4:16:41 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/ESTAT,PRC_HICP_MIDX,1.0/.I15.CP00.DE+FR+NL+IT+ES+EA20
-Sep 30, 2026 3:58:27 PM REPL.$JShell$12 SgetTimeSeries
+Sep 30, 2026 4:16:42 PM REPL.$JShell$12C SgetTimeSeries
 INFO: The query returned 6 time series.
-Sep 30, 2026 3:58:27 PM REPL.$JShell$12 SgetTimeSeries
+Sep 30, 2026 4:16:42 PM REPL.$JShell$12C SgetTimeSeries
 INFO: The query returned 2113 observations.
 
 . rename *, low replace
@@ -268,7 +258,6 @@ Panel variable: x (strongly balanced)
 . drop x 
 
 . save ${data}/eurostat_hicp_ea_q.dta, replace
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/data/eurostat_hicp_ea_q.dta not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/data/eurostat_hicp_ea_q.dta saved
 
 . tempfile hicp_ea
@@ -408,7 +397,7 @@ Panel variable: geocode (unbalanced)
  Time variable: timeq, 1983q1 to 2026q3
          Delta: 1 quarter
 
-. foreach v of varlist wageH compH defl clupH { 
+. foreach v of varlist wageH compH defl clupH vagh { 
   2.         gen _`v' = 100*`v'/l4.`v'-100 if _n>4
   3.         drop `v'
   4.         rename _`v' `v'
@@ -417,6 +406,7 @@ Panel variable: geocode (unbalanced)
 (191 missing values generated)
 (198 missing values generated)
 (199 missing values generated)
+(198 missing values generated)
 
 . 
 . * Save dataset
@@ -438,5 +428,5 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/data/dataset_ea.dta save
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_cr_dataset_ea.txt
   log type:  text
- closed on:  30 Sep 2026, 15:58:27
+ closed on:  30 Sep 2026, 16:16:42
 ------------------------------------------------------------------------------------------------------------------------------------------------------------

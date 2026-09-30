@@ -6,14 +6,14 @@ cap log close
 log using ${log}/log_cr_dataset_ea.txt, t replace
 
 * Dati CNQ Eurostat
-use anno trim wageHT* compHT* deflT* clupHT* using ${source_na}/CN_dataset_dest.dta, clear
+use anno trim wageHT* compHT* deflT* clupHT* vaghT* using ${source_na}/CN_dataset_dest.dta, clear
 keep anno trim *DE *IT *FR *ES *NL *EA
 gen int year    = round(anno)
 gen int quarter    = round(trim)
 gen int timeq = yq(year, quarter)
 format timeq %tq
 drop anno trim
-reshape long wageHT compHT deflT clupHT, j(geo) i(timeq year quarter) string
+reshape long wageHT compHT deflT clupHT vaghT, j(geo) i(timeq year quarter) string
 rename *T *
 tempfile cnq_ea
 save `cnq_ea'
@@ -145,7 +145,7 @@ merge 1:1 timeq geo using `contr_ea', nogen
 merge 1:1 timeq geo using `hicp_ea', nogen
 encode geo, gen(geocode)
 xtset geocode timeq
-foreach v of varlist wageH compH defl clupH { 
+foreach v of varlist wageH compH defl clupH vagh { 
 	gen _`v' = 100*`v'/l4.`v'-100 if _n>4
 	drop `v'
 	rename _`v' `v'
