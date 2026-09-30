@@ -46,7 +46,7 @@ global covid_dum = 0
 * lp_panel    : paesi del panel (EA esclusa: è l'aggregato degli altri)
 global lp_lags     = 4
 global lp_shocks   "OilSpotUSDBarrel TTFSpotEURMWH ELEEURMWH"
-global lp_outcomes "defl wageH compH"
+global lp_outcomes "contr hicp defl wageH compH"
 global lp_panel    "DE IT NL ES FR"
 
 *******************************************************************************
