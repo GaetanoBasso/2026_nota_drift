@@ -21,9 +21,10 @@ dofiles/
   cr_dataset_ea.do       builds the quarterly country panel  -> data/dataset_ea.dta
   an_lp_energy_ea.do     Local Projections of energy shocks -> output/, graphs/
 logfiles/                one text log per dofile (log_<dofile name>.txt)
+main_graphs.tex          LaTeX file collecting the graphs (compile in ${home}, next to graphs/)
 ```
 
-Only `dofiles/`, `logfiles/`, `README.md` and `CLAUDE.md` are tracked (see `.gitignore`).
+Only `dofiles/`, `logfiles/`, `README.md`, `CLAUDE.md` and `main_graphs.tex` are tracked (see `.gitignore`).
 Data, output and graphs live on the shared drive under `${home}`
 (`/home/group/main/892fl/policy/2026/2026_nota_drift` on Unix,
 `//osiride-fs/group/main/892fl/...` on Windows).
