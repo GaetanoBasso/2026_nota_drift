@@ -19,7 +19,7 @@ tempfile cnq_ea
 save `cnq_ea'
 
 /*
-* Dati contrattuali ECB pubblici PNA - versione mensile (sostituita dal download trimestrale sotto)
+* Dati contrattuali ECB ristretti Totale economia - versione mensile (sostituita dal download trimestrale sotto)
 use anno month EA_INWR ES IT FR NL DE_INWR using ${source_contr}/dati_retr_pubblici_1.dta, clear
 gen int year    = round(anno)
 gen int quarter = ceil(month / 3)
