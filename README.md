@@ -8,7 +8,7 @@ Three wage/price measures are compared:
 
 - **negotiated wages** (ECB indicator of negotiated wage rates, `contr`);
 - **national accounts wages per hour** (`wageH`) and **compensation per hour** (`compH`);
-- the **GDP deflator** (`defl`) and **HICP inflation** (`hicp`).
+- **HICP inflation** (`hicp`).
 
 The gap between negotiated wages and national accounts wages is the *wage drift*,
 which gives the note its name.
@@ -24,8 +24,9 @@ logfiles/                one text log per dofile (log_<dofile name>.txt)
 main_graphs.tex          LaTeX file collecting the graphs (compile in ${home}, next to graphs/)
 ```
 
-Only `dofiles/`, `logfiles/`, `README.md`, `CLAUDE.md` and `main_graphs.tex` are tracked (see `.gitignore`).
-Data, output and graphs live on the shared drive under `${home}`
+Only `dofiles/`, `logfiles/`, `graphs/`, `README.md`, `CLAUDE.md` and `main_graphs.tex` are tracked
+(see `.gitignore`); graphs are committed so that Overleaf can compile `main_graphs.tex`.
+Data and output live on the shared drive under `${home}`
 (`/home/group/main/892fl/policy/2026/2026_nota_drift` on Unix,
 `//osiride-fs/group/main/892fl/...` on Windows).
 
@@ -39,9 +40,11 @@ in order:
 
 Requirements:
 
-- `getTimeSeries`, used to download the ECB series. It is not an official Stata or SSC
+- `getTimeSeries`, used to download the ECB and Eurostat series. It is not an official Stata or SSC
   command, so it has to be available in the environment where the code runs.
 - `xtscc` (Hoechle, 2007), from SSC. `an_lp_energy_ea.do` installs it if it is missing.
+- Internet access from Stata to the Bundesbank SDMX API (1-year Bund yield, downloaded
+  with `import delimited`).
 - Read access to the shared folders `${source_na}` and `${source_contr}`, and to
   `${home}/rawdata/Data_OIL_ELE_GAS.xlsx`.
 
@@ -54,6 +57,10 @@ Requirements:
 | `occP` | Employment (persons), level; weight of the panel LPs | same file (variables `occPT*`) |
 | `contr` | Indicator of negotiated wage rates (INWR), total economy, annual growth rate (`GY`), quarterly | ECB INW dataset, downloaded with `getTimeSeries ECB_RESTR INW/.......`. For DE and FR the national provider series (`DE2`, `FR2`) are used |
 | `hicp` | HICP all items (index 2015=100), year-on-year % change of the quarterly average | Eurostat `prc_hicp_midx`, downloaded with `getTimeSeries`; EA = EA20 |
+| `hicpx` | Core HICP: all items excluding energy, food, alcohol and tobacco (index 2015=100), year-on-year % change; defines the inflation state | Eurostat `prc_hicp_midx` (`TOT_X_NRG_FOOD`), `getTimeSeries` |
+| `lip` | Log of industrial production (B–D, seasonally and calendar adjusted, 2021=100), quarterly average | Eurostat `sts_inpr_m`, `getTimeSeries` |
+| `ur` | Unemployment rate (seasonally adjusted, % of labour force), quarterly average | Eurostat `une_rt_m`, `getTimeSeries` |
+| `bund1y` | 1-year Bund yield (Svensson term structure, residual maturity 1 year), quarterly average, common to all countries | Deutsche Bundesbank, series `BBSIS.M.I.ZST.ZI.EUR.S1311.B.A604.R01XX.R.A.A._Z._Z.A` |
 | `OilSpotUSDBarrel` | Oil spot price, USD per barrel | `rawdata/Data_OIL_ELE_GAS.xlsx` (monthly) |
 | `TTFSpotEURMWH` | Dutch TTF natural gas spot price, EUR/MWh | same file |
 | `ELEEURMWH` | Wholesale electricity price, EUR/MWh, country-specific (not available for EA; for BE only if the file has a column `ELE_BelgiumEURMWH`) | same file |
@@ -67,31 +74,36 @@ Steps:
    commented out.
 3. HICP: monthly indices are averaged over complete quarters, turned into
    year-on-year % changes and saved to `${data}/eurostat_hicp_ea_q.dta`.
-4. Energy prices: the monthly data are averaged to quarterly, turned into year-on-year
+4. Core HICP, industrial production and unemployment (monthly, Eurostat) are averaged
+   over complete quarters; the 1-year Bund yield (monthly, Bundesbank) likewise.
+5. Energy prices: the monthly data are averaged to quarterly, turned into year-on-year
    % changes, and reshaped by country. Oil and gas are common to all countries.
    Electricity is country-specific. EA gets an empty electricity column so that oil and
    gas are also available for EA.
-5. The four sources are merged. `wageH compH defl clupH` are turned into
+6. All sources are merged (the Bund yield by quarter). `wageH compH defl clupH hicpx` are turned into
    year-on-year % changes (`100*x/L4.x - 100`) and `vagh` into a quarter-on-quarter
-   % change (`100*x/L.x - 100`).
-6. The result is saved to `${data}/dataset_ea.dta`.
+   % change (`100*x/L.x - 100`); `lip = ln(ip)`.
+7. The result is saved to `${data}/dataset_ea.dta`.
 
 ## Analysis (`an_lp_energy_ea.do`)
 
 Local Projections (Jordà, 2005). Each energy price is used as a shock on its own, and
-each variable in `$lp_outcomes` (`contr hicp defl wageH compH`) is used as the outcome
+each variable in `$lp_outcomes` (`contr hicp wageH compH`) is used as the outcome
 on its own, for
 horizons h = 0, …, 12 quarters (`$hmax`):
 
 ```
-y(i,t+h) = a(i,h) + b(h) s(i,t) + Σ_{l=1..p} [ c(l,h) y(i,t-l) + d(l,h) s(i,t-l) ] + e(i,t+h)
+y(i,t+h) = a(i,h) + b(h) s(i,t) + Σ_{l=1..p} [ c(l,h) y(i,t-l) + d(l,h) s(i,t-l) + f(l,h)' x(i,t-l) ]
+           + k(h) covid(t) + e(i,t+h)
 ```
 
 - `y` and `s` are year-on-year % changes. `s` is divided by 10, so `b(h)` is the
   response in percentage points of the outcome's year-on-year growth to a
   **+10 pp increase in the year-on-year growth of the energy price**.
-- `p = $lp_lags` (default 4 quarters) lags of both the outcome and the shock are used
-  as controls.
+- `p = $lp_lags` (default 4 quarters) lags of the outcome, the shock and the macro
+  controls `x` = `$lp_controls` (log industrial production, unemployment rate, 1-year
+  Bund yield, as in Corsello and Foschi, 2026) are used as controls, plus a COVID dummy
+  for 2020q1–2022q4 when `$covid_dum = 1` (default).
 - **Panel LP**: pooled over `$lp_panel` (DE IT NL ES FR BE). EA is left out because it
   is the aggregate of the other countries. The regression is weighted by fixed
   country weights, equal to each country's average employment over the whole period
@@ -103,36 +115,37 @@ y(i,t+h) = a(i,h) + b(h) s(i,t) + Σ_{l=1..p} [ c(l,h) y(i,t-l) + d(l,h) s(i,t-l
 - **Time-series LP**: one regression per country in `$countries` (including EA), with
   Newey–West standard errors (Newey and West, 1987) and h+1 lags. Electricity is
   skipped for EA because there is no series for it.
-- **Covid**: with `$covid_dum = 1`, observations whose outcome date t+h falls in
-  2020q1–2021q4 are dropped (currently `$covid_dum = 0`).
-- **Sample period**: every panel of every figure shows in its title the first and
-  last shock date t used in the h = 0 regression (stored as `tmin`/`tmax`).
+- **Robustness variants** (`variant`): `base`; `pre` = only observations with
+  t+h ≤ 2019q4 (no COVID dummy); `post` = only shocks from 2020q1 (country time series
+  are often not estimable: too few observations); `seas` = `base` plus quarter fixed
+  effects.
+- **Sample period**: stored as `tmin`/`tmax` (first and last shock date t at h = 0).
+  It is shown in the panel labels of the appendix figures and written to
+  `graphs/smp_<figure>.tex` for the main figures, which `main_graphs.tex` reads.
 
-### High vs low growth at the time of the shock (section 4)
+### High vs low inflation at the time of the shock (section 4)
 
-A quarter t is **high growth** (`hg = 1`) if `vagh(t)` is above the country's
-historical average of `vagh` **and** `vagh(t+1) > 0` **and** `vagh(t+2) > 0`. All other
-quarters are **low growth** (`hg = 0`). `hg` is missing when `vagh` is missing in t,
-t+1 or t+2. The LPs above are re-estimated with every regressor (shock and lags)
-interacted with `hg` and `1-hg`, plus `hg` itself, as in Ramey and Zubairy (2018).
-This gives one response for shocks that hit in high-growth quarters (`bH`) and one for
-low-growth quarters (`bL`), with a test of their equality (`pdiff`).
-
-Note that the state uses `vagh(t+1)` and `vagh(t+2)`, i.e. information from after the
-shock, as requested for this first pass.
+Following Corsello and Foschi (2026), a quarter t is **high inflation** (`hinf = 1`)
+if core HICP inflation (`hicpx`) in t-1 is above `$infl_thr` (default 2%); all other
+quarters are **low inflation**. The threshold and timing are an assumption to be
+checked against the paper. The LPs are re-estimated with every regressor interacted
+with `hinf` and `1-hinf`, plus `hinf` itself (as in Ramey and Zubairy, 2018). This gives
+`bH` and `bL`, with a test of their equality (`pdiff`).
 
 Outputs:
 
-- `${out}/lp_energy_ea.dta` and `${out}/lp_energy_ea.xlsx`: one row per
-  `spec` (panel/ts) × `geo` × `shock` × `outcome` × `h`, with `b`, `se`, `N` and
+- `${out}/lp_energy_ea.dta` / `.xlsx`: one row per `spec` (panel/ts) × `geo` ×
+  `variant` × `shock` × `outcome` × `h`, with `b`, `se`, `N`, `tmin`, `tmax` and
   68% / 90% bands.
-- `${gph}/lp_<shock>_<outcome>.png`: one figure per shock–outcome pair. Each
-  figure shows the panel response and one panel per country.
-- `${out}/lp_energy_growthstate_ea.dta` / `.xlsx`: state-dependent results, with
-  `bH seH bL seL pdiff N NH tmin tmax` (`NH` = high-growth observations in the sample)
-  and 90% bands.
-- `${gph}/lp_growthstate_<shock>_<outcome>.png`: high-growth (red) and low-growth
-  (blue, dashed) responses with 90% bands, panel plus one panel per country.
+- `${out}/lp_energy_inflstate_ea.dta` / `.xlsx`: inflation-state results, with
+  `bH seH bL seL pdiff N NH tmin tmax` (`NH` = high-inflation observations).
+- Graphs (no titles: titles and notes are in `main_graphs.tex`):
+  - `lp_main_<shock>_<outcome>.png`: main figure, EA for oil and gas, panel for
+    electricity;
+  - `lp_app_<shock>_<outcome>.png`: appendix, the panel (oil, gas) and the countries,
+    with a common y axis;
+  - `lp_rob_<shock>_<outcome>.png`: appendix, robustness variants for the main unit;
+  - `lp_inflstate_main_*` / `lp_inflstate_app_*`: the same for the inflation state.
 
 Caveat: the "shocks" are observed energy price changes, conditioned on their own lags
 and on lags of the outcome. They are not identified structural shocks, so the
@@ -149,6 +162,9 @@ responses should be read as conditional reduced-form pass-through.
 - Hoechle, D. (2007), "Robust standard errors for panel regressions with
   cross-sectional dependence", *Stata Journal*, 7(3), 281–312.
   <https://doi.org/10.1177/1536867X0700700301>
+- Corsello, F. and Foschi, A. (2026), "The different effects of oil and gas supply
+  shocks on euro-area inflation", Banca d'Italia, *Questioni di Economia e Finanza
+  (Occasional Papers)*, No. 1024.
 - Ramey, V. A. and Zubairy, S. (2018), "Government Spending Multipliers in Good
   Times and in Bad: Evidence from US Historical Data", *Journal of Political Economy*,
   126(2), 850–901. <https://doi.org/10.1086/696277>

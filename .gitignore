@@ -27,3 +27,6 @@
 
 # Stata swap files
 /dofiles/~*.stswp
+
+# Windows thumbnail cache
+Thumbs.db

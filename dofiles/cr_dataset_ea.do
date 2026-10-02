@@ -110,6 +110,54 @@ save ${data}/eurostat_hicp_ea_q.dta, replace
 tempfile hicp_ea
 save `hicp_ea'
 
+* Dati mensili Eurostat aggiuntivi: HICP core, produzione industriale, tasso di disoccupazione
+* hicpx: HICP esclusi energia, alimentari, alcol e tabacchi (indice 2015=100, come hicp)
+* ip   : produzione industriale B-D, dest. e corretta per i giorni lavorativi (indice 2021=100)
+* ur   : tasso di disoccupazione, destagionalizzato, % forze di lavoro
+local k_hicpx "PRC_HICP_MIDX/M.I15.TOT_X_NRG_FOOD"
+local k_ip    "STS_INPR_M/M.PRD.B-D.SCA.I21"
+local k_ur    "UNE_RT_M/M.SA.TOTAL.PC_ACT.T"
+foreach v in hicpx ip ur {
+	clear
+	getTimeSeries EUROSTAT `k_`v''.DE+FR+NL+IT+ES+BE+EA20 "" "" 0 0
+	rename *, low replace
+	gen geo = word(subinstr(tsname, ".", " ", .), -1)
+	replace geo = "EA" if geo == "EA20"
+	replace date = subinstr(date, "-", " ", .)
+	gen year = real(word(date, 1))
+	gen quarter = ceil(real(word(date, 2))/3)
+	* solo trimestri completi (3 mesi disponibili)
+	egen nm = count(value), by(geo year quarter)
+	keep if nm == 3
+	collapse (mean) value, by(geo year quarter)
+	gen int timeq = yq(year, quarter)
+	format timeq %tq
+	rename value `v'
+	keep timeq geo `v'
+	isid geo timeq
+	tempfile `v'_ea
+	save ``v'_ea'
+}
+
+* Rendimento del Bund a 1 anno (Bundesbank: struttura per scadenza dei titoli federali,
+* metodo Svensson, vita residua 1 anno, dati mensili), comune a tutti i paesi
+* Serie BBSIS.M.I.ZST.ZI.EUR.S1311.B.A604.R01XX.R.A.A._Z._Z.A; se il download diretto è
+* bloccato, scaricarla da https://www.bundesbank.de/en/statistics/money-and-capital-markets/interest-rates-and-yields
+import delimited using "https://api.statistiken.bundesbank.de/rest/download/BBSIS/M.I.ZST.ZI.EUR.S1311.B.A604.R01XX.R.A.A._Z._Z.A?format=csv&lang=en", varnames(nonames) delimiters(",") stringcols(_all) clear
+keep if ustrregexm(v1, "^[0-9]{4}-[0-9]{2}$")
+gen year = real(substr(v1, 1, 4))
+gen quarter = ceil(real(substr(v1, 6, 2))/3)
+gen bund1y = real(v2)
+egen nm = count(bund1y), by(year quarter)
+keep if nm == 3
+collapse (mean) bund1y, by(year quarter)
+gen int timeq = yq(year, quarter)
+format timeq %tq
+keep timeq bund1y
+isid timeq
+tempfile bund
+save `bund'
+
 * Dati shock prezzi energetici
 import excel ${home}/rawdata/Data_OIL_ELE_GAS.xlsx, clear first
 destring _all, replace
@@ -147,9 +195,16 @@ use `cnq_ea', clear
 merge 1:1 timeq geo using `prices', nogen
 merge 1:1 timeq geo using `contr_ea', nogen
 merge 1:1 timeq geo using `hicp_ea', nogen
+foreach v in hicpx ip ur {
+	merge 1:1 timeq geo using ``v'_ea', nogen
+}
+merge m:1 timeq using `bund', nogen keep(master match)
+* Anno e trimestre anche per le righe aggiunte dai merge
+replace year = year(dofq(timeq))
+replace quarter = quarter(dofq(timeq))
 encode geo, gen(geocode)
 xtset geocode timeq
-foreach v of varlist wageH compH defl clupH { 
+foreach v of varlist wageH compH defl clupH hicpx { 
 	gen _`v' = 100*`v'/l4.`v'-100 if _n>4
 	drop `v'
 	rename _`v' `v'
@@ -158,6 +213,9 @@ xtset
 gen _vagh = 100*vagh/l.vagh-100 if _n>1
 drop vagh
 rename _vagh vagh
+* Logaritmo della produzione industriale
+gen lip = ln(ip)
+drop ip
 
 
 * Save dataset
