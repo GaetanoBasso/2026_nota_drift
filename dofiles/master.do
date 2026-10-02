@@ -34,32 +34,38 @@ global countries "DE IT NL ES FR BE EA"
 * hmax      : orizzonte massimo in trimestri rispetto all'ultimo disponibile
 * oos_start : primo forecast origin della valutazione ricorsiva
 * minobs    : numero minimo di osservazioni per stimare un modello
-* covid_dum : 1 = esclude dalle LP le osservazioni con t+h in 2020q1-2021q4 (lockdown)
+* covid_dum : 1 = include tra i controlli delle LP una dummy per 2020q1-2022q4
 global hmax      = 12
 global oos_start = tq(1995q1)
-global covid_dum = 0
+global covid_dum = 1
 
 * --- Parametri delle Local Projections (an_lp_energy_ea.do) ------------------
 * lp_lags     : numero di ritardi di outcome e shock inclusi come controlli
 * lp_shocks   : prezzi energetici (var. % tendenziali); lo shock è scalato a 10 pp
 * lp_outcomes : variabili di risposta (var. % tendenziali)
+* lp_controls : controlli macro come in Corsello e Foschi (2026), inclusi con $lp_lags ritardi:
+*               log produzione industriale, tasso di disoccupazione, rendimento Bund 1 anno
+* infl_thr    : soglia (%, a/a) dell'inflazione di fondo (HICP core) in t-1 oltre la quale
+*               il trimestre dello shock è ad alta inflazione
 * lp_panel    : paesi del panel (EA esclusa: è l'aggregato degli altri);
 *               le stime panel sono ponderate per gli occupati medi del paese (occP)
 global lp_lags     = 4
 global lp_shocks   "OilSpotUSDBarrel TTFSpotEURMWH ELEEURMWH"
-global lp_outcomes "contr hicp defl wageH compH"
+global lp_outcomes "contr hicp wageH compH"
+global lp_controls "lip ur bund1y"
+global infl_thr    = 2
 global lp_panel    "DE IT NL ES FR BE"
 
 *******************************************************************************
 * 1) CREAZIONE DATASET
 *******************************************************************************
 
-* Dataset panel trimestrale: CN Eurostat, retribuzioni contrattuali BCE, prezzi energetici
+* Dataset panel trimestrale: CN Eurostat, retribuzioni contrattuali BCE, HICP, controlli macro, prezzi energetici
 do ${do}/cr_dataset_ea.do
 
 *******************************************************************************
 * 2) ANALISI
 *******************************************************************************
 
-* Local Projections (Jordà, 2005): shock dei prezzi energetici su deflatore, wageH, compH
+* Local Projections (Jordà, 2005): shock dei prezzi energetici su retribuzioni e prezzi; eterogeneità per inflazione; robustezza
 do ${do}/an_lp_energy_ea.do
