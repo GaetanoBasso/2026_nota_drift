@@ -241,9 +241,10 @@ foreach s of global lp_shocks {
 *******************************************************************************
 * 4) LP per stato dell'inflazione di fondo allo shock: alta vs bassa
 *
-* Come in Corsello e Foschi (2026): pi_bar(t) = media della var. % congiunturale mensile
-* dell'HICP core (esclusi energia, alimentari, alcol e tabacchi) nei 6 mesi precedenti
-* il trimestre t (hicpx_bar). Trimestre t ad alta inflazione (hinf = 1) se pi_bar(t) supera
+* Adattato da Corsello e Foschi (2026): pi_bar(t) = media della var. % a/a trimestrale
+* dell'HICP core (esclusi energia, alimentari, alcol e tabacchi, non destagionalizzato)
+* nei 2 trimestri precedenti t (hicpx_bar; C-F usano la media della var. % congiunturale
+* mensile nei 6 mesi precedenti). Trimestre t ad alta inflazione (hinf = 1) se pi_bar(t) supera
 * il 75° percentile di pi_bar del paese sull'intero periodo; altrimenti bassa inflazione
 * (hinf = 0); hinf mancante se manca hicpx_bar.
 * Specificazione completamente interagita con lo stato (come Ramey e Zubairy, 2018):
