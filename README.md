@@ -57,7 +57,7 @@ Requirements:
 | `occP` | Employment (persons), level; weight of the panel LPs | same file (variables `occPT*`) |
 | `contr` | Indicator of negotiated wage rates (INWR), total economy, annual growth rate (`GY`), quarterly | ECB INW dataset, downloaded with `getTimeSeries ECB_RESTR INW/.......`. For DE and FR the national provider series (`DE2`, `FR2`) are used |
 | `hicp` | HICP all items (index 2015=100), year-on-year % change of the quarterly average | Eurostat `prc_hicp_midx`, downloaded with `getTimeSeries`; EA = EA20 |
-| `hicpx` | Core HICP: all items excluding energy, food, alcohol and tobacco (index 2015=100), year-on-year % change; defines the inflation state | Eurostat `prc_hicp_midx` (`TOT_X_NRG_FOOD`), `getTimeSeries` |
+| `hicpx` | Core HICP: all items excluding energy, food, alcohol and tobacco (index 2015=100), year-on-year % change. `hicpx_bar`: average month-on-month core inflation over the 6 months before the quarter, which defines the inflation state | Eurostat `prc_hicp_midx` (`TOT_X_NRG_FOOD`), `getTimeSeries` |
 | `lip` | Log of industrial production (B–D, seasonally and calendar adjusted, 2021=100), quarterly average | Eurostat `sts_inpr_m`, `getTimeSeries` |
 | `ur` | Unemployment rate (seasonally adjusted, % of labour force), quarterly average | Eurostat `une_rt_m`, `getTimeSeries` |
 | `bund1y` | 1-year Bund yield (Svensson term structure, residual maturity 1 year), quarterly average, common to all countries | Deutsche Bundesbank, series `BBSIS.M.I.ZST.ZI.EUR.S1311.B.A604.R01XX.R.A.A._Z._Z.A` |
@@ -115,20 +115,18 @@ y(i,t+h) = a(i,h) + b(h) s(i,t) + Σ_{l=1..p} [ c(l,h) y(i,t-l) + d(l,h) s(i,t-l
 - **Time-series LP**: one regression per country in `$countries` (including EA), with
   Newey–West standard errors (Newey and West, 1987) and h+1 lags. Electricity is
   skipped for EA because there is no series for it.
-- **Robustness variants** (`variant`): `base`; `pre` = only observations with
-  t+h ≤ 2019q4 (no COVID dummy); `post` = only shocks from 2020q1 (country time series
-  are often not estimable: too few observations); `seas` = `base` plus quarter fixed
-  effects.
+- **Robustness variant** (`variant`): `base`; `seas` = `base` plus quarter fixed effects.
 - **Sample period**: stored as `tmin`/`tmax` (first and last shock date t at h = 0).
   It is shown in the panel labels of the appendix figures and written to
   `graphs/smp_<figure>.tex` for the main figures, which `main_graphs.tex` reads.
 
 ### High vs low inflation at the time of the shock (section 4)
 
-Following Corsello and Foschi (2026), a quarter t is **high inflation** (`hinf = 1`)
-if core HICP inflation (`hicpx`) in t-1 is above `$infl_thr` (default 2%); all other
-quarters are **low inflation**. The threshold and timing are an assumption to be
-checked against the paper. The LPs are re-estimated with every regressor interacted
+Following Corsello and Foschi (2026), let π be month-on-month core HICP inflation and
+π̄(t) its average over the 6 months before quarter t starts (`hicpx_bar`, computed from
+monthly data in `cr_dataset_ea.do`). A quarter t is **high inflation** (`hinf = 1`) if
+π̄(t) is above the 75th percentile of π̄ for that country over the whole sample; all
+other quarters are **low inflation**. The LPs are re-estimated with every regressor interacted
 with `hinf` and `1-hinf`, plus `hinf` itself (as in Ramey and Zubairy, 2018). This gives
 `bH` and `bL`, with a test of their equality (`pdiff`).
 
@@ -144,7 +142,7 @@ Outputs:
     electricity;
   - `lp_app_<shock>_<outcome>.png`: appendix, the panel (oil, gas) and the countries,
     with a common y axis;
-  - `lp_rob_<shock>_<outcome>.png`: appendix, robustness variants for the main unit;
+  - `lp_rob_<shock>_<outcome>.png`: appendix, baseline vs quarter fixed effects for the main unit;
   - `lp_inflstate_main_*` / `lp_inflstate_app_*`: the same for the inflation state.
 
 Caveat: the "shocks" are observed energy price changes, conditioned on their own lags

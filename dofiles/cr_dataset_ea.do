@@ -112,6 +112,8 @@ save `hicp_ea'
 
 * Dati mensili Eurostat aggiuntivi: HICP core, produzione industriale, tasso di disoccupazione
 * hicpx: HICP esclusi energia, alimentari, alcol e tabacchi (indice 2015=100, come hicp)
+*        hicpx_bar: media della var. % congiunturale dei 6 mesi precedenti il trimestre
+*        (pi_bar di Corsello e Foschi, 2026, valutata al primo mese del trimestre)
 * ip   : produzione industriale B-D, dest. e corretta per i giorni lavorativi (indice 2021=100)
 * ur   : tasso di disoccupazione, destagionalizzato, % forze di lavoro
 local k_hicpx "PRC_HICP_MIDX/M.I15.TOT_X_NRG_FOOD"
@@ -125,15 +127,25 @@ foreach v in hicpx ip ur {
 	replace geo = "EA" if geo == "EA20"
 	replace date = subinstr(date, "-", " ", .)
 	gen year = real(word(date, 1))
-	gen quarter = ceil(real(word(date, 2))/3)
+	gen month = real(word(date, 2))
+	gen quarter = ceil(month/3)
+	local xv ""
+	if "`v'" == "hicpx" {
+		gen int timem = ym(year, month)
+		encode geo, gen(g)
+		xtset g timem
+		gen pim = 100*value/L.value - 100
+		gen hicpx_bar = (L1.pim + L2.pim + L3.pim + L4.pim + L5.pim + L6.pim)/6 if inlist(month, 1, 4, 7, 10)
+		local xv "hicpx_bar"
+	}
 	* solo trimestri completi (3 mesi disponibili)
 	egen nm = count(value), by(geo year quarter)
 	keep if nm == 3
-	collapse (mean) value, by(geo year quarter)
+	collapse (mean) value `xv', by(geo year quarter)
 	gen int timeq = yq(year, quarter)
 	format timeq %tq
 	rename value `v'
-	keep timeq geo `v'
+	keep timeq geo `v' `xv'
 	isid geo timeq
 	tempfile `v'_ea
 	save ``v'_ea'

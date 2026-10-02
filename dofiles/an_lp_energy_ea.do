@@ -21,14 +21,13 @@ log using ${log}/log_an_lp_energy_ea.txt, t replace
 *   (xtscc >= 1.4, necessario per aweight con fe) con lag h+1
 * - Serie storiche: una regressione per paese in $countries, errori standard
 *   Newey-West con lag h+1
-* - Varianti (variabile variant): base; pre = solo t+h <= 2019q4 (senza dummy covid);
-*   post = solo t >= 2020q1; seas = base con effetti fissi trimestrali
+* - Varianti (variabile variant): base; seas = base con effetti fissi trimestrali
 * - Grafici senza titoli (titoli e note nel file TeX):
 *   principali  lp_main_*: EA per petrolio e gas, panel per l'elettricità
 *   appendice   lp_app_* : panel e paesi restanti, stesso asse y
-*   robustezza  lp_rob_* : varianti per l'unità del grafico principale
+*   robustezza  lp_rob_* : base ed effetti fissi trimestrali per l'unità del grafico principale
 *   il periodo campionario dei grafici principali è scritto in graphs/smp_*.tex
-* - Sezione 4: LP per stato di alta/bassa inflazione di fondo allo shock
+* - Sezione 4: LP per stato di alta/bassa inflazione di fondo prima dello shock
 *******************************************************************************
 
 cap which xtscc
@@ -91,17 +90,13 @@ foreach s of global lp_shocks {
 			local ctrl "`ctrl' L`l'_`y' L`l'_`s'"
 		}
 		local ctrl "`ctrl' `xctrl'"
-		foreach vr in base pre post seas {
+		foreach vr in base seas {
 			local xr "`cv'"
-			if "`vr'" == "pre"  local xr ""
 			if "`vr'" == "seas" local xr "`cv' q2 q3 q4"
 			forv h = 0/$hmax {
-				local xc ""
-				if "`vr'" == "pre"  local xc "& timeq + `h' <= tq(2019q4)"
-				if "`vr'" == "post" local xc "& timeq >= tq(2020q1)"
 				cap drop lhs smp
 				qui gen lhs = F`h'.`y'
-				qui gen byte smp = inpanel `xc'
+				qui gen byte smp = inpanel
 				markout smp lhs `s' `ctrl' `xr' wP
 				qui su timeq if smp
 				local t0 = r(min)
@@ -133,22 +128,18 @@ foreach c of global countries {
 				local ctrl "`ctrl' L`l'_`y' L`l'_`s'"
 			}
 			local ctrl "`ctrl' `xctrl'"
-			foreach vr in base pre post seas {
+			foreach vr in base seas {
 				local xr "`cv'"
-				if "`vr'" == "pre"  local xr ""
 				if "`vr'" == "seas" local xr "`cv' q2 q3 q4"
 				forv h = 0/$hmax {
-					local xc ""
-					if "`vr'" == "pre"  local xc "& timeq + `h' <= tq(2019q4)"
-					if "`vr'" == "post" local xc "& timeq >= tq(2020q1)"
 					cap drop lhs smp
 					qui gen lhs = F`h'.`y'
-					qui gen byte smp = 1 `xc'
+					qui gen byte smp = 1
 					markout smp lhs `s' `ctrl' `xr'
 					qui su timeq if smp
 					local t0 = r(min)
 					local t1 = r(max)
-					* ELEEURMWH non esiste per EA e BE; post-Covid: poche osservazioni. La stima fallisce e si salta
+					* ELEEURMWH non esiste per EA e BE: la stima fallisce e si salta
 					cap newey lhs `s' `ctrl' `xr' if smp, lag(`=`h'+1') force
 					if _rc {
 						di as txt "Salto: `c' `vr' `s' -> `y', h=`h' (rc=" _rc ")"
@@ -177,12 +168,8 @@ save ${out}/lp_energy_ea.dta, replace
 export excel using ${out}/lp_energy_ea.xlsx, firstrow(var) replace
 
 local lab_base "Base"
-local lab_pre  "Pre-Covid"
-local lab_post "Post-Covid"
 local lab_seas "Eff. fissi trimestrali"
 local sty_base "lcolor(navy) lwidth(medthick)"
-local sty_pre  "lcolor(forest_green) lwidth(medthick) lpattern(dash)"
-local sty_post "lcolor(dkorange) lwidth(medthick) lpattern(shortdash)"
 local sty_seas "lcolor(maroon) lwidth(medthick) lpattern(longdash_dot)"
 
 tempname fh
@@ -232,12 +219,12 @@ foreach s of global lp_shocks {
 		graph combine `gl', ycommon graphregion(color(white)) name(comb, replace)
 		graph export ${gph}/lp_app_`s'_`y'.png, replace
 
-		* --- Robustezza: varianti per l'unità del grafico principale --- *
+		* --- Robustezza: effetti fissi trimestrali per l'unità del grafico principale --- *
 		local rc `"if geo == "`mg'" & shock == "`s'" & outcome == "`y'""'
 		local pl `"(rarea lo90 hi90 h `rc' & variant == "base", color(gs13))"'
 		local lg ""
 		local k = 1
-		foreach vr in base pre post seas {
+		foreach vr in base seas {
 			qui count `rc' & variant == "`vr'"
 			if r(N) == 0 continue
 			local ++k
@@ -254,9 +241,11 @@ foreach s of global lp_shocks {
 *******************************************************************************
 * 4) LP per stato dell'inflazione di fondo allo shock: alta vs bassa
 *
-* Trimestre t ad alta inflazione (hinf = 1) se l'inflazione di fondo (HICP esclusi
-* energia, alimentari, alcol e tabacchi, var. % a/a) in t-1 supera $infl_thr;
-* altrimenti bassa inflazione (hinf = 0); hinf mancante se manca hicpx in t-1.
+* Come in Corsello e Foschi (2026): pi_bar(t) = media della var. % congiunturale mensile
+* dell'HICP core (esclusi energia, alimentari, alcol e tabacchi) nei 6 mesi precedenti
+* il trimestre t (hicpx_bar). Trimestre t ad alta inflazione (hinf = 1) se pi_bar(t) supera
+* il 75° percentile di pi_bar del paese sull'intero periodo; altrimenti bassa inflazione
+* (hinf = 0); hinf mancante se manca hicpx_bar.
 * Specificazione completamente interagita con lo stato (come Ramey e Zubairy, 2018):
 *   y(i,t+h) = a(i,h) + g(h)*hinf(i,t)
 *              + hinf(i,t)*[bH(h)*s(i,t) + controlli] + (1-hinf(i,t))*[bL(h)*s(i,t) + controlli] + e(i,t+h)
@@ -264,7 +253,8 @@ foreach s of global lp_shocks {
 *******************************************************************************
 
 use `lpdata', clear
-gen byte hinf = L.hicpx > $infl_thr if !missing(L.hicpx)
+egen p75_hicpx_bar = pctile(hicpx_bar), p(75) by(geocode)
+gen byte hinf = hicpx_bar > p75_hicpx_bar if !missing(hicpx_bar)
 tab geo hinf, missing
 
 tempname pf
