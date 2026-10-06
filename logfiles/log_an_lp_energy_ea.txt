@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lp_energy_ea.txt
   log type:  text
- opened on:   6 Oct 2026, 14:57:17
+ opened on:   6 Oct 2026, 15:46:05
 
 . 
 . *******************************************************************************
@@ -21,13 +21,13 @@
 . *   (xtscc >= 1.4, necessario per aweight con fe) con lag h+1
 . * - Serie storiche: una regressione per paese in $countries, errori standard
 . *   Newey-West con lag h+1
-. * - Varianti (variabile variant): base; seas = base con effetti fissi trimestrali
+. * - Varianti (variabile variant): base; seas = base con effetti fissi trimestrali;
+. *   pre = solo dati pre-Covid (t e t+h fino al 2019q4), senza dummy Covid
 . * - Grafici senza titoli (titoli e note nel file TeX):
 . *   principali  lp_main_*: EA per petrolio e gas, panel per l'elettricità
 . *   appendice   lp_app_* : panel e paesi restanti, stesso asse y
-. *   robustezza  lp_rob_* : base ed effetti fissi trimestrali per l'unità del grafico principale
+. *   robustezza  lp_rob_* : base, effetti fissi trimestrali e pre-Covid per l'unità del grafico principale
 . *   il periodo campionario dei grafici principali è scritto in graphs/smp_*.tex
-. * - Sezione 4: LP per stato di alta/bassa inflazione di fondo prima dello shock
 . *******************************************************************************
 . 
 . cap which xtscc
@@ -63,46 +63,46 @@ Panel variable: geocode (unbalanced)
   3.                 gen L`l'_`v' = L`l'.`v'
   4.         }
   5. }
-(432 missing values generated)
-(439 missing values generated)
-(446 missing values generated)
-(453 missing values generated)
-(740 missing values generated)
-(747 missing values generated)
-(754 missing values generated)
-(761 missing values generated)
-(876 missing values generated)
-(881 missing values generated)
-(886 missing values generated)
-(891 missing values generated)
-(240 missing values generated)
-(247 missing values generated)
-(254 missing values generated)
-(261 missing values generated)
-(489 missing values generated)
-(489 missing values generated)
-(489 missing values generated)
-(496 missing values generated)
-(433 missing values generated)
-(439 missing values generated)
-(446 missing values generated)
-(453 missing values generated)
-(433 missing values generated)
-(439 missing values generated)
-(446 missing values generated)
-(453 missing values generated)
-(361 missing values generated)
-(368 missing values generated)
-(375 missing values generated)
-(382 missing values generated)
-(194 missing values generated)
-(201 missing values generated)
-(208 missing values generated)
-(215 missing values generated)
-(8 missing values generated)
-(16 missing values generated)
-(24 missing values generated)
-(32 missing values generated)
+(294 missing values generated)
+(301 missing values generated)
+(308 missing values generated)
+(315 missing values generated)
+(602 missing values generated)
+(609 missing values generated)
+(616 missing values generated)
+(623 missing values generated)
+(738 missing values generated)
+(743 missing values generated)
+(748 missing values generated)
+(753 missing values generated)
+(102 missing values generated)
+(109 missing values generated)
+(116 missing values generated)
+(123 missing values generated)
+(351 missing values generated)
+(351 missing values generated)
+(351 missing values generated)
+(358 missing values generated)
+(295 missing values generated)
+(301 missing values generated)
+(308 missing values generated)
+(315 missing values generated)
+(295 missing values generated)
+(301 missing values generated)
+(308 missing values generated)
+(315 missing values generated)
+(222 missing values generated)
+(229 missing values generated)
+(236 missing values generated)
+(243 missing values generated)
+(56 missing values generated)
+(63 missing values generated)
+(70 missing values generated)
+(77 missing values generated)
+(7 missing values generated)
+(14 missing values generated)
+(21 missing values generated)
+(28 missing values generated)
 
 . 
 . * Dummy Covid ed effetti fissi trimestrali
@@ -128,18 +128,12 @@ Panel variable: geocode (unbalanced)
 
 . * Pesi fissi del panel: occupati medi del paese sul periodo
 . egen wP = mean(occP), by(geocode)
-(142 missing values generated)
 
 . xtset geocode timeq
 
 Panel variable: geocode (unbalanced)
  Time variable: timeq, 1983q1 to 2026q3
          Delta: 1 quarter
-
-. tempfile lpdata
-
-. save `lpdata'
-file /tmp/work/m029601/St1474092.000001 saved as .dta format
 
 . 
 . * Ritardi dei controlli macro e dummy Covid (comuni a tutte le specificazioni)
@@ -172,28 +166,31 @@ file /tmp/work/m029601/St1474092.000001 saved as .dta format
   5.                         local ctrl "`ctrl' L`l'_`y' L`l'_`s'"
   6.                 }
   7.                 local ctrl "`ctrl' `xctrl'"
-  8.                 foreach vr in base seas {
+  8.                 foreach vr in base seas pre {
   9.                         local xr "`cv'"
  10.                         if "`vr'" == "seas" local xr "`cv' q2 q3 q4"
- 11.                         forv h = 0/$hmax {
- 12.                                 cap drop lhs smp
- 13.                                 qui gen lhs = F`h'.`y'
- 14.                                 qui gen byte smp = inpanel
- 15.                                 markout smp lhs `s' `ctrl' `xr' wP
- 16.                                 qui su timeq if smp
- 17.                                 local t0 = r(min)
- 18.                                 local t1 = r(max)
- 19.                                 cap xtscc lhs `s' `ctrl' `xr' if smp [aw=wP], fe lag(`=`h'+1')
- 20.                                 if _rc {
- 21.                                         di as txt "Salto: PANEL `vr' `s' -> `y', h=`h' (rc=" _rc ")"
- 22.                                         continue
- 23.                                 }
- 24.                                 post `pf' ("panel") ("PANEL") ("`vr'") ("`s'") ("`y'") (`h') (_b[`s']) (_se[`s']) (e(N)) (`t0') (`t1')
- 25.                         }
- 26.                 }
- 27.                 di as txt "Panel LP: `s' -> `y' fatto"
- 28.         }
- 29. }
+ 11.                         if "`vr'" == "pre"  local xr ""
+ 12.                         forv h = 0/$hmax {
+ 13.                                 local xc ""
+ 14.                                 if "`vr'" == "pre" local xc "& timeq + `h' <= tq(2019q4)"
+ 15.                                 cap drop lhs smp
+ 16.                                 qui gen lhs = F`h'.`y'
+ 17.                                 qui gen byte smp = inpanel `xc'
+ 18.                                 markout smp lhs `s' `ctrl' `xr' wP
+ 19.                                 qui su timeq if smp
+ 20.                                 local t0 = r(min)
+ 21.                                 local t1 = r(max)
+ 22.                                 cap xtscc lhs `s' `ctrl' `xr' if smp [aw=wP], fe lag(`=`h'+1')
+ 23.                                 if _rc {
+ 24.                                         di as txt "Salto: PANEL `vr' `s' -> `y', h=`h' (rc=" _rc ")"
+ 25.                                         continue
+ 26.                                 }
+ 27.                                 post `pf' ("panel") ("PANEL") ("`vr'") ("`s'") ("`y'") (`h') (_b[`s']) (_se[`s']) (e(N)) (`t0') (`t1')
+ 28.                         }
+ 29.                 }
+ 30.                 di as txt "Panel LP: `s' -> `y' fatto"
+ 31.         }
+ 32. }
 Panel LP: OilSpotUSDBarrel -> contr fatto
 Panel LP: OilSpotUSDBarrel -> hicp fatto
 Panel LP: OilSpotUSDBarrel -> wageH fatto
@@ -223,51 +220,54 @@ Panel LP: ELEEURMWH -> compH fatto
   9.                                 local ctrl "`ctrl' L`l'_`y' L`l'_`s'"
  10.                         }
  11.                         local ctrl "`ctrl' `xctrl'"
- 12.                         foreach vr in base seas {
+ 12.                         foreach vr in base seas pre {
  13.                                 local xr "`cv'"
  14.                                 if "`vr'" == "seas" local xr "`cv' q2 q3 q4"
- 15.                                 forv h = 0/$hmax {
- 16.                                         cap drop lhs smp
- 17.                                         qui gen lhs = F`h'.`y'
- 18.                                         qui gen byte smp = 1
- 19.                                         markout smp lhs `s' `ctrl' `xr'
- 20.                                         qui su timeq if smp
- 21.                                         local t0 = r(min)
- 22.                                         local t1 = r(max)
- 23.                                         * ELEEURMWH non esiste per EA e BE: la stima fallisce e si salta
+ 15.                                 if "`vr'" == "pre"  local xr ""
+ 16.                                 forv h = 0/$hmax {
+ 17.                                         local xc ""
+ 18.                                         if "`vr'" == "pre" local xc "& timeq + `h' <= tq(2019q4)"
+ 19.                                         cap drop lhs smp
+ 20.                                         qui gen lhs = F`h'.`y'
+ 21.                                         qui gen byte smp = 1 `xc'
+ 22.                                         markout smp lhs `s' `ctrl' `xr'
+ 23.                                         qui su timeq if smp
+ 24.                                         local t0 = r(min)
+ 25.                                         local t1 = r(max)
+ 26.                                         * ELEEURMWH non esiste per EA e BE: la stima fallisce e si salta
 .                                         cap newey lhs `s' `ctrl' `xr' if smp, lag(`=`h'+1') force
- 24.                                         if _rc {
- 25.                                                 di as txt "Salto: `c' `vr' `s' -> `y', h=`h' (rc=" _rc ")"
- 26.                                                 continue
- 27.                                         }
- 28.                                         post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (_b[`s']) (_se[`s']) (e(N)) (`t0') (`t1')
- 29.                                 }
- 30.                         }
- 31.                 }
- 32.         }
- 33.         restore
- 34. }
-(1,143 observations deleted)
+ 27.                                         if _rc {
+ 28.                                                 di as txt "Salto: `c' `vr' `s' -> `y', h=`h' (rc=" _rc ")"
+ 29.                                                 continue
+ 30.                                         }
+ 31.                                         post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (_b[`s']) (_se[`s']) (e(N)) (`t0') (`t1')
+ 32.                                 }
+ 33.                         }
+ 34.                 }
+ 35.         }
+ 36.         restore
+ 37. }
+(1,005 observations deleted)
 
 Time variable: timeq, 1991q1 to 2026q3
         Delta: 1 quarter
-(1,111 observations deleted)
+(973 observations deleted)
 
 Time variable: timeq, 1983q1 to 2026q3
         Delta: 1 quarter
-(1,111 observations deleted)
+(973 observations deleted)
 
 Time variable: timeq, 1983q1 to 2026q3
         Delta: 1 quarter
-(1,111 observations deleted)
+(973 observations deleted)
 
 Time variable: timeq, 1983q1 to 2026q3
         Delta: 1 quarter
-(1,111 observations deleted)
+(973 observations deleted)
 
 Time variable: timeq, 1983q1 to 2026q3
         Delta: 1 quarter
-(1,124 observations deleted)
+(986 observations deleted)
 
 Time variable: timeq, 1986q2 to 2026q3
         Delta: 1 quarter
@@ -297,6 +297,19 @@ Salto: BE seas ELEEURMWH -> contr, h=9 (rc=2000)
 Salto: BE seas ELEEURMWH -> contr, h=10 (rc=2000)
 Salto: BE seas ELEEURMWH -> contr, h=11 (rc=2000)
 Salto: BE seas ELEEURMWH -> contr, h=12 (rc=2000)
+Salto: BE pre ELEEURMWH -> contr, h=0 (rc=2000)
+Salto: BE pre ELEEURMWH -> contr, h=1 (rc=2000)
+Salto: BE pre ELEEURMWH -> contr, h=2 (rc=2000)
+Salto: BE pre ELEEURMWH -> contr, h=3 (rc=2000)
+Salto: BE pre ELEEURMWH -> contr, h=4 (rc=2000)
+Salto: BE pre ELEEURMWH -> contr, h=5 (rc=2000)
+Salto: BE pre ELEEURMWH -> contr, h=6 (rc=2000)
+Salto: BE pre ELEEURMWH -> contr, h=7 (rc=2000)
+Salto: BE pre ELEEURMWH -> contr, h=8 (rc=2000)
+Salto: BE pre ELEEURMWH -> contr, h=9 (rc=2000)
+Salto: BE pre ELEEURMWH -> contr, h=10 (rc=2000)
+Salto: BE pre ELEEURMWH -> contr, h=11 (rc=2000)
+Salto: BE pre ELEEURMWH -> contr, h=12 (rc=2000)
 Salto: BE base ELEEURMWH -> hicp, h=0 (rc=2000)
 Salto: BE base ELEEURMWH -> hicp, h=1 (rc=2000)
 Salto: BE base ELEEURMWH -> hicp, h=2 (rc=2000)
@@ -323,6 +336,19 @@ Salto: BE seas ELEEURMWH -> hicp, h=9 (rc=2000)
 Salto: BE seas ELEEURMWH -> hicp, h=10 (rc=2000)
 Salto: BE seas ELEEURMWH -> hicp, h=11 (rc=2000)
 Salto: BE seas ELEEURMWH -> hicp, h=12 (rc=2000)
+Salto: BE pre ELEEURMWH -> hicp, h=0 (rc=2000)
+Salto: BE pre ELEEURMWH -> hicp, h=1 (rc=2000)
+Salto: BE pre ELEEURMWH -> hicp, h=2 (rc=2000)
+Salto: BE pre ELEEURMWH -> hicp, h=3 (rc=2000)
+Salto: BE pre ELEEURMWH -> hicp, h=4 (rc=2000)
+Salto: BE pre ELEEURMWH -> hicp, h=5 (rc=2000)
+Salto: BE pre ELEEURMWH -> hicp, h=6 (rc=2000)
+Salto: BE pre ELEEURMWH -> hicp, h=7 (rc=2000)
+Salto: BE pre ELEEURMWH -> hicp, h=8 (rc=2000)
+Salto: BE pre ELEEURMWH -> hicp, h=9 (rc=2000)
+Salto: BE pre ELEEURMWH -> hicp, h=10 (rc=2000)
+Salto: BE pre ELEEURMWH -> hicp, h=11 (rc=2000)
+Salto: BE pre ELEEURMWH -> hicp, h=12 (rc=2000)
 Salto: BE base ELEEURMWH -> wageH, h=0 (rc=2000)
 Salto: BE base ELEEURMWH -> wageH, h=1 (rc=2000)
 Salto: BE base ELEEURMWH -> wageH, h=2 (rc=2000)
@@ -349,6 +375,19 @@ Salto: BE seas ELEEURMWH -> wageH, h=9 (rc=2000)
 Salto: BE seas ELEEURMWH -> wageH, h=10 (rc=2000)
 Salto: BE seas ELEEURMWH -> wageH, h=11 (rc=2000)
 Salto: BE seas ELEEURMWH -> wageH, h=12 (rc=2000)
+Salto: BE pre ELEEURMWH -> wageH, h=0 (rc=2000)
+Salto: BE pre ELEEURMWH -> wageH, h=1 (rc=2000)
+Salto: BE pre ELEEURMWH -> wageH, h=2 (rc=2000)
+Salto: BE pre ELEEURMWH -> wageH, h=3 (rc=2000)
+Salto: BE pre ELEEURMWH -> wageH, h=4 (rc=2000)
+Salto: BE pre ELEEURMWH -> wageH, h=5 (rc=2000)
+Salto: BE pre ELEEURMWH -> wageH, h=6 (rc=2000)
+Salto: BE pre ELEEURMWH -> wageH, h=7 (rc=2000)
+Salto: BE pre ELEEURMWH -> wageH, h=8 (rc=2000)
+Salto: BE pre ELEEURMWH -> wageH, h=9 (rc=2000)
+Salto: BE pre ELEEURMWH -> wageH, h=10 (rc=2000)
+Salto: BE pre ELEEURMWH -> wageH, h=11 (rc=2000)
+Salto: BE pre ELEEURMWH -> wageH, h=12 (rc=2000)
 Salto: BE base ELEEURMWH -> compH, h=0 (rc=2000)
 Salto: BE base ELEEURMWH -> compH, h=1 (rc=2000)
 Salto: BE base ELEEURMWH -> compH, h=2 (rc=2000)
@@ -375,218 +414,23 @@ Salto: BE seas ELEEURMWH -> compH, h=9 (rc=2000)
 Salto: BE seas ELEEURMWH -> compH, h=10 (rc=2000)
 Salto: BE seas ELEEURMWH -> compH, h=11 (rc=2000)
 Salto: BE seas ELEEURMWH -> compH, h=12 (rc=2000)
-(1,147 observations deleted)
+Salto: BE pre ELEEURMWH -> compH, h=0 (rc=2000)
+Salto: BE pre ELEEURMWH -> compH, h=1 (rc=2000)
+Salto: BE pre ELEEURMWH -> compH, h=2 (rc=2000)
+Salto: BE pre ELEEURMWH -> compH, h=3 (rc=2000)
+Salto: BE pre ELEEURMWH -> compH, h=4 (rc=2000)
+Salto: BE pre ELEEURMWH -> compH, h=5 (rc=2000)
+Salto: BE pre ELEEURMWH -> compH, h=6 (rc=2000)
+Salto: BE pre ELEEURMWH -> compH, h=7 (rc=2000)
+Salto: BE pre ELEEURMWH -> compH, h=8 (rc=2000)
+Salto: BE pre ELEEURMWH -> compH, h=9 (rc=2000)
+Salto: BE pre ELEEURMWH -> compH, h=10 (rc=2000)
+Salto: BE pre ELEEURMWH -> compH, h=11 (rc=2000)
+Salto: BE pre ELEEURMWH -> compH, h=12 (rc=2000)
+(1,005 observations deleted)
 
-Time variable: timeq, 1992q1 to 2026q3
+Time variable: timeq, 1991q1 to 2026q3
         Delta: 1 quarter
-Salto: EA base OilSpotUSDBarrel -> contr, h=0 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> contr, h=1 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> contr, h=2 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> contr, h=3 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> contr, h=4 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> contr, h=5 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> contr, h=6 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> contr, h=7 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> contr, h=8 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> contr, h=9 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> contr, h=10 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> contr, h=11 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> contr, h=12 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> contr, h=0 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> contr, h=1 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> contr, h=2 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> contr, h=3 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> contr, h=4 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> contr, h=5 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> contr, h=6 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> contr, h=7 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> contr, h=8 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> contr, h=9 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> contr, h=10 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> contr, h=11 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> contr, h=12 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> hicp, h=0 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> hicp, h=1 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> hicp, h=2 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> hicp, h=3 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> hicp, h=4 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> hicp, h=5 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> hicp, h=6 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> hicp, h=7 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> hicp, h=8 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> hicp, h=9 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> hicp, h=10 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> hicp, h=11 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> hicp, h=12 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> hicp, h=0 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> hicp, h=1 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> hicp, h=2 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> hicp, h=3 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> hicp, h=4 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> hicp, h=5 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> hicp, h=6 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> hicp, h=7 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> hicp, h=8 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> hicp, h=9 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> hicp, h=10 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> hicp, h=11 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> hicp, h=12 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> wageH, h=0 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> wageH, h=1 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> wageH, h=2 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> wageH, h=3 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> wageH, h=4 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> wageH, h=5 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> wageH, h=6 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> wageH, h=7 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> wageH, h=8 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> wageH, h=9 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> wageH, h=10 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> wageH, h=11 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> wageH, h=12 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> wageH, h=0 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> wageH, h=1 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> wageH, h=2 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> wageH, h=3 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> wageH, h=4 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> wageH, h=5 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> wageH, h=6 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> wageH, h=7 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> wageH, h=8 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> wageH, h=9 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> wageH, h=10 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> wageH, h=11 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> wageH, h=12 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> compH, h=0 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> compH, h=1 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> compH, h=2 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> compH, h=3 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> compH, h=4 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> compH, h=5 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> compH, h=6 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> compH, h=7 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> compH, h=8 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> compH, h=9 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> compH, h=10 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> compH, h=11 (rc=2000)
-Salto: EA base OilSpotUSDBarrel -> compH, h=12 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> compH, h=0 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> compH, h=1 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> compH, h=2 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> compH, h=3 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> compH, h=4 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> compH, h=5 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> compH, h=6 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> compH, h=7 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> compH, h=8 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> compH, h=9 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> compH, h=10 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> compH, h=11 (rc=2000)
-Salto: EA seas OilSpotUSDBarrel -> compH, h=12 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> contr, h=0 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> contr, h=1 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> contr, h=2 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> contr, h=3 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> contr, h=4 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> contr, h=5 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> contr, h=6 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> contr, h=7 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> contr, h=8 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> contr, h=9 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> contr, h=10 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> contr, h=11 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> contr, h=12 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> contr, h=0 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> contr, h=1 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> contr, h=2 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> contr, h=3 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> contr, h=4 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> contr, h=5 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> contr, h=6 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> contr, h=7 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> contr, h=8 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> contr, h=9 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> contr, h=10 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> contr, h=11 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> contr, h=12 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> hicp, h=0 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> hicp, h=1 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> hicp, h=2 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> hicp, h=3 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> hicp, h=4 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> hicp, h=5 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> hicp, h=6 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> hicp, h=7 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> hicp, h=8 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> hicp, h=9 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> hicp, h=10 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> hicp, h=11 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> hicp, h=12 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> hicp, h=0 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> hicp, h=1 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> hicp, h=2 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> hicp, h=3 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> hicp, h=4 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> hicp, h=5 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> hicp, h=6 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> hicp, h=7 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> hicp, h=8 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> hicp, h=9 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> hicp, h=10 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> hicp, h=11 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> hicp, h=12 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> wageH, h=0 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> wageH, h=1 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> wageH, h=2 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> wageH, h=3 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> wageH, h=4 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> wageH, h=5 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> wageH, h=6 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> wageH, h=7 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> wageH, h=8 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> wageH, h=9 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> wageH, h=10 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> wageH, h=11 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> wageH, h=12 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> wageH, h=0 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> wageH, h=1 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> wageH, h=2 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> wageH, h=3 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> wageH, h=4 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> wageH, h=5 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> wageH, h=6 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> wageH, h=7 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> wageH, h=8 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> wageH, h=9 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> wageH, h=10 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> wageH, h=11 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> wageH, h=12 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> compH, h=0 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> compH, h=1 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> compH, h=2 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> compH, h=3 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> compH, h=4 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> compH, h=5 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> compH, h=6 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> compH, h=7 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> compH, h=8 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> compH, h=9 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> compH, h=10 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> compH, h=11 (rc=2000)
-Salto: EA base TTFSpotEURMWH -> compH, h=12 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> compH, h=0 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> compH, h=1 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> compH, h=2 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> compH, h=3 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> compH, h=4 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> compH, h=5 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> compH, h=6 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> compH, h=7 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> compH, h=8 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> compH, h=9 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> compH, h=10 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> compH, h=11 (rc=2000)
-Salto: EA seas TTFSpotEURMWH -> compH, h=12 (rc=2000)
 Salto: EA base ELEEURMWH -> contr, h=0 (rc=2000)
 Salto: EA base ELEEURMWH -> contr, h=1 (rc=2000)
 Salto: EA base ELEEURMWH -> contr, h=2 (rc=2000)
@@ -613,6 +457,19 @@ Salto: EA seas ELEEURMWH -> contr, h=9 (rc=2000)
 Salto: EA seas ELEEURMWH -> contr, h=10 (rc=2000)
 Salto: EA seas ELEEURMWH -> contr, h=11 (rc=2000)
 Salto: EA seas ELEEURMWH -> contr, h=12 (rc=2000)
+Salto: EA pre ELEEURMWH -> contr, h=0 (rc=2000)
+Salto: EA pre ELEEURMWH -> contr, h=1 (rc=2000)
+Salto: EA pre ELEEURMWH -> contr, h=2 (rc=2000)
+Salto: EA pre ELEEURMWH -> contr, h=3 (rc=2000)
+Salto: EA pre ELEEURMWH -> contr, h=4 (rc=2000)
+Salto: EA pre ELEEURMWH -> contr, h=5 (rc=2000)
+Salto: EA pre ELEEURMWH -> contr, h=6 (rc=2000)
+Salto: EA pre ELEEURMWH -> contr, h=7 (rc=2000)
+Salto: EA pre ELEEURMWH -> contr, h=8 (rc=2000)
+Salto: EA pre ELEEURMWH -> contr, h=9 (rc=2000)
+Salto: EA pre ELEEURMWH -> contr, h=10 (rc=2000)
+Salto: EA pre ELEEURMWH -> contr, h=11 (rc=2000)
+Salto: EA pre ELEEURMWH -> contr, h=12 (rc=2000)
 Salto: EA base ELEEURMWH -> hicp, h=0 (rc=2000)
 Salto: EA base ELEEURMWH -> hicp, h=1 (rc=2000)
 Salto: EA base ELEEURMWH -> hicp, h=2 (rc=2000)
@@ -639,6 +496,19 @@ Salto: EA seas ELEEURMWH -> hicp, h=9 (rc=2000)
 Salto: EA seas ELEEURMWH -> hicp, h=10 (rc=2000)
 Salto: EA seas ELEEURMWH -> hicp, h=11 (rc=2000)
 Salto: EA seas ELEEURMWH -> hicp, h=12 (rc=2000)
+Salto: EA pre ELEEURMWH -> hicp, h=0 (rc=2000)
+Salto: EA pre ELEEURMWH -> hicp, h=1 (rc=2000)
+Salto: EA pre ELEEURMWH -> hicp, h=2 (rc=2000)
+Salto: EA pre ELEEURMWH -> hicp, h=3 (rc=2000)
+Salto: EA pre ELEEURMWH -> hicp, h=4 (rc=2000)
+Salto: EA pre ELEEURMWH -> hicp, h=5 (rc=2000)
+Salto: EA pre ELEEURMWH -> hicp, h=6 (rc=2000)
+Salto: EA pre ELEEURMWH -> hicp, h=7 (rc=2000)
+Salto: EA pre ELEEURMWH -> hicp, h=8 (rc=2000)
+Salto: EA pre ELEEURMWH -> hicp, h=9 (rc=2000)
+Salto: EA pre ELEEURMWH -> hicp, h=10 (rc=2000)
+Salto: EA pre ELEEURMWH -> hicp, h=11 (rc=2000)
+Salto: EA pre ELEEURMWH -> hicp, h=12 (rc=2000)
 Salto: EA base ELEEURMWH -> wageH, h=0 (rc=2000)
 Salto: EA base ELEEURMWH -> wageH, h=1 (rc=2000)
 Salto: EA base ELEEURMWH -> wageH, h=2 (rc=2000)
@@ -665,6 +535,19 @@ Salto: EA seas ELEEURMWH -> wageH, h=9 (rc=2000)
 Salto: EA seas ELEEURMWH -> wageH, h=10 (rc=2000)
 Salto: EA seas ELEEURMWH -> wageH, h=11 (rc=2000)
 Salto: EA seas ELEEURMWH -> wageH, h=12 (rc=2000)
+Salto: EA pre ELEEURMWH -> wageH, h=0 (rc=2000)
+Salto: EA pre ELEEURMWH -> wageH, h=1 (rc=2000)
+Salto: EA pre ELEEURMWH -> wageH, h=2 (rc=2000)
+Salto: EA pre ELEEURMWH -> wageH, h=3 (rc=2000)
+Salto: EA pre ELEEURMWH -> wageH, h=4 (rc=2000)
+Salto: EA pre ELEEURMWH -> wageH, h=5 (rc=2000)
+Salto: EA pre ELEEURMWH -> wageH, h=6 (rc=2000)
+Salto: EA pre ELEEURMWH -> wageH, h=7 (rc=2000)
+Salto: EA pre ELEEURMWH -> wageH, h=8 (rc=2000)
+Salto: EA pre ELEEURMWH -> wageH, h=9 (rc=2000)
+Salto: EA pre ELEEURMWH -> wageH, h=10 (rc=2000)
+Salto: EA pre ELEEURMWH -> wageH, h=11 (rc=2000)
+Salto: EA pre ELEEURMWH -> wageH, h=12 (rc=2000)
 Salto: EA base ELEEURMWH -> compH, h=0 (rc=2000)
 Salto: EA base ELEEURMWH -> compH, h=1 (rc=2000)
 Salto: EA base ELEEURMWH -> compH, h=2 (rc=2000)
@@ -691,6 +574,19 @@ Salto: EA seas ELEEURMWH -> compH, h=9 (rc=2000)
 Salto: EA seas ELEEURMWH -> compH, h=10 (rc=2000)
 Salto: EA seas ELEEURMWH -> compH, h=11 (rc=2000)
 Salto: EA seas ELEEURMWH -> compH, h=12 (rc=2000)
+Salto: EA pre ELEEURMWH -> compH, h=0 (rc=2000)
+Salto: EA pre ELEEURMWH -> compH, h=1 (rc=2000)
+Salto: EA pre ELEEURMWH -> compH, h=2 (rc=2000)
+Salto: EA pre ELEEURMWH -> compH, h=3 (rc=2000)
+Salto: EA pre ELEEURMWH -> compH, h=4 (rc=2000)
+Salto: EA pre ELEEURMWH -> compH, h=5 (rc=2000)
+Salto: EA pre ELEEURMWH -> compH, h=6 (rc=2000)
+Salto: EA pre ELEEURMWH -> compH, h=7 (rc=2000)
+Salto: EA pre ELEEURMWH -> compH, h=8 (rc=2000)
+Salto: EA pre ELEEURMWH -> compH, h=9 (rc=2000)
+Salto: EA pre ELEEURMWH -> compH, h=10 (rc=2000)
+Salto: EA pre ELEEURMWH -> compH, h=11 (rc=2000)
+Salto: EA pre ELEEURMWH -> compH, h=12 (rc=2000)
 
 . 
 . postclose `pf'
@@ -721,9 +617,13 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_ea.xlsx
 
 . local lab_seas "Eff. fissi trimestrali"
 
+. local lab_pre  "Pre-Covid"
+
 . local sty_base "lcolor(navy) lwidth(medthick)"
 
 . local sty_seas "lcolor(maroon) lwidth(medthick) lpattern(longdash_dot)"
+
+. local sty_pre  "lcolor(forest_green) lwidth(medthick) lpattern(dash)"
 
 . 
 . tempname fh
@@ -774,12 +674,12 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_ea.xlsx
  29.                 graph combine `gl', ycommon graphregion(color(white)) name(comb, replace)
  30.                 graph export ${gph}/lp_app_`s'_`y'.png, replace
  31. 
-.                 * --- Robustezza: effetti fissi trimestrali per l'unità del grafico principale --- *
+.                 * --- Robustezza: effetti fissi trimestrali e pre-Covid per l'unità del grafico principale --- *
 .                 local rc `"if geo == "`mg'" & shock == "`s'" & outcome == "`y'""'
  32.                 local pl `"(rarea lo90 hi90 h `rc' & variant == "base", color(gs13))"'
  33.                 local lg ""
  34.                 local k = 1
- 35.                 foreach vr in base seas {
+ 35.                 foreach vr in base seas pre {
  36.                         qui count `rc' & variant == "`vr'"
  37.                         if r(N) == 0 continue
  38.                         local ++k
@@ -830,473 +730,9 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_ELEEURMWH_
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_ELEEURMWH_compH.png saved as PNG format
 
 . 
-. *******************************************************************************
-. * 4) LP per stato dell'inflazione di fondo allo shock: alta vs bassa
-. *
-. * Adattato da Corsello e Foschi (2026): pi_bar(t) = media della var. % a/a trimestrale
-. * dell'HICP core (esclusi energia, alimentari, alcol e tabacchi, non destagionalizzato)
-. * nei 2 trimestri precedenti t (hicpx_bar; C-F usano la media della var. % congiunturale
-. * mensile nei 6 mesi precedenti). Trimestre t ad alta inflazione (hinf = 1) se pi_bar(t) supera
-. * il 75° percentile di pi_bar del paese sull'intero periodo; altrimenti bassa inflazione
-. * (hinf = 0); hinf mancante se manca hicpx_bar.
-. * Specificazione completamente interagita con lo stato (come Ramey e Zubairy, 2018):
-. *   y(i,t+h) = a(i,h) + g(h)*hinf(i,t)
-. *              + hinf(i,t)*[bH(h)*s(i,t) + controlli] + (1-hinf(i,t))*[bL(h)*s(i,t) + controlli] + e(i,t+h)
-. * pdiff: p-value del test bH(h) = bL(h). NH: osservazioni ad alta inflazione nel campione.
-. *******************************************************************************
-. 
-. use `lpdata', clear
-
-. egen p75_hicpx_bar = pctile(hicpx_bar), p(75) by(geocode)
-(139 missing values generated)
-
-. gen byte hinf = hicpx_bar > p75_hicpx_bar if !missing(hicpx_bar)
-(565 missing values generated)
-
-. tab geo hinf, missing
-
-           |               hinf
-       geo |         0          1          . |     Total
------------+---------------------------------+----------
-        BE |        78         25         59 |       162 
-        DE |        87         28         28 |       143 
-        EA |         0          0        139 |       139 
-      EA20 |        72         23         47 |       142 
-        ES |        72         23         80 |       175 
-        FR |        87         28         60 |       175 
-        IT |        75         24         76 |       175 
-        NL |        75         24         76 |       175 
------------+---------------------------------+----------
-     Total |       546        175        565 |     1,286 
-
-. 
-. tempname pf
-
-. postfile `pf' str5 spec str5 geo str20 shock str8 outcome byte h double(bH seH bL seL pdiff) int(N NH tmin tmax) using ${out}/lp_energy_inflstate_ea.dta, replace
-
-. 
-. * --- LP panel --- *
-. foreach s of global lp_shocks {
-  2.         foreach y of global lp_outcomes {
-  3.                 local ctrl ""
-  4.                 forv l = 1/$lp_lags {
-  5.                         local ctrl "`ctrl' L`l'_`y' L`l'_`s'"
-  6.                 }
-  7.                 local rhs ""
-  8.                 foreach v in `s' `ctrl' `xctrl' `cv' {
-  9.                         qui gen hi_`v' = `v'*hinf
- 10.                         qui gen lo_`v' = `v'*(1-hinf)
- 11.                         local rhs "`rhs' hi_`v' lo_`v'"
- 12.                 }
- 13.                 forv h = 0/$hmax {
- 14.                         cap drop lhs smp
- 15.                         qui gen lhs = F`h'.`y'
- 16.                         qui gen byte smp = inpanel
- 17.                         markout smp lhs hinf `rhs' wP
- 18.                         qui su timeq if smp
- 19.                         local t0 = r(min)
- 20.                         local t1 = r(max)
- 21.                         qui count if smp & hinf == 1
- 22.                         local nh = r(N)
- 23.                         qui xtscc lhs hinf `rhs' if smp [aw=wP], fe lag(`=`h'+1')
- 24.                         qui test hi_`s' = lo_`s'
- 25.                         post `pf' ("panel") ("PANEL") ("`s'") ("`y'") (`h') (_b[hi_`s']) (_se[hi_`s']) (_b[lo_`s']) (_se[lo_`s']) (r(p)) (e(N)) (`nh') (`t0') (`t1')
- 26.                 }
- 27.                 drop hi_* lo_*
- 28.                 di as txt "Panel LP per stato: `s' -> `y' fatto"
- 29.         }
- 30. }
-Panel LP per stato: OilSpotUSDBarrel -> contr fatto
-Panel LP per stato: OilSpotUSDBarrel -> hicp fatto
-Panel LP per stato: OilSpotUSDBarrel -> wageH fatto
-Panel LP per stato: OilSpotUSDBarrel -> compH fatto
-Panel LP per stato: TTFSpotEURMWH -> contr fatto
-Panel LP per stato: TTFSpotEURMWH -> hicp fatto
-Panel LP per stato: TTFSpotEURMWH -> wageH fatto
-Panel LP per stato: TTFSpotEURMWH -> compH fatto
-Panel LP per stato: ELEEURMWH -> contr fatto
-Panel LP per stato: ELEEURMWH -> hicp fatto
-Panel LP per stato: ELEEURMWH -> wageH fatto
-Panel LP per stato: ELEEURMWH -> compH fatto
-
-. 
-. * --- LP serie storiche, un paese alla volta --- *
-. foreach c of global countries {
-  2.         preserve
-  3.         keep if geo == "`c'"
-  4.         tsset timeq
-  5.         foreach s of global lp_shocks {
-  6.                 foreach y of global lp_outcomes {
-  7.                         local ctrl ""
-  8.                         forv l = 1/$lp_lags {
-  9.                                 local ctrl "`ctrl' L`l'_`y' L`l'_`s'"
- 10.                         }
- 11.                         local rhs ""
- 12.                         foreach v in `s' `ctrl' `xctrl' `cv' {
- 13.                                 qui gen hi_`v' = `v'*hinf
- 14.                                 qui gen lo_`v' = `v'*(1-hinf)
- 15.                                 local rhs "`rhs' hi_`v' lo_`v'"
- 16.                         }
- 17.                         forv h = 0/$hmax {
- 18.                                 cap drop lhs smp
- 19.                                 qui gen lhs = F`h'.`y'
- 20.                                 qui gen byte smp = 1
- 21.                                 markout smp lhs hinf `rhs'
- 22.                                 qui su timeq if smp
- 23.                                 local t0 = r(min)
- 24.                                 local t1 = r(max)
- 25.                                 qui count if smp & hinf == 1
- 26.                                 local nh = r(N)
- 27.                                 * ELEEURMWH non esiste per EA e BE: la stima fallisce e si salta
-.                                 cap newey lhs hinf `rhs' if smp, lag(`=`h'+1') force
- 28.                                 if _rc {
- 29.                                         di as txt "Salto: `c' `s' -> `y', h=`h' (rc=" _rc ")"
- 30.                                         continue
- 31.                                 }
- 32.                                 qui test hi_`s' = lo_`s'
- 33.                                 * Coefficiente omesso (nessuna osservazione nello stato): risposta mancante
-.                                 post `pf' ("ts") ("`c'") ("`s'") ("`y'") (`h') (cond(_se[hi_`s'] > 0, _b[hi_`s'], .)) (_se[hi_`s']) (cond(_se[lo_`s'] > 0, _b[lo_`s'], .)) (_se[lo_
-> `s']) (r(p)) (e(N)) (`nh') (`t0') (`t1')
- 34.                         }
- 35.                         drop hi_* lo_*
- 36.                 }
- 37.         }
- 38.         restore
- 39. }
-(1,143 observations deleted)
-
-Time variable: timeq, 1991q1 to 2026q3
-        Delta: 1 quarter
-(1,111 observations deleted)
-
-Time variable: timeq, 1983q1 to 2026q3
-        Delta: 1 quarter
-(1,111 observations deleted)
-
-Time variable: timeq, 1983q1 to 2026q3
-        Delta: 1 quarter
-(1,111 observations deleted)
-
-Time variable: timeq, 1983q1 to 2026q3
-        Delta: 1 quarter
-(1,111 observations deleted)
-
-Time variable: timeq, 1983q1 to 2026q3
-        Delta: 1 quarter
-(1,124 observations deleted)
-
-Time variable: timeq, 1986q2 to 2026q3
-        Delta: 1 quarter
-Salto: BE ELEEURMWH -> contr, h=0 (rc=2000)
-Salto: BE ELEEURMWH -> contr, h=1 (rc=2000)
-Salto: BE ELEEURMWH -> contr, h=2 (rc=2000)
-Salto: BE ELEEURMWH -> contr, h=3 (rc=2000)
-Salto: BE ELEEURMWH -> contr, h=4 (rc=2000)
-Salto: BE ELEEURMWH -> contr, h=5 (rc=2000)
-Salto: BE ELEEURMWH -> contr, h=6 (rc=2000)
-Salto: BE ELEEURMWH -> contr, h=7 (rc=2000)
-Salto: BE ELEEURMWH -> contr, h=8 (rc=2000)
-Salto: BE ELEEURMWH -> contr, h=9 (rc=2000)
-Salto: BE ELEEURMWH -> contr, h=10 (rc=2000)
-Salto: BE ELEEURMWH -> contr, h=11 (rc=2000)
-Salto: BE ELEEURMWH -> contr, h=12 (rc=2000)
-Salto: BE ELEEURMWH -> hicp, h=0 (rc=2000)
-Salto: BE ELEEURMWH -> hicp, h=1 (rc=2000)
-Salto: BE ELEEURMWH -> hicp, h=2 (rc=2000)
-Salto: BE ELEEURMWH -> hicp, h=3 (rc=2000)
-Salto: BE ELEEURMWH -> hicp, h=4 (rc=2000)
-Salto: BE ELEEURMWH -> hicp, h=5 (rc=2000)
-Salto: BE ELEEURMWH -> hicp, h=6 (rc=2000)
-Salto: BE ELEEURMWH -> hicp, h=7 (rc=2000)
-Salto: BE ELEEURMWH -> hicp, h=8 (rc=2000)
-Salto: BE ELEEURMWH -> hicp, h=9 (rc=2000)
-Salto: BE ELEEURMWH -> hicp, h=10 (rc=2000)
-Salto: BE ELEEURMWH -> hicp, h=11 (rc=2000)
-Salto: BE ELEEURMWH -> hicp, h=12 (rc=2000)
-Salto: BE ELEEURMWH -> wageH, h=0 (rc=2000)
-Salto: BE ELEEURMWH -> wageH, h=1 (rc=2000)
-Salto: BE ELEEURMWH -> wageH, h=2 (rc=2000)
-Salto: BE ELEEURMWH -> wageH, h=3 (rc=2000)
-Salto: BE ELEEURMWH -> wageH, h=4 (rc=2000)
-Salto: BE ELEEURMWH -> wageH, h=5 (rc=2000)
-Salto: BE ELEEURMWH -> wageH, h=6 (rc=2000)
-Salto: BE ELEEURMWH -> wageH, h=7 (rc=2000)
-Salto: BE ELEEURMWH -> wageH, h=8 (rc=2000)
-Salto: BE ELEEURMWH -> wageH, h=9 (rc=2000)
-Salto: BE ELEEURMWH -> wageH, h=10 (rc=2000)
-Salto: BE ELEEURMWH -> wageH, h=11 (rc=2000)
-Salto: BE ELEEURMWH -> wageH, h=12 (rc=2000)
-Salto: BE ELEEURMWH -> compH, h=0 (rc=2000)
-Salto: BE ELEEURMWH -> compH, h=1 (rc=2000)
-Salto: BE ELEEURMWH -> compH, h=2 (rc=2000)
-Salto: BE ELEEURMWH -> compH, h=3 (rc=2000)
-Salto: BE ELEEURMWH -> compH, h=4 (rc=2000)
-Salto: BE ELEEURMWH -> compH, h=5 (rc=2000)
-Salto: BE ELEEURMWH -> compH, h=6 (rc=2000)
-Salto: BE ELEEURMWH -> compH, h=7 (rc=2000)
-Salto: BE ELEEURMWH -> compH, h=8 (rc=2000)
-Salto: BE ELEEURMWH -> compH, h=9 (rc=2000)
-Salto: BE ELEEURMWH -> compH, h=10 (rc=2000)
-Salto: BE ELEEURMWH -> compH, h=11 (rc=2000)
-Salto: BE ELEEURMWH -> compH, h=12 (rc=2000)
-(1,147 observations deleted)
-
-Time variable: timeq, 1992q1 to 2026q3
-        Delta: 1 quarter
-Salto: EA OilSpotUSDBarrel -> contr, h=0 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> contr, h=1 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> contr, h=2 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> contr, h=3 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> contr, h=4 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> contr, h=5 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> contr, h=6 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> contr, h=7 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> contr, h=8 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> contr, h=9 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> contr, h=10 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> contr, h=11 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> contr, h=12 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> hicp, h=0 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> hicp, h=1 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> hicp, h=2 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> hicp, h=3 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> hicp, h=4 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> hicp, h=5 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> hicp, h=6 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> hicp, h=7 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> hicp, h=8 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> hicp, h=9 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> hicp, h=10 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> hicp, h=11 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> hicp, h=12 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> wageH, h=0 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> wageH, h=1 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> wageH, h=2 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> wageH, h=3 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> wageH, h=4 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> wageH, h=5 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> wageH, h=6 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> wageH, h=7 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> wageH, h=8 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> wageH, h=9 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> wageH, h=10 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> wageH, h=11 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> wageH, h=12 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> compH, h=0 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> compH, h=1 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> compH, h=2 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> compH, h=3 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> compH, h=4 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> compH, h=5 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> compH, h=6 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> compH, h=7 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> compH, h=8 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> compH, h=9 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> compH, h=10 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> compH, h=11 (rc=2000)
-Salto: EA OilSpotUSDBarrel -> compH, h=12 (rc=2000)
-Salto: EA TTFSpotEURMWH -> contr, h=0 (rc=2000)
-Salto: EA TTFSpotEURMWH -> contr, h=1 (rc=2000)
-Salto: EA TTFSpotEURMWH -> contr, h=2 (rc=2000)
-Salto: EA TTFSpotEURMWH -> contr, h=3 (rc=2000)
-Salto: EA TTFSpotEURMWH -> contr, h=4 (rc=2000)
-Salto: EA TTFSpotEURMWH -> contr, h=5 (rc=2000)
-Salto: EA TTFSpotEURMWH -> contr, h=6 (rc=2000)
-Salto: EA TTFSpotEURMWH -> contr, h=7 (rc=2000)
-Salto: EA TTFSpotEURMWH -> contr, h=8 (rc=2000)
-Salto: EA TTFSpotEURMWH -> contr, h=9 (rc=2000)
-Salto: EA TTFSpotEURMWH -> contr, h=10 (rc=2000)
-Salto: EA TTFSpotEURMWH -> contr, h=11 (rc=2000)
-Salto: EA TTFSpotEURMWH -> contr, h=12 (rc=2000)
-Salto: EA TTFSpotEURMWH -> hicp, h=0 (rc=2000)
-Salto: EA TTFSpotEURMWH -> hicp, h=1 (rc=2000)
-Salto: EA TTFSpotEURMWH -> hicp, h=2 (rc=2000)
-Salto: EA TTFSpotEURMWH -> hicp, h=3 (rc=2000)
-Salto: EA TTFSpotEURMWH -> hicp, h=4 (rc=2000)
-Salto: EA TTFSpotEURMWH -> hicp, h=5 (rc=2000)
-Salto: EA TTFSpotEURMWH -> hicp, h=6 (rc=2000)
-Salto: EA TTFSpotEURMWH -> hicp, h=7 (rc=2000)
-Salto: EA TTFSpotEURMWH -> hicp, h=8 (rc=2000)
-Salto: EA TTFSpotEURMWH -> hicp, h=9 (rc=2000)
-Salto: EA TTFSpotEURMWH -> hicp, h=10 (rc=2000)
-Salto: EA TTFSpotEURMWH -> hicp, h=11 (rc=2000)
-Salto: EA TTFSpotEURMWH -> hicp, h=12 (rc=2000)
-Salto: EA TTFSpotEURMWH -> wageH, h=0 (rc=2000)
-Salto: EA TTFSpotEURMWH -> wageH, h=1 (rc=2000)
-Salto: EA TTFSpotEURMWH -> wageH, h=2 (rc=2000)
-Salto: EA TTFSpotEURMWH -> wageH, h=3 (rc=2000)
-Salto: EA TTFSpotEURMWH -> wageH, h=4 (rc=2000)
-Salto: EA TTFSpotEURMWH -> wageH, h=5 (rc=2000)
-Salto: EA TTFSpotEURMWH -> wageH, h=6 (rc=2000)
-Salto: EA TTFSpotEURMWH -> wageH, h=7 (rc=2000)
-Salto: EA TTFSpotEURMWH -> wageH, h=8 (rc=2000)
-Salto: EA TTFSpotEURMWH -> wageH, h=9 (rc=2000)
-Salto: EA TTFSpotEURMWH -> wageH, h=10 (rc=2000)
-Salto: EA TTFSpotEURMWH -> wageH, h=11 (rc=2000)
-Salto: EA TTFSpotEURMWH -> wageH, h=12 (rc=2000)
-Salto: EA TTFSpotEURMWH -> compH, h=0 (rc=2000)
-Salto: EA TTFSpotEURMWH -> compH, h=1 (rc=2000)
-Salto: EA TTFSpotEURMWH -> compH, h=2 (rc=2000)
-Salto: EA TTFSpotEURMWH -> compH, h=3 (rc=2000)
-Salto: EA TTFSpotEURMWH -> compH, h=4 (rc=2000)
-Salto: EA TTFSpotEURMWH -> compH, h=5 (rc=2000)
-Salto: EA TTFSpotEURMWH -> compH, h=6 (rc=2000)
-Salto: EA TTFSpotEURMWH -> compH, h=7 (rc=2000)
-Salto: EA TTFSpotEURMWH -> compH, h=8 (rc=2000)
-Salto: EA TTFSpotEURMWH -> compH, h=9 (rc=2000)
-Salto: EA TTFSpotEURMWH -> compH, h=10 (rc=2000)
-Salto: EA TTFSpotEURMWH -> compH, h=11 (rc=2000)
-Salto: EA TTFSpotEURMWH -> compH, h=12 (rc=2000)
-Salto: EA ELEEURMWH -> contr, h=0 (rc=2000)
-Salto: EA ELEEURMWH -> contr, h=1 (rc=2000)
-Salto: EA ELEEURMWH -> contr, h=2 (rc=2000)
-Salto: EA ELEEURMWH -> contr, h=3 (rc=2000)
-Salto: EA ELEEURMWH -> contr, h=4 (rc=2000)
-Salto: EA ELEEURMWH -> contr, h=5 (rc=2000)
-Salto: EA ELEEURMWH -> contr, h=6 (rc=2000)
-Salto: EA ELEEURMWH -> contr, h=7 (rc=2000)
-Salto: EA ELEEURMWH -> contr, h=8 (rc=2000)
-Salto: EA ELEEURMWH -> contr, h=9 (rc=2000)
-Salto: EA ELEEURMWH -> contr, h=10 (rc=2000)
-Salto: EA ELEEURMWH -> contr, h=11 (rc=2000)
-Salto: EA ELEEURMWH -> contr, h=12 (rc=2000)
-Salto: EA ELEEURMWH -> hicp, h=0 (rc=2000)
-Salto: EA ELEEURMWH -> hicp, h=1 (rc=2000)
-Salto: EA ELEEURMWH -> hicp, h=2 (rc=2000)
-Salto: EA ELEEURMWH -> hicp, h=3 (rc=2000)
-Salto: EA ELEEURMWH -> hicp, h=4 (rc=2000)
-Salto: EA ELEEURMWH -> hicp, h=5 (rc=2000)
-Salto: EA ELEEURMWH -> hicp, h=6 (rc=2000)
-Salto: EA ELEEURMWH -> hicp, h=7 (rc=2000)
-Salto: EA ELEEURMWH -> hicp, h=8 (rc=2000)
-Salto: EA ELEEURMWH -> hicp, h=9 (rc=2000)
-Salto: EA ELEEURMWH -> hicp, h=10 (rc=2000)
-Salto: EA ELEEURMWH -> hicp, h=11 (rc=2000)
-Salto: EA ELEEURMWH -> hicp, h=12 (rc=2000)
-Salto: EA ELEEURMWH -> wageH, h=0 (rc=2000)
-Salto: EA ELEEURMWH -> wageH, h=1 (rc=2000)
-Salto: EA ELEEURMWH -> wageH, h=2 (rc=2000)
-Salto: EA ELEEURMWH -> wageH, h=3 (rc=2000)
-Salto: EA ELEEURMWH -> wageH, h=4 (rc=2000)
-Salto: EA ELEEURMWH -> wageH, h=5 (rc=2000)
-Salto: EA ELEEURMWH -> wageH, h=6 (rc=2000)
-Salto: EA ELEEURMWH -> wageH, h=7 (rc=2000)
-Salto: EA ELEEURMWH -> wageH, h=8 (rc=2000)
-Salto: EA ELEEURMWH -> wageH, h=9 (rc=2000)
-Salto: EA ELEEURMWH -> wageH, h=10 (rc=2000)
-Salto: EA ELEEURMWH -> wageH, h=11 (rc=2000)
-Salto: EA ELEEURMWH -> wageH, h=12 (rc=2000)
-Salto: EA ELEEURMWH -> compH, h=0 (rc=2000)
-Salto: EA ELEEURMWH -> compH, h=1 (rc=2000)
-Salto: EA ELEEURMWH -> compH, h=2 (rc=2000)
-Salto: EA ELEEURMWH -> compH, h=3 (rc=2000)
-Salto: EA ELEEURMWH -> compH, h=4 (rc=2000)
-Salto: EA ELEEURMWH -> compH, h=5 (rc=2000)
-Salto: EA ELEEURMWH -> compH, h=6 (rc=2000)
-Salto: EA ELEEURMWH -> compH, h=7 (rc=2000)
-Salto: EA ELEEURMWH -> compH, h=8 (rc=2000)
-Salto: EA ELEEURMWH -> compH, h=9 (rc=2000)
-Salto: EA ELEEURMWH -> compH, h=10 (rc=2000)
-Salto: EA ELEEURMWH -> compH, h=11 (rc=2000)
-Salto: EA ELEEURMWH -> compH, h=12 (rc=2000)
-
-. 
-. postclose `pf'
-
-. 
-. * --- Risultati: intervalli, Excel e grafici --- *
-. use ${out}/lp_energy_inflstate_ea.dta, clear
-
-. foreach k in H L {
-  2.         gen lo90`k' = b`k' - invnormal(0.95)*se`k'
-  3.         gen hi90`k' = b`k' + invnormal(0.95)*se`k'
-  4. }
-
-. save ${out}/lp_energy_inflstate_ea.dta, replace
-file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_inflstate_ea.dta saved
-
-. export excel using ${out}/lp_energy_inflstate_ea.xlsx, firstrow(var) replace
-file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_inflstate_ea.xlsx saved
-
-. 
-. * Rosso = alta inflazione, blu tratteggiato = bassa inflazione
-. foreach s of global lp_shocks {
-  2.         local mg "EA"
-  3.         if "`s'" == "ELEEURMWH" local mg "PANEL"
-  4.         foreach y of global lp_outcomes {
-  5.                 local sel `"shock == "`s'" & outcome == "`y'""'
-  6. 
-.                 * --- Grafico principale --- *
-.                 local cond `"if geo == "`mg'" & `sel'"'
-  7.                 qui su tmin `cond' & h == 0
-  8.                 local p0 : di %tq r(min)
-  9.                 qui su tmax `cond' & h == 0
- 10.                 local p1 : di %tq r(max)
- 11.                 file open `fh' using "${gph}/smp_lp_inflstate_main_`s'_`y'.tex", write replace
- 12.                 file write `fh' "`p0'--`p1'"
- 13.                 file close `fh'
- 14.                 twoway (rarea lo90H hi90H h `cond', color(cranberry%20) lwidth(none)) ///
->                         (rarea lo90L hi90L h `cond', color(navy%20) lwidth(none)) ///
->                         (line bH h `cond', lcolor(cranberry) lwidth(medthick)) ///
->                         (line bL h `cond', lcolor(navy) lwidth(medthick) lpattern(dash)), ///
->                         yline(0, lcolor(black)) legend(order(3 "Alta inflazione" 4 "Bassa inflazione") rows(1) position(6)) ///
->                         xtitle("Trimestri") ytitle("pp") xlabel(0(2)$hmax) ///
->                         graphregion(color(white)) name(gmain, replace)
- 15.                 graph export ${gph}/lp_inflstate_main_`s'_`y'.png, replace
- 16. 
-.                 * --- Appendice: panel e paesi restanti, stesso asse y --- *
-.                 local gl ""
- 17.                 foreach g in PANEL $countries {
- 18.                         if "`g'" == "`mg'" continue
- 19.                         qui count if geo == "`g'" & `sel'
- 20.                         if r(N) == 0 continue
- 21.                         local cond `"if geo == "`g'" & `sel'"'
- 22.                         qui su tmin `cond' & h == 0
- 23.                         local p0 : di %tq r(min)
- 24.                         qui su tmax `cond' & h == 0
- 25.                         local p1 : di %tq r(max)
- 26.                         twoway (rarea lo90H hi90H h `cond', color(cranberry%20) lwidth(none)) ///
->                                 (rarea lo90L hi90L h `cond', color(navy%20) lwidth(none)) ///
->                                 (line bH h `cond', lcolor(cranberry) lwidth(medthick)) ///
->                                 (line bL h `cond', lcolor(navy) lwidth(medthick) lpattern(dash)), ///
->                                 yline(0, lcolor(black)) legend(off) subtitle("`g' (`p0'-`p1')") ///
->                                 xtitle("Trimestri") ytitle("pp") xlabel(0(2)$hmax) ///
->                                 graphregion(color(white)) name(g_`g', replace) nodraw
- 27.                         local gl "`gl' g_`g'"
- 28.                 }
- 29.                 graph combine `gl', ycommon graphregion(color(white)) name(comb, replace)
- 30.                 graph export ${gph}/lp_inflstate_app_`s'_`y'.png, replace
- 31.         }
- 32. }
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_main_OilSpotUSDBarrel_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_app_OilSpotUSDBarrel_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_main_OilSpotUSDBarrel_hicp.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_app_OilSpotUSDBarrel_hicp.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_main_OilSpotUSDBarrel_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_app_OilSpotUSDBarrel_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_main_OilSpotUSDBarrel_compH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_app_OilSpotUSDBarrel_compH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_main_TTFSpotEURMWH_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_app_TTFSpotEURMWH_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_main_TTFSpotEURMWH_hicp.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_app_TTFSpotEURMWH_hicp.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_main_TTFSpotEURMWH_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_app_TTFSpotEURMWH_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_main_TTFSpotEURMWH_compH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_app_TTFSpotEURMWH_compH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_main_ELEEURMWH_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_app_ELEEURMWH_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_main_ELEEURMWH_hicp.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_app_ELEEURMWH_hicp.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_main_ELEEURMWH_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_app_ELEEURMWH_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_main_ELEEURMWH_compH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_inflstate_app_ELEEURMWH_compH.png saved as PNG format
-
-. 
 . log close
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lp_energy_ea.txt
   log type:  text
- closed on:   6 Oct 2026, 15:09:31
+ closed on:   6 Oct 2026, 15:53:53
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
