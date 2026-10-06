@@ -39,13 +39,14 @@ Simbolo & Variabile & Definizione & Fonte \\
  & \texttt{TTFSpotEURMWH} & Gas naturale TTF spot, EUR/MWh & \texttt{Data\_OIL\_ELE\_GAS.xlsx} \\
  & \texttt{ELEEURMWH} & Elettricità all'ingrosso, EUR/MWh, per paese (non disponibile per BE, EA) & \texttt{Data\_OIL\_ELE\_GAS.xlsx} \\
 \midrule
-\multicolumn{4}{l}{\emph{Outcome} $y_{i,t}$ (var.\ \% tendenziale)} \\
- & \texttt{hicp} & HICP, indice generale & Eurostat \\
- & \texttt{contr} & Retribuzioni contrattuali (INWR), totale economia & BCE \\
- & \texttt{wageH} & Retribuzioni lorde per ora lavorata & Eurostat, CN trimestrali \\
- & \texttt{compH} & Redditi da lavoro dipendente per ora lavorata & Eurostat, CN trimestrali \\
+\multicolumn{4}{l}{\emph{Outcome} $y_{i,t}$} \\
+ & \texttt{hicp} & HICP, indice generale, var.\ \% tendenziale & Eurostat \\
+ & \texttt{contr} & Retribuzioni contrattuali (INWR), totale economia, var.\ \% tendenziale & BCE \\
+ & \texttt{wageH} & Retribuzioni lorde per ora lavorata, var.\ \% tendenziale & Eurostat, CN trimestrali \\
+ & \texttt{occH} & Ore lavorate, totale economia, var.\ \% congiunturale & Eurostat, CN trimestrali \\
+ & \texttt{dur} & Tasso di disoccupazione, differenza congiunturale (punti percentuali) & Eurostat \\
 \midrule
-\multicolumn{4}{l}{\emph{Controlli} $x_{i,t}$ (come in Corsello e Foschi, 2026)} \\
+\multicolumn{4}{l}{\emph{Controlli} $x_{i,t}$ (come in Corsello e Foschi, 2026; per \texttt{dur} senza \texttt{ur})} \\
  & \texttt{lip} & Logaritmo della produzione industriale (B--D, dest.) & Eurostat \\
  & \texttt{ur} & Tasso di disoccupazione (dest., \% forze di lavoro) & Eurostat \\
  & \texttt{bund1y} & Rendimento del Bund a 1 anno (comune ai paesi) & Bundesbank \\
@@ -61,11 +62,13 @@ $w_i$ & \texttt{wP} & Media degli occupati del paese (\texttt{occP}) sul periodo
 orizzonte $h = 0,\dots,12$ trimestri; $p = 4$ ritardi.
 Panel: $i \in \{\text{DE, IT, NL, ES, FR, BE}\}$ (l'area dell'euro è esclusa perché
 aggregato dei paesi); serie storiche per DE, IT, NL, ES, FR, BE ed EA.
-Grafici principali: area dell'euro per petrolio e gas, panel per l'elettricità
-(prezzo nazionale non disponibile per l'area dell'euro); panel e singoli paesi in
-Appendice.
+Grafici nel testo: risposte a petrolio e gas nello stesso grafico, per l'area dell'euro e
+per l'area dell'euro con i singoli paesi (prezzi al consumo, retribuzioni contrattuali,
+retribuzioni orarie). In Appendice: ore lavorate e tasso di disoccupazione; grafici per
+singolo prezzo energetico (inclusa l'elettricità, stimata sul panel perché il prezzo
+nazionale non è disponibile per l'area dell'euro); robustezza.
 
-\subsection{Local Projections: risposte medie}
+\subsection{Local Projections}
 
 \noindent Panel (effetti fissi paese, pesi $w_i$, errori standard Driscoll--Kraay con $h+1$ ritardi):
 \begin{equation}
@@ -82,13 +85,12 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
  + \kappa^h C_t + \varepsilon_{t+h}
 \end{equation}
 
-\noindent Grafici: $\hat\beta^h$ per $h=0,\dots,12$, bande al 68\% e al 90\%.
+\noindent Grafici: $\hat\beta^h$ per $h=0,\dots,12$, bande al 90\%.
 
 \subsection{Robustezza}
 
-\noindent Per l'unità dei grafici principali: (i) specificazione principale con effetti fissi
-trimestrali $\sum_{q=2}^{4} \mu_q^h \mathbb{1}[\text{trimestre}(t)=q]$; (ii) pre-Covid,
-solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
+\noindent Per l'unità dei grafici per singolo prezzo: campione pre-Covid, solo dati
+precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
 
 \subsection{Fonti}
 
@@ -97,8 +99,7 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
  di fondo (\texttt{TOT\_X\_NRG\_FOOD}) è scaricata e inclusa nel dataset ma non usata nelle stime.
 \item Retribuzioni contrattuali: BCE, indicatore delle retribuzioni contrattuali (INW),
  totale economia, tassi di crescita annuali; per DE e FR serie delle fonti nazionali.
-\item Retribuzioni, redditi da lavoro dipendente, ore lavorate, occupati: Eurostat,
- conti nazionali trimestrali.
+\item Retribuzioni, ore lavorate, occupati: Eurostat, conti nazionali trimestrali.
 \item Produzione industriale: Eurostat, \texttt{sts\_inpr\_m} (B--D, dest., 2021=100).
  Tasso di disoccupazione: Eurostat, \texttt{une\_rt\_m} (dest., totale).
 \item Rendimento del Bund a 1 anno: Deutsche Bundesbank, struttura per scadenza dei
@@ -109,7 +110,137 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
 
 \clearpage
 %==============================================================================
-\section{Risposte medie}
+\section{Risposte a shock dei prezzi di petrolio e gas}
+%==============================================================================
+
+\subsection{Prezzi al consumo}
+
+\begin{figure}[H]
+  \centering
+  \caption{Petrolio e gas $\rightarrow$ HICP: area dell'euro}
+  \label{fig:lp_og_EA_hicp}
+  \includegraphics[width=0.7\textwidth]{lp_og_EA_hicp.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale dell'HICP a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (blu) e del gas naturale (rosso); bande di confidenza al 90\%. Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Campione (date dello shock, $h=0$): \smp{lp_og_EA_hicp}. Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{Petrolio e gas $\rightarrow$ HICP: area dell'euro e singoli paesi}
+  \label{fig:lp_og_ctry_hicp}
+  \includegraphics[width=1\textwidth]{lp_og_ctry_hicp.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale dell'HICP a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (blu) e del gas naturale (rosso); bande di confidenza al 90\%. Serie storiche per l'area dell'euro e per paese, errori standard Newey--West; stessa scala dell'asse verticale in tutti i riquadri; sotto il nome di ciascun riquadro il campione (date dello shock, $h=0$) per il petrolio (P) e il gas (G). Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\clearpage
+
+\subsection{Retribuzioni contrattuali}
+
+\begin{figure}[H]
+  \centering
+  \caption{Petrolio e gas $\rightarrow$ retribuzioni contrattuali: area dell'euro}
+  \label{fig:lp_og_EA_contr}
+  \includegraphics[width=0.7\textwidth]{lp_og_EA_contr.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni contrattuali a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (blu) e del gas naturale (rosso); bande di confidenza al 90\%. Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Campione (date dello shock, $h=0$): \smp{lp_og_EA_contr}. Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{Petrolio e gas $\rightarrow$ retribuzioni contrattuali: area dell'euro e singoli paesi}
+  \label{fig:lp_og_ctry_contr}
+  \includegraphics[width=1\textwidth]{lp_og_ctry_contr.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni contrattuali a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (blu) e del gas naturale (rosso); bande di confidenza al 90\%. Serie storiche per l'area dell'euro e per paese, errori standard Newey--West; stessa scala dell'asse verticale in tutti i riquadri; sotto il nome di ciascun riquadro il campione (date dello shock, $h=0$) per il petrolio (P) e il gas (G). Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\clearpage
+
+\subsection{Retribuzioni di contabilità nazionale}
+
+\begin{figure}[H]
+  \centering
+  \caption{Petrolio e gas $\rightarrow$ retribuzioni lorde per ora lavorata: area dell'euro}
+  \label{fig:lp_og_EA_wageH}
+  \includegraphics[width=0.7\textwidth]{lp_og_EA_wageH.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni lorde per ora lavorata a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (blu) e del gas naturale (rosso); bande di confidenza al 90\%. Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Campione (date dello shock, $h=0$): \smp{lp_og_EA_wageH}. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{Petrolio e gas $\rightarrow$ retribuzioni lorde per ora lavorata: area dell'euro e singoli paesi}
+  \label{fig:lp_og_ctry_wageH}
+  \includegraphics[width=1\textwidth]{lp_og_ctry_wageH.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni lorde per ora lavorata a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (blu) e del gas naturale (rosso); bande di confidenza al 90\%. Serie storiche per l'area dell'euro e per paese, errori standard Newey--West; stessa scala dell'asse verticale in tutti i riquadri; sotto il nome di ciascun riquadro il campione (date dello shock, $h=0$) per il petrolio (P) e il gas (G). Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\clearpage
+
+\begin{appendices}
+
+%==============================================================================
+\section{Mercato del lavoro: petrolio e gas}
+%==============================================================================
+
+\subsection{Ore lavorate}
+
+\begin{figure}[H]
+  \centering
+  \caption{Petrolio e gas $\rightarrow$ ore lavorate: area dell'euro}
+  \label{fig:lp_og_EA_occH}
+  \includegraphics[width=0.7\textwidth]{lp_og_EA_occH.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale delle ore lavorate (totale economia) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (blu) e del gas naturale (rosso); bande di confidenza al 90\%. Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Campione (date dello shock, $h=0$): \smp{lp_og_EA_occH}. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{Petrolio e gas $\rightarrow$ ore lavorate: area dell'euro e singoli paesi}
+  \label{fig:lp_og_ctry_occH}
+  \includegraphics[width=1\textwidth]{lp_og_ctry_occH.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale delle ore lavorate (totale economia) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (blu) e del gas naturale (rosso); bande di confidenza al 90\%. Serie storiche per l'area dell'euro e per paese, errori standard Newey--West; stessa scala dell'asse verticale in tutti i riquadri; sotto il nome di ciascun riquadro il campione (date dello shock, $h=0$) per il petrolio (P) e il gas (G). Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\clearpage
+
+\subsection{Tasso di disoccupazione}
+
+\begin{figure}[H]
+  \centering
+  \caption{Petrolio e gas $\rightarrow$ tasso di disoccupazione: area dell'euro}
+  \label{fig:lp_og_EA_dur}
+  \includegraphics[width=0.7\textwidth]{lp_og_EA_dur.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale del tasso di disoccupazione a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (blu) e del gas naturale (rosso); bande di confidenza al 90\%. Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, rendimento del Bund a 1 anno (senza il livello del tasso di disoccupazione, collineare con i ritardi dell'outcome); dummy Covid 2020--2022. Campione (date dello shock, $h=0$): \smp{lp_og_EA_dur}. Fonti: Eurostat (\texttt{une\_rt\_m}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{Petrolio e gas $\rightarrow$ tasso di disoccupazione: area dell'euro e singoli paesi}
+  \label{fig:lp_og_ctry_dur}
+  \includegraphics[width=1\textwidth]{lp_og_ctry_dur.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale del tasso di disoccupazione a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (blu) e del gas naturale (rosso); bande di confidenza al 90\%. Serie storiche per l'area dell'euro e per paese, errori standard Newey--West; stessa scala dell'asse verticale in tutti i riquadri; sotto il nome di ciascun riquadro il campione (date dello shock, $h=0$) per il petrolio (P) e il gas (G). Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, rendimento del Bund a 1 anno (senza il livello del tasso di disoccupazione, collineare con i ritardi dell'outcome); dummy Covid 2020--2022. Fonti: Eurostat (\texttt{une\_rt\_m}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\clearpage
+
+%==============================================================================
+\section{Singoli prezzi energetici: area dell'euro e panel}
 %==============================================================================
 
 \subsection{Prezzi al consumo}
@@ -120,7 +251,7 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
   \label{fig:lp_main_OilSpotUSDBarrel_hicp}
   \includegraphics[width=0.7\textwidth]{lp_main_OilSpotUSDBarrel_hicp.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) della variazione tendenziale di: HICP, a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_OilSpotUSDBarrel_hicp}. Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale dell'HICP a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_OilSpotUSDBarrel_hicp}. Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -130,7 +261,7 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
   \label{fig:lp_main_TTFSpotEURMWH_hicp}
   \includegraphics[width=0.7\textwidth]{lp_main_TTFSpotEURMWH_hicp.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) della variazione tendenziale di: HICP, a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_TTFSpotEURMWH_hicp}. Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale dell'HICP a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_TTFSpotEURMWH_hicp}. Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -140,7 +271,7 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
   \label{fig:lp_main_ELEEURMWH_hicp}
   \includegraphics[width=0.7\textwidth]{lp_main_ELEEURMWH_hicp.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) della variazione tendenziale di: HICP, a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Stima panel su DE, IT, NL, ES, FR (BE esclusa: prezzo dell'elettricità non disponibile), effetti fissi paese, ponderata con gli occupati medi del paese, errori standard Driscoll--Kraay. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_ELEEURMWH_hicp}. Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale dell'HICP a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Stima panel su DE, IT, NL, ES, FR (BE esclusa: prezzo dell'elettricità non disponibile), effetti fissi paese, ponderata con gli occupati medi del paese, errori standard Driscoll--Kraay. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_ELEEURMWH_hicp}. Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -154,7 +285,7 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
   \label{fig:lp_main_OilSpotUSDBarrel_contr}
   \includegraphics[width=0.7\textwidth]{lp_main_OilSpotUSDBarrel_contr.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) della variazione tendenziale di: retribuzioni contrattuali, a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_OilSpotUSDBarrel_contr}. Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni contrattuali a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_OilSpotUSDBarrel_contr}. Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -164,7 +295,7 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
   \label{fig:lp_main_TTFSpotEURMWH_contr}
   \includegraphics[width=0.7\textwidth]{lp_main_TTFSpotEURMWH_contr.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) della variazione tendenziale di: retribuzioni contrattuali, a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_TTFSpotEURMWH_contr}. Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni contrattuali a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_TTFSpotEURMWH_contr}. Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -174,7 +305,7 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
   \label{fig:lp_main_ELEEURMWH_contr}
   \includegraphics[width=0.7\textwidth]{lp_main_ELEEURMWH_contr.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) della variazione tendenziale di: retribuzioni contrattuali, a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Stima panel su DE, IT, NL, ES, FR (BE esclusa: prezzo dell'elettricità non disponibile), effetti fissi paese, ponderata con gli occupati medi del paese, errori standard Driscoll--Kraay. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_ELEEURMWH_contr}. Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni contrattuali a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Stima panel su DE, IT, NL, ES, FR (BE esclusa: prezzo dell'elettricità non disponibile), effetti fissi paese, ponderata con gli occupati medi del paese, errori standard Driscoll--Kraay. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_ELEEURMWH_contr}. Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -188,7 +319,7 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
   \label{fig:lp_main_OilSpotUSDBarrel_wageH}
   \includegraphics[width=0.7\textwidth]{lp_main_OilSpotUSDBarrel_wageH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) della variazione tendenziale di: retribuzioni lorde per ora lavorata, a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_OilSpotUSDBarrel_wageH}. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni lorde per ora lavorata a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_OilSpotUSDBarrel_wageH}. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -198,7 +329,7 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
   \label{fig:lp_main_TTFSpotEURMWH_wageH}
   \includegraphics[width=0.7\textwidth]{lp_main_TTFSpotEURMWH_wageH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) della variazione tendenziale di: retribuzioni lorde per ora lavorata, a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_TTFSpotEURMWH_wageH}. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni lorde per ora lavorata a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_TTFSpotEURMWH_wageH}. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -208,7 +339,41 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
   \label{fig:lp_main_ELEEURMWH_wageH}
   \includegraphics[width=0.7\textwidth]{lp_main_ELEEURMWH_wageH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) della variazione tendenziale di: retribuzioni lorde per ora lavorata, a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Stima panel su DE, IT, NL, ES, FR (BE esclusa: prezzo dell'elettricità non disponibile), effetti fissi paese, ponderata con gli occupati medi del paese, errori standard Driscoll--Kraay. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_ELEEURMWH_wageH}. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni lorde per ora lavorata a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Stima panel su DE, IT, NL, ES, FR (BE esclusa: prezzo dell'elettricità non disponibile), effetti fissi paese, ponderata con gli occupati medi del paese, errori standard Driscoll--Kraay. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_ELEEURMWH_wageH}. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\clearpage
+
+\subsection{Mercato del lavoro}
+
+\begin{figure}[H]
+  \centering
+  \caption{Petrolio $\rightarrow$ ore lavorate: area dell'euro}
+  \label{fig:lp_main_OilSpotUSDBarrel_occH}
+  \includegraphics[width=0.7\textwidth]{lp_main_OilSpotUSDBarrel_occH.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale delle ore lavorate (totale economia) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_OilSpotUSDBarrel_occH}. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{Gas $\rightarrow$ ore lavorate: area dell'euro}
+  \label{fig:lp_main_TTFSpotEURMWH_occH}
+  \includegraphics[width=0.7\textwidth]{lp_main_TTFSpotEURMWH_occH.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale delle ore lavorate (totale economia) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_TTFSpotEURMWH_occH}. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{Elettricità $\rightarrow$ ore lavorate: panel dei paesi}
+  \label{fig:lp_main_ELEEURMWH_occH}
+  \includegraphics[width=0.7\textwidth]{lp_main_ELEEURMWH_occH.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale delle ore lavorate (totale economia) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Stima panel su DE, IT, NL, ES, FR (BE esclusa: prezzo dell'elettricità non disponibile), effetti fissi paese, ponderata con gli occupati medi del paese, errori standard Driscoll--Kraay. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_ELEEURMWH_occH}. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -216,40 +381,38 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
 
 \begin{figure}[H]
   \centering
-  \caption{Petrolio $\rightarrow$ redditi da lavoro dipendente per ora lavorata: area dell'euro}
-  \label{fig:lp_main_OilSpotUSDBarrel_compH}
-  \includegraphics[width=0.7\textwidth]{lp_main_OilSpotUSDBarrel_compH.png}
+  \caption{Petrolio $\rightarrow$ tasso di disoccupazione: area dell'euro}
+  \label{fig:lp_main_OilSpotUSDBarrel_dur}
+  \includegraphics[width=0.7\textwidth]{lp_main_OilSpotUSDBarrel_dur.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) della variazione tendenziale di: redditi da lavoro dipendente per ora lavorata, a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_OilSpotUSDBarrel_compH}. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale del tasso di disoccupazione a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, rendimento del Bund a 1 anno (senza il livello del tasso di disoccupazione, collineare con i ritardi dell'outcome); dummy Covid 2020--2022. Banda di confidenza al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_OilSpotUSDBarrel_dur}. Fonti: Eurostat (\texttt{une\_rt\_m}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
 \begin{figure}[H]
   \centering
-  \caption{Gas $\rightarrow$ redditi da lavoro dipendente per ora lavorata: area dell'euro}
-  \label{fig:lp_main_TTFSpotEURMWH_compH}
-  \includegraphics[width=0.7\textwidth]{lp_main_TTFSpotEURMWH_compH.png}
+  \caption{Gas $\rightarrow$ tasso di disoccupazione: area dell'euro}
+  \label{fig:lp_main_TTFSpotEURMWH_dur}
+  \includegraphics[width=0.7\textwidth]{lp_main_TTFSpotEURMWH_dur.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) della variazione tendenziale di: redditi da lavoro dipendente per ora lavorata, a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_TTFSpotEURMWH_compH}. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale del tasso di disoccupazione a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, rendimento del Bund a 1 anno (senza il livello del tasso di disoccupazione, collineare con i ritardi dell'outcome); dummy Covid 2020--2022. Banda di confidenza al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_TTFSpotEURMWH_dur}. Fonti: Eurostat (\texttt{une\_rt\_m}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
 \begin{figure}[H]
   \centering
-  \caption{Elettricità $\rightarrow$ redditi da lavoro dipendente per ora lavorata: panel dei paesi}
-  \label{fig:lp_main_ELEEURMWH_compH}
-  \includegraphics[width=0.7\textwidth]{lp_main_ELEEURMWH_compH.png}
+  \caption{Elettricità $\rightarrow$ tasso di disoccupazione: panel dei paesi}
+  \label{fig:lp_main_ELEEURMWH_dur}
+  \includegraphics[width=0.7\textwidth]{lp_main_ELEEURMWH_dur.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) della variazione tendenziale di: redditi da lavoro dipendente per ora lavorata, a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Stima panel su DE, IT, NL, ES, FR (BE esclusa: prezzo dell'elettricità non disponibile), effetti fissi paese, ponderata con gli occupati medi del paese, errori standard Driscoll--Kraay. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_ELEEURMWH_compH}. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale del tasso di disoccupazione a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Stima panel su DE, IT, NL, ES, FR (BE esclusa: prezzo dell'elettricità non disponibile), effetti fissi paese, ponderata con gli occupati medi del paese, errori standard Driscoll--Kraay. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, rendimento del Bund a 1 anno (senza il livello del tasso di disoccupazione, collineare con i ritardi dell'outcome); dummy Covid 2020--2022. Banda di confidenza al 90\%. Campione (date dello shock, $h=0$): \smp{lp_main_ELEEURMWH_dur}. Fonti: Eurostat (\texttt{une\_rt\_m}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
 \clearpage
-
-\begin{appendices}
 
 %==============================================================================
-\section{Risposte medie: panel e singoli paesi}
+\section{Singoli prezzi energetici: panel e singoli paesi}
 %==============================================================================
 
 \subsection{Prezzi al consumo}
@@ -260,7 +423,7 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
   \label{fig:lp_app_OilSpotUSDBarrel_hicp}
   \includegraphics[width=1\textwidth]{lp_app_OilSpotUSDBarrel_hicp.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Panel: DE, IT, NL, ES, FR, BE, effetti fissi paese, ponderato con gli occupati medi del paese, errori standard Driscoll--Kraay; paesi: serie storiche, errori standard Newey--West. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale dell'HICP a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Panel: DE, IT, NL, ES, FR, BE, effetti fissi paese, ponderato con gli occupati medi del paese, errori standard Driscoll--Kraay; paesi: serie storiche, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%; stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -270,7 +433,7 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
   \label{fig:lp_app_TTFSpotEURMWH_hicp}
   \includegraphics[width=1\textwidth]{lp_app_TTFSpotEURMWH_hicp.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Panel: DE, IT, NL, ES, FR, BE, effetti fissi paese, ponderato con gli occupati medi del paese, errori standard Driscoll--Kraay; paesi: serie storiche, errori standard Newey--West. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale dell'HICP a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Panel: DE, IT, NL, ES, FR, BE, effetti fissi paese, ponderato con gli occupati medi del paese, errori standard Driscoll--Kraay; paesi: serie storiche, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%; stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -280,7 +443,7 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
   \label{fig:lp_app_ELEEURMWH_hicp}
   \includegraphics[width=1\textwidth]{lp_app_ELEEURMWH_hicp.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Serie storiche per paese, errori standard Newey--West; BE ed EA esclusi (prezzo dell'elettricità non disponibile). Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale dell'HICP a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Serie storiche per paese, errori standard Newey--West; BE ed EA esclusi (prezzo dell'elettricità non disponibile). Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%; stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -294,7 +457,7 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
   \label{fig:lp_app_OilSpotUSDBarrel_contr}
   \includegraphics[width=1\textwidth]{lp_app_OilSpotUSDBarrel_contr.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Panel: DE, IT, NL, ES, FR, BE, effetti fissi paese, ponderato con gli occupati medi del paese, errori standard Driscoll--Kraay; paesi: serie storiche, errori standard Newey--West. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni contrattuali a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Panel: DE, IT, NL, ES, FR, BE, effetti fissi paese, ponderato con gli occupati medi del paese, errori standard Driscoll--Kraay; paesi: serie storiche, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%; stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -304,7 +467,7 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
   \label{fig:lp_app_TTFSpotEURMWH_contr}
   \includegraphics[width=1\textwidth]{lp_app_TTFSpotEURMWH_contr.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Panel: DE, IT, NL, ES, FR, BE, effetti fissi paese, ponderato con gli occupati medi del paese, errori standard Driscoll--Kraay; paesi: serie storiche, errori standard Newey--West. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni contrattuali a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Panel: DE, IT, NL, ES, FR, BE, effetti fissi paese, ponderato con gli occupati medi del paese, errori standard Driscoll--Kraay; paesi: serie storiche, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%; stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -314,7 +477,7 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
   \label{fig:lp_app_ELEEURMWH_contr}
   \includegraphics[width=1\textwidth]{lp_app_ELEEURMWH_contr.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Serie storiche per paese, errori standard Newey--West; BE ed EA esclusi (prezzo dell'elettricità non disponibile). Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni contrattuali a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Serie storiche per paese, errori standard Newey--West; BE ed EA esclusi (prezzo dell'elettricità non disponibile). Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%; stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -328,7 +491,7 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
   \label{fig:lp_app_OilSpotUSDBarrel_wageH}
   \includegraphics[width=1\textwidth]{lp_app_OilSpotUSDBarrel_wageH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Panel: DE, IT, NL, ES, FR, BE, effetti fissi paese, ponderato con gli occupati medi del paese, errori standard Driscoll--Kraay; paesi: serie storiche, errori standard Newey--West. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni lorde per ora lavorata a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Panel: DE, IT, NL, ES, FR, BE, effetti fissi paese, ponderato con gli occupati medi del paese, errori standard Driscoll--Kraay; paesi: serie storiche, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%; stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -338,7 +501,7 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
   \label{fig:lp_app_TTFSpotEURMWH_wageH}
   \includegraphics[width=1\textwidth]{lp_app_TTFSpotEURMWH_wageH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Panel: DE, IT, NL, ES, FR, BE, effetti fissi paese, ponderato con gli occupati medi del paese, errori standard Driscoll--Kraay; paesi: serie storiche, errori standard Newey--West. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni lorde per ora lavorata a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Panel: DE, IT, NL, ES, FR, BE, effetti fissi paese, ponderato con gli occupati medi del paese, errori standard Driscoll--Kraay; paesi: serie storiche, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%; stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -348,7 +511,41 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
   \label{fig:lp_app_ELEEURMWH_wageH}
   \includegraphics[width=1\textwidth]{lp_app_ELEEURMWH_wageH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Serie storiche per paese, errori standard Newey--West; BE ed EA esclusi (prezzo dell'elettricità non disponibile). Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni lorde per ora lavorata a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Serie storiche per paese, errori standard Newey--West; BE ed EA esclusi (prezzo dell'elettricità non disponibile). Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%; stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\clearpage
+
+\subsection{Mercato del lavoro}
+
+\begin{figure}[H]
+  \centering
+  \caption{Petrolio $\rightarrow$ ore lavorate: panel e singoli paesi}
+  \label{fig:lp_app_OilSpotUSDBarrel_occH}
+  \includegraphics[width=1\textwidth]{lp_app_OilSpotUSDBarrel_occH.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale delle ore lavorate (totale economia) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Panel: DE, IT, NL, ES, FR, BE, effetti fissi paese, ponderato con gli occupati medi del paese, errori standard Driscoll--Kraay; paesi: serie storiche, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%; stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{Gas $\rightarrow$ ore lavorate: panel e singoli paesi}
+  \label{fig:lp_app_TTFSpotEURMWH_occH}
+  \includegraphics[width=1\textwidth]{lp_app_TTFSpotEURMWH_occH.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale delle ore lavorate (totale economia) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Panel: DE, IT, NL, ES, FR, BE, effetti fissi paese, ponderato con gli occupati medi del paese, errori standard Driscoll--Kraay; paesi: serie storiche, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%; stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{Elettricità $\rightarrow$ ore lavorate: singoli paesi}
+  \label{fig:lp_app_ELEEURMWH_occH}
+  \includegraphics[width=1\textwidth]{lp_app_ELEEURMWH_occH.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale delle ore lavorate (totale economia) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Serie storiche per paese, errori standard Newey--West; BE ed EA esclusi (prezzo dell'elettricità non disponibile). Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Banda di confidenza al 90\%; stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -356,69 +553,69 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
 
 \begin{figure}[H]
   \centering
-  \caption{Petrolio $\rightarrow$ redditi da lavoro dipendente per ora lavorata: panel e singoli paesi}
-  \label{fig:lp_app_OilSpotUSDBarrel_compH}
-  \includegraphics[width=1\textwidth]{lp_app_OilSpotUSDBarrel_compH.png}
+  \caption{Petrolio $\rightarrow$ tasso di disoccupazione: panel e singoli paesi}
+  \label{fig:lp_app_OilSpotUSDBarrel_dur}
+  \includegraphics[width=1\textwidth]{lp_app_OilSpotUSDBarrel_dur.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Panel: DE, IT, NL, ES, FR, BE, effetti fissi paese, ponderato con gli occupati medi del paese, errori standard Driscoll--Kraay; paesi: serie storiche, errori standard Newey--West. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale del tasso di disoccupazione a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Panel: DE, IT, NL, ES, FR, BE, effetti fissi paese, ponderato con gli occupati medi del paese, errori standard Driscoll--Kraay; paesi: serie storiche, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, rendimento del Bund a 1 anno (senza il livello del tasso di disoccupazione, collineare con i ritardi dell'outcome); dummy Covid 2020--2022. Banda di confidenza al 90\%; stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (\texttt{une\_rt\_m}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
 \begin{figure}[H]
   \centering
-  \caption{Gas $\rightarrow$ redditi da lavoro dipendente per ora lavorata: panel e singoli paesi}
-  \label{fig:lp_app_TTFSpotEURMWH_compH}
-  \includegraphics[width=1\textwidth]{lp_app_TTFSpotEURMWH_compH.png}
+  \caption{Gas $\rightarrow$ tasso di disoccupazione: panel e singoli paesi}
+  \label{fig:lp_app_TTFSpotEURMWH_dur}
+  \includegraphics[width=1\textwidth]{lp_app_TTFSpotEURMWH_dur.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Panel: DE, IT, NL, ES, FR, BE, effetti fissi paese, ponderato con gli occupati medi del paese, errori standard Driscoll--Kraay; paesi: serie storiche, errori standard Newey--West. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale del tasso di disoccupazione a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Panel: DE, IT, NL, ES, FR, BE, effetti fissi paese, ponderato con gli occupati medi del paese, errori standard Driscoll--Kraay; paesi: serie storiche, errori standard Newey--West. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, rendimento del Bund a 1 anno (senza il livello del tasso di disoccupazione, collineare con i ritardi dell'outcome); dummy Covid 2020--2022. Banda di confidenza al 90\%; stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (\texttt{une\_rt\_m}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
 \begin{figure}[H]
   \centering
-  \caption{Elettricità $\rightarrow$ redditi da lavoro dipendente per ora lavorata: singoli paesi}
-  \label{fig:lp_app_ELEEURMWH_compH}
-  \includegraphics[width=1\textwidth]{lp_app_ELEEURMWH_compH.png}
+  \caption{Elettricità $\rightarrow$ tasso di disoccupazione: singoli paesi}
+  \label{fig:lp_app_ELEEURMWH_dur}
+  \includegraphics[width=1\textwidth]{lp_app_ELEEURMWH_dur.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Serie storiche per paese, errori standard Newey--West; BE ed EA esclusi (prezzo dell'elettricità non disponibile). Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Bande di confidenza al 68\% e al 90\%. Stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale del tasso di disoccupazione a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Serie storiche per paese, errori standard Newey--West; BE ed EA esclusi (prezzo dell'elettricità non disponibile). Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, rendimento del Bund a 1 anno (senza il livello del tasso di disoccupazione, collineare con i ritardi dell'outcome); dummy Covid 2020--2022. Banda di confidenza al 90\%; stessa scala dell'asse verticale in tutti i riquadri; tra parentesi il campione di ciascun riquadro (date dello shock, $h=0$). Fonti: Eurostat (\texttt{une\_rt\_m}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
 \clearpage
 
 %==============================================================================
-\section{Robustezza: effetti fissi trimestrali e campione pre-Covid}
+\section{Robustezza: campione pre-Covid}
 %==============================================================================
 
 \subsection{Prezzi al consumo}
 
 \begin{figure}[H]
   \centering
-  \caption{Petrolio $\rightarrow$ HICP: area dell'euro, robustezza}
+  \caption{Petrolio $\rightarrow$ HICP: area dell'euro, robustezza pre-Covid}
   \label{fig:lp_rob_OilSpotUSDBarrel_hicp}
   \includegraphics[width=0.7\textwidth]{lp_rob_OilSpotUSDBarrel_hicp.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Base: specificazione principale (banda al 90\%). Effetti fissi trimestrali: specificazione principale con dummy per trimestre. Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale dell'HICP a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Base: specificazione principale (banda al 90\%). Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
 \begin{figure}[H]
   \centering
-  \caption{Gas $\rightarrow$ HICP: area dell'euro, robustezza}
+  \caption{Gas $\rightarrow$ HICP: area dell'euro, robustezza pre-Covid}
   \label{fig:lp_rob_TTFSpotEURMWH_hicp}
   \includegraphics[width=0.7\textwidth]{lp_rob_TTFSpotEURMWH_hicp.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Base: specificazione principale (banda al 90\%). Effetti fissi trimestrali: specificazione principale con dummy per trimestre. Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale dell'HICP a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Base: specificazione principale (banda al 90\%). Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
 \begin{figure}[H]
   \centering
-  \caption{Elettricità $\rightarrow$ HICP: panel dei paesi, robustezza}
+  \caption{Elettricità $\rightarrow$ HICP: panel dei paesi, robustezza pre-Covid}
   \label{fig:lp_rob_ELEEURMWH_hicp}
   \includegraphics[width=0.7\textwidth]{lp_rob_ELEEURMWH_hicp.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Stima panel su DE, IT, NL, ES, FR (BE esclusa: prezzo dell'elettricità non disponibile), effetti fissi paese, ponderata con gli occupati medi del paese, errori standard Driscoll--Kraay. Base: specificazione principale (banda al 90\%). Effetti fissi trimestrali: specificazione principale con dummy per trimestre. Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale dell'HICP a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Stima panel su DE, IT, NL, ES, FR (BE esclusa: prezzo dell'elettricità non disponibile), effetti fissi paese, ponderata con gli occupati medi del paese, errori standard Driscoll--Kraay. Base: specificazione principale (banda al 90\%). Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -428,31 +625,31 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
 
 \begin{figure}[H]
   \centering
-  \caption{Petrolio $\rightarrow$ retribuzioni contrattuali: area dell'euro, robustezza}
+  \caption{Petrolio $\rightarrow$ retribuzioni contrattuali: area dell'euro, robustezza pre-Covid}
   \label{fig:lp_rob_OilSpotUSDBarrel_contr}
   \includegraphics[width=0.7\textwidth]{lp_rob_OilSpotUSDBarrel_contr.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Base: specificazione principale (banda al 90\%). Effetti fissi trimestrali: specificazione principale con dummy per trimestre. Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni contrattuali a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Base: specificazione principale (banda al 90\%). Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
 \begin{figure}[H]
   \centering
-  \caption{Gas $\rightarrow$ retribuzioni contrattuali: area dell'euro, robustezza}
+  \caption{Gas $\rightarrow$ retribuzioni contrattuali: area dell'euro, robustezza pre-Covid}
   \label{fig:lp_rob_TTFSpotEURMWH_contr}
   \includegraphics[width=0.7\textwidth]{lp_rob_TTFSpotEURMWH_contr.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Base: specificazione principale (banda al 90\%). Effetti fissi trimestrali: specificazione principale con dummy per trimestre. Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni contrattuali a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Base: specificazione principale (banda al 90\%). Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
 \begin{figure}[H]
   \centering
-  \caption{Elettricità $\rightarrow$ retribuzioni contrattuali: panel dei paesi, robustezza}
+  \caption{Elettricità $\rightarrow$ retribuzioni contrattuali: panel dei paesi, robustezza pre-Covid}
   \label{fig:lp_rob_ELEEURMWH_contr}
   \includegraphics[width=0.7\textwidth]{lp_rob_ELEEURMWH_contr.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Stima panel su DE, IT, NL, ES, FR (BE esclusa: prezzo dell'elettricità non disponibile), effetti fissi paese, ponderata con gli occupati medi del paese, errori standard Driscoll--Kraay. Base: specificazione principale (banda al 90\%). Effetti fissi trimestrali: specificazione principale con dummy per trimestre. Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni contrattuali a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Stima panel su DE, IT, NL, ES, FR (BE esclusa: prezzo dell'elettricità non disponibile), effetti fissi paese, ponderata con gli occupati medi del paese, errori standard Driscoll--Kraay. Base: specificazione principale (banda al 90\%). Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: BCE (indicatore delle retribuzioni contrattuali, INW); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -462,31 +659,65 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
 
 \begin{figure}[H]
   \centering
-  \caption{Petrolio $\rightarrow$ retribuzioni lorde per ora lavorata: area dell'euro, robustezza}
+  \caption{Petrolio $\rightarrow$ retribuzioni lorde per ora lavorata: area dell'euro, robustezza pre-Covid}
   \label{fig:lp_rob_OilSpotUSDBarrel_wageH}
   \includegraphics[width=0.7\textwidth]{lp_rob_OilSpotUSDBarrel_wageH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Base: specificazione principale (banda al 90\%). Effetti fissi trimestrali: specificazione principale con dummy per trimestre. Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni lorde per ora lavorata a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Base: specificazione principale (banda al 90\%). Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
 \begin{figure}[H]
   \centering
-  \caption{Gas $\rightarrow$ retribuzioni lorde per ora lavorata: area dell'euro, robustezza}
+  \caption{Gas $\rightarrow$ retribuzioni lorde per ora lavorata: area dell'euro, robustezza pre-Covid}
   \label{fig:lp_rob_TTFSpotEURMWH_wageH}
   \includegraphics[width=0.7\textwidth]{lp_rob_TTFSpotEURMWH_wageH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Base: specificazione principale (banda al 90\%). Effetti fissi trimestrali: specificazione principale con dummy per trimestre. Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni lorde per ora lavorata a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Base: specificazione principale (banda al 90\%). Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
 \begin{figure}[H]
   \centering
-  \caption{Elettricità $\rightarrow$ retribuzioni lorde per ora lavorata: panel dei paesi, robustezza}
+  \caption{Elettricità $\rightarrow$ retribuzioni lorde per ora lavorata: panel dei paesi, robustezza pre-Covid}
   \label{fig:lp_rob_ELEEURMWH_wageH}
   \includegraphics[width=0.7\textwidth]{lp_rob_ELEEURMWH_wageH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Stima panel su DE, IT, NL, ES, FR (BE esclusa: prezzo dell'elettricità non disponibile), effetti fissi paese, ponderata con gli occupati medi del paese, errori standard Driscoll--Kraay. Base: specificazione principale (banda al 90\%). Effetti fissi trimestrali: specificazione principale con dummy per trimestre. Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione tendenziale delle retribuzioni lorde per ora lavorata a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Stima panel su DE, IT, NL, ES, FR (BE esclusa: prezzo dell'elettricità non disponibile), effetti fissi paese, ponderata con gli occupati medi del paese, errori standard Driscoll--Kraay. Base: specificazione principale (banda al 90\%). Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\clearpage
+
+\subsection{Mercato del lavoro}
+
+\begin{figure}[H]
+  \centering
+  \caption{Petrolio $\rightarrow$ ore lavorate: area dell'euro, robustezza pre-Covid}
+  \label{fig:lp_rob_OilSpotUSDBarrel_occH}
+  \includegraphics[width=0.7\textwidth]{lp_rob_OilSpotUSDBarrel_occH.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale delle ore lavorate (totale economia) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Base: specificazione principale (banda al 90\%). Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{Gas $\rightarrow$ ore lavorate: area dell'euro, robustezza pre-Covid}
+  \label{fig:lp_rob_TTFSpotEURMWH_occH}
+  \includegraphics[width=0.7\textwidth]{lp_rob_TTFSpotEURMWH_occH.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale delle ore lavorate (totale economia) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Base: specificazione principale (banda al 90\%). Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{Elettricità $\rightarrow$ ore lavorate: panel dei paesi, robustezza pre-Covid}
+  \label{fig:lp_rob_ELEEURMWH_occH}
+  \includegraphics[width=0.7\textwidth]{lp_rob_ELEEURMWH_occH.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale delle ore lavorate (totale economia) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Stima panel su DE, IT, NL, ES, FR (BE esclusa: prezzo dell'elettricità non disponibile), effetti fissi paese, ponderata con gli occupati medi del paese, errori standard Driscoll--Kraay. Base: specificazione principale (banda al 90\%). Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -494,31 +725,31 @@ solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza $C_t$.
 
 \begin{figure}[H]
   \centering
-  \caption{Petrolio $\rightarrow$ redditi da lavoro dipendente per ora lavorata: area dell'euro, robustezza}
-  \label{fig:lp_rob_OilSpotUSDBarrel_compH}
-  \includegraphics[width=0.7\textwidth]{lp_rob_OilSpotUSDBarrel_compH.png}
+  \caption{Petrolio $\rightarrow$ tasso di disoccupazione: area dell'euro, robustezza pre-Covid}
+  \label{fig:lp_rob_OilSpotUSDBarrel_dur}
+  \includegraphics[width=0.7\textwidth]{lp_rob_OilSpotUSDBarrel_dur.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Base: specificazione principale (banda al 90\%). Effetti fissi trimestrali: specificazione principale con dummy per trimestre. Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale del tasso di disoccupazione a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del petrolio (spot, USD/barile). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Base: specificazione principale (banda al 90\%). Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, rendimento del Bund a 1 anno (senza il livello del tasso di disoccupazione, collineare con i ritardi dell'outcome); dummy Covid 2020--2022. Fonti: Eurostat (\texttt{une\_rt\_m}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
 \begin{figure}[H]
   \centering
-  \caption{Gas $\rightarrow$ redditi da lavoro dipendente per ora lavorata: area dell'euro, robustezza}
-  \label{fig:lp_rob_TTFSpotEURMWH_compH}
-  \includegraphics[width=0.7\textwidth]{lp_rob_TTFSpotEURMWH_compH.png}
+  \caption{Gas $\rightarrow$ tasso di disoccupazione: area dell'euro, robustezza pre-Covid}
+  \label{fig:lp_rob_TTFSpotEURMWH_dur}
+  \includegraphics[width=0.7\textwidth]{lp_rob_TTFSpotEURMWH_dur.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Base: specificazione principale (banda al 90\%). Effetti fissi trimestrali: specificazione principale con dummy per trimestre. Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale del tasso di disoccupazione a un aumento di 10 punti percentuali della variazione tendenziale del prezzo del gas naturale (TTF, EUR/MWh). Stima su serie storiche per l'area dell'euro, errori standard Newey--West. Base: specificazione principale (banda al 90\%). Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, rendimento del Bund a 1 anno (senza il livello del tasso di disoccupazione, collineare con i ritardi dell'outcome); dummy Covid 2020--2022. Fonti: Eurostat (\texttt{une\_rt\_m}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
 \begin{figure}[H]
   \centering
-  \caption{Elettricità $\rightarrow$ redditi da lavoro dipendente per ora lavorata: panel dei paesi, robustezza}
-  \label{fig:lp_rob_ELEEURMWH_compH}
-  \includegraphics[width=0.7\textwidth]{lp_rob_ELEEURMWH_compH.png}
+  \caption{Elettricità $\rightarrow$ tasso di disoccupazione: panel dei paesi, robustezza pre-Covid}
+  \label{fig:lp_rob_ELEEURMWH_dur}
+  \includegraphics[width=0.7\textwidth]{lp_rob_ELEEURMWH_dur.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Note}: risposta (punti percentuali) a un aumento di 10 punti percentuali della variazione tendenziale del prezzo. Stima panel su DE, IT, NL, ES, FR (BE esclusa: prezzo dell'elettricità non disponibile), effetti fissi paese, ponderata con gli occupati medi del paese, errori standard Driscoll--Kraay. Base: specificazione principale (banda al 90\%). Effetti fissi trimestrali: specificazione principale con dummy per trimestre. Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome, shock, logaritmo della produzione industriale, tasso di disoccupazione e rendimento del Bund a 1 anno; dummy Covid 2020--2022. Fonti: Eurostat (conti nazionali trimestrali); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Note}: Risposta (punti percentuali) della variazione congiunturale del tasso di disoccupazione a un aumento di 10 punti percentuali della variazione tendenziale del prezzo dell'elettricità all'ingrosso (EUR/MWh, prezzo nazionale). Stima panel su DE, IT, NL, ES, FR (BE esclusa: prezzo dell'elettricità non disponibile), effetti fissi paese, ponderata con gli occupati medi del paese, errori standard Driscoll--Kraay. Base: specificazione principale (banda al 90\%). Pre-Covid: solo dati precedenti il 2020q1 ($t+h \le$ 2019q4), senza dummy Covid. Controlli: 4 ritardi di outcome e shock, logaritmo della produzione industriale, rendimento del Bund a 1 anno (senza il livello del tasso di disoccupazione, collineare con i ritardi dell'outcome); dummy Covid 2020--2022. Fonti: Eurostat (\texttt{une\_rt\_m}); Eurostat e Bundesbank per i controlli. Prezzi energetici: medie trimestrali di dati mensili (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 

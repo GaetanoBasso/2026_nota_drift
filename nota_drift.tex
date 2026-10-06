@@ -1,0 +1,101 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage{lmodern}
+\usepackage[top=2.5cm,bottom=2.5cm,left=3.5cm,right=3.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{hyperref}
+\graphicspath{{graphs/}}
+\captionsetup{font=small,labelfont=bf}
+\setlength{\parskip}{0.3em}
+% Testo da completare dopo aver letto i risultati
+\newcommand{\dacompletare}[1]{\textcolor{red}{[DA COMPLETARE: #1]}}
+% Campione scritto da Stata in graphs/smp_*.tex (n.d. se il file non esiste ancora)
+\newcommand{\smp}[1]{\IfFileExists{graphs/smp_#1.tex}{\input{graphs/smp_#1.tex}\unskip}{n.d.}}
+
+\title{\vspace{-1.5cm}Shock dei prezzi energetici e retribuzioni nell'area dell'euro}
+\author{\dacompletare{autori}}
+\date{\today}
+
+\begin{document}
+\maketitle
+\vspace{-0.8cm}
+
+\section{Principali risultati}
+
+\begin{itemize}
+\item Retribuzioni contrattuali, area dell'euro: \dacompletare{segno, entità e
+  persistenza della risposta a un aumento di 10 punti percentuali della variazione
+  tendenziale del prezzo del petrolio e del gas}.
+\item Retribuzioni orarie di contabilità nazionale: \dacompletare{risposta a petrolio e
+  gas; confronto con le retribuzioni contrattuali (slittamento salariale)}.
+\item Petrolio e gas: \dacompletare{differenze nella dimensione e nei tempi delle risposte}.
+\item Paesi: \dacompletare{eterogeneità tra DE, FR, IT, ES, NL e BE}.
+\end{itemize}
+
+\section{Metodologia, dati e riferimenti}
+
+Le risposte sono stimate con \emph{local projections} (Jordà, 2005) su dati trimestrali
+per l'area dell'euro e per Germania, Francia, Italia, Spagna, Paesi Bassi e Belgio, fino a
+12 trimestri dopo lo shock. Lo shock è la variazione tendenziale del prezzo spot del
+petrolio (in dollari) o del gas naturale (TTF); i coefficienti misurano la risposta a un
+aumento di 10 punti percentuali di tale variazione. Gli outcome principali sono la
+variazione tendenziale delle retribuzioni contrattuali (indicatore BCE) e delle
+retribuzioni lorde per ora lavorata (conti nazionali Eurostat); nel documento di
+lavoro sono riportati anche HICP, ore lavorate e tasso di disoccupazione.
+
+Seguendo Corsello e Foschi (2026), le regressioni includono quattro ritardi dell'outcome
+e dello shock, del logaritmo della produzione industriale, del tasso di disoccupazione e
+del rendimento del Bund a un anno, oltre a una dummy per il periodo 2020--2022. Per
+l'area dell'euro e per ciascun paese le stime sono su serie storiche, con errori standard
+Newey--West; le stime panel sui sei paesi (effetti fissi paese, ponderazione con gli
+occupati, errori standard Driscoll--Kraay; Driscoll e Kraay, 1998) sono in appendice al
+documento di lavoro. Come robustezza, le stime sono ripetute sui soli dati precedenti il
+2020. Campione per le retribuzioni contrattuali nell'area dell'euro (date dello shock):
+\smp{lp_og_EA_contr}.
+
+A differenza di Corsello e Foschi (2026), che identificano shock di offerta di petrolio e
+gas con strumenti esterni e ne studiano la trasmissione all'inflazione al consumo, qui
+gli shock sono variazioni osservate dei prezzi, al netto della loro dinamica passata e
+dei controlli: le risposte vanno lette come una trasmissione in forma ridotta. Corsello
+e Foschi trovano effetti sull'inflazione di breve durata per il petrolio e più forti e
+persistenti per il gas.
+
+{\footnotesize
+\noindent\textbf{Riferimenti.} Corsello F. e Foschi A. (2026), ``The different effects
+of oil and gas supply shocks on euro-area inflation'', Banca d'Italia, Questioni di
+Economia e Finanza, 1024. Driscoll J.C. e Kraay A.C. (1998), ``Consistent covariance
+matrix estimation with spatially dependent panel data'', \emph{Review of Economics and
+Statistics}, 80(4). Jordà \`O. (2005), ``Estimation and inference of impulse responses by
+local projections'', \emph{American Economic Review}, 95(1).\par}
+
+\section{Discussione}
+
+\dacompletare{lettura dei risultati principali: entità delle risposte delle retribuzioni
+contrattuali e orarie e loro tempi rispetto alla trasmissione ai prezzi}.
+
+\emph{Eterogeneità.} \dacompletare{differenze tra petrolio e gas e tra paesi (figura 1)}.
+
+\emph{Robustezza.} \dacompletare{confronto con le stime sui soli dati pre-Covid}.
+
+\begin{figure}[b!]
+  \centering
+  \includegraphics[width=0.49\textwidth]{lp_og_ctry_contr_sq.png}\hfill
+  \includegraphics[width=0.49\textwidth]{lp_og_ctry_wageH_sq.png}
+  \caption{Risposta delle retribuzioni contrattuali (sinistra) e delle retribuzioni
+  lorde per ora lavorata (destra) a shock dei prezzi di petrolio e gas}
+  \label{fig:paesi}
+  \begin{minipage}{\textwidth}\scriptsize
+  \emph{Note}: risposta (punti percentuali) della variazione tendenziale delle
+  retribuzioni a un aumento di 10 punti percentuali della variazione tendenziale del
+  prezzo del petrolio (blu) e del gas naturale (rosso); bande di confidenza al 90\%.
+  Stime su serie storiche per l'area dell'euro e per paese; stessa scala dell'asse
+  verticale in tutti i riquadri; sotto il nome di ciascun riquadro il campione per il
+  petrolio (P) e il gas (G).
+  \end{minipage}
+\end{figure}
+
+\end{document}
