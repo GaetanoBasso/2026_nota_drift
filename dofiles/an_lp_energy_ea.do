@@ -26,9 +26,9 @@ log using ${log}/log_an_lp_energy_ea.txt, t replace
 *   senza dummy Covid
 * - Grafici senza titoli (titoli e note nel file TeX), bande al 90%:
 *   lp_og_EA_*      : EA, petrolio (blu) e gas (rosso) nello stesso grafico
-*   lp_og_ctry_*    : EA e paesi, petrolio e gas, stesso asse y (_sq: versione quadrata)
+*   lp_og_ctry_*    : EA e paesi, petrolio e gas, stesso asse y stretto (_sq: versione quadrata)
 *   lp_main_*       : singolo prezzo, EA per petrolio e gas, panel per l'elettricità
-*   lp_app_*        : singolo prezzo, panel e paesi restanti, stesso asse y
+*   lp_app_*        : singolo prezzo, panel e paesi restanti, stesso asse y stretto
 *   lp_rob_*        : base e pre-Covid per l'unità di lp_main_*
 *   il periodo campionario di lp_main_* e lp_og_EA_* è scritto in graphs/smp_*.tex
 *******************************************************************************
@@ -36,6 +36,22 @@ log using ${log}/log_an_lp_energy_ea.txt, t replace
 cap which xtscc
 if _rc ssc install xtscc
 which xtscc
+
+* Asse y comune e stretto per i grafici combinati: range dai dati (incluso lo 0) ed etichette
+* interne al range, così da lasciare il minimo spazio bianco sopra e sotto
+cap program drop lp_yaxis
+program lp_yaxis, rclass
+	args ymin ymax
+	local ymin = min(`ymin', 0)
+	local ymax = max(`ymax', 0)
+	local d = (`ymax' - `ymin')/4
+	local m = 10^floor(log10(`d'))
+	local r = `d'/`m'
+	local st = cond(`r' <= 1, 1, cond(`r' <= 2, 2, cond(`r' <= 5, 5, 10)))*`m'
+	local y0 = ceil(`ymin'/`st')*`st'
+	local y1 = floor(`ymax'/`st')*`st'
+	return local opt "yscale(range(`ymin' `ymax')) ylabel(`y0'(`st')`y1')"
+end
 
 use ${data}/dataset_ea.dta, clear
 xtset geocode timeq
@@ -202,7 +218,12 @@ foreach s of global lp_shocks {
 			graphregion(color(white)) name(gmain, replace)
 		graph export ${gph}/lp_main_`s'_`y'.png, replace
 
-		* --- Appendice: panel e paesi restanti, stesso asse y --- *
+		* --- Appendice: panel e paesi restanti, stesso asse y (stretto) --- *
+		qui su lo90 if geo != "`mg'" & `sel'
+		local a = r(min)
+		qui su hi90 if geo != "`mg'" & `sel'
+		lp_yaxis `a' `r(max)'
+		local yax `"`r(opt)'"'
 		local gl ""
 		foreach g in PANEL $countries {
 			if "`g'" == "`mg'" continue
@@ -216,11 +237,11 @@ foreach s of global lp_shocks {
 			twoway (rarea lo90 hi90 h `cond', color(gs13)) ///
 				(line b h `cond', `sty_base'), ///
 				yline(0, lcolor(black)) legend(off) subtitle("`g' (`p0'-`p1')") ///
-				xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
-				graphregion(color(white)) name(g_`g', replace) nodraw
+				xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) `yax' ///
+				graphregion(color(white) margin(vsmall)) name(g_`g', replace) nodraw
 			local gl "`gl' g_`g'"
 		}
-		graph combine `gl', ycommon graphregion(color(white)) name(comb, replace)
+		graph combine `gl', imargin(tiny) graphregion(color(white) margin(vsmall)) name(comb, replace)
 		graph export ${gph}/lp_app_`s'_`y'.png, replace
 
 		* --- Robustezza: pre-Covid per l'unità del grafico principale --- *
@@ -247,6 +268,11 @@ local o "OilSpotUSDBarrel"
 local g "TTFSpotEURMWH"
 local others : subinstr global countries "EA" "", word
 foreach y of global lp_outcomes {
+	qui su lo90 if spec == "ts" & variant == "base" & inlist(shock, "`o'", "`g'") & outcome == "`y'"
+	local a = r(min)
+	qui su hi90 if spec == "ts" & variant == "base" & inlist(shock, "`o'", "`g'") & outcome == "`y'"
+	lp_yaxis `a' `r(max)'
+	local yax `"`r(opt)'"'
 	local gl ""
 	local lco ""
 	foreach c in EA `others' {
@@ -283,8 +309,8 @@ foreach y of global lp_outcomes {
 		}
 		twoway `pl', yline(0, lcolor(black)) legend(off) ///
 			subtitle("`c'" "Oil `po0'-`po1'; gas `pg0'-`pg1'", size(small)) ///
-			xtitle("Quarters", size(small)) ytitle("pp") xlabel(0(2)$hmax) ///
-			graphregion(color(white)) name(g_`c', replace) nodraw
+			xtitle("Quarters", size(small)) ytitle("pp") xlabel(0(2)$hmax) `yax' ///
+			graphregion(color(white) margin(vsmall)) name(g_`c', replace) nodraw
 		local gl "`gl' g_`c'"
 	}
 	* Riquadro con la sola legenda: un solo punto per serie, quindi le linee non si vedono
@@ -293,10 +319,10 @@ foreach y of global lp_outcomes {
 		xscale(off) yscale(off) xlabel(none) ylabel(none) xtitle("") ytitle("") ///
 		plotregion(style(none)) graphregion(color(white)) name(g_leg, replace) nodraw
 	local gl "`gl' g_leg"
-	graph combine `gl', ycommon graphregion(color(white)) name(comb, replace)
+	graph combine `gl', imargin(tiny) graphregion(color(white) margin(vsmall)) name(comb, replace)
 	graph export ${gph}/lp_og_ctry_`y'.png, replace
 	* Versione quadrata (nota e slide)
-	graph combine `gl', ycommon cols(3) xsize(6) ysize(6) graphregion(color(white)) name(combsq, replace)
+	graph combine `gl', imargin(tiny) cols(3) xsize(6) ysize(6) graphregion(color(white) margin(vsmall)) name(combsq, replace)
 	graph export ${gph}/lp_og_ctry_`y'_sq.png, replace
 }
 

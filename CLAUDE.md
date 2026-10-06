@@ -66,7 +66,8 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   figures or, for the main figures, written to `graphs/smp_*.tex` for the TeX notes. State-dependent variants (if added) interact all regressors
   with the state dummy and carry the state in the output name.
 - Graphs: no titles or notes in Stata (they go in the `.tex` files); 90% bands only;
-  multi-panel graphs use `graph combine ..., ycommon`; main text of `main_graphs.tex` =
+  multi-panel graphs share an explicit, tight y range (`lp_yaxis`: data range incl. 0, no `ycommon`)
+  with small margins (`imargin(tiny)`, `margin(vsmall)`); main text of `main_graphs.tex` =
   oil (blue) and gas (red) together (`lp_og_*`); single energy price graphs, hours and
   unemployment go to the appendix. Square versions (`_sq`) only where a layout needs them.
 

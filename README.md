@@ -69,6 +69,8 @@ Requirements:
 | `ur` | Unemployment rate (seasonally adjusted, % of labour force), quarterly average | Eurostat `une_rt_m`, `getTimeSeries` |
 | `dur` | Quarter-on-quarter change of `ur` (pp) | computed from `ur` |
 | `bund1y` | 1-year Bund yield (Svensson term structure, residual maturity 1 year), quarterly average, common to all countries | Deutsche Bundesbank, series `BBSIS.M.I.ZST.ZI.EUR.S1311.B.A604.R01XX.R.A.A._Z._Z.A` |
+| `gasAG` | Gas supply shock of Alessandri and Gazzani (2025, *Journal of Monetary Economics* 151, 103749), quarterly average of the monthly series, common to all countries; not used in the estimates yet | `GasSupplyShocks.xlsx`, sheet `2025update` (authors' Dropbox), downloaded by `cr_dataset_ea.do` |
+| `oilMP` | Oil supply news shock of Mori and Peersman, column "Updated sample 2025m12", quarterly average of the monthly series, common to all countries; not used in the estimates yet | authors' Google spreadsheet (exported as csv), downloaded by `cr_dataset_ea.do` |
 | `OilSpotUSDBarrel` | Oil spot price, USD per barrel | `rawdata/Data_OIL_ELE_GAS.xlsx` (monthly) |
 | `TTFSpotEURMWH` | Dutch TTF natural gas spot price, EUR/MWh | same file |
 | `ELEEURMWH` | Wholesale electricity price, EUR/MWh, country-specific (not available for EA; for BE only if the file has a column `ELE_BelgiumEURMWH`) | same file |
@@ -83,7 +85,9 @@ Steps:
 3. HICP: monthly indices are averaged over complete quarters, turned into
    year-on-year % changes and saved to `${data}/eurostat_hicp_ea_q.dta`.
 4. Core HICP, industrial production and unemployment (monthly, Eurostat) are averaged
-   over complete quarters; the 1-year Bund yield (monthly, Bundesbank) likewise.
+   over complete quarters; the 1-year Bund yield (monthly, Bundesbank) likewise. The
+   Alessandri–Gazzani gas supply shock and the Mori–Peersman oil supply news shock are
+   downloaded directly from the authors' files (Stata `copy`) and averaged by quarter.
 5. Energy prices: the monthly data are averaged to quarterly, turned into year-on-year
    % changes, and reshaped by country. Oil and gas are common to all countries.
    Electricity is country-specific. EA gets an empty electricity column so that oil and
