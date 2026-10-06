@@ -1,0 +1,120 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage[scaled=0.95]{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage[top=1.8cm,bottom=1.8cm,left=1.8cm,right=1.8cm]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\graphicspath{{graphs/}}
+\pagecolor{white}
+\captionsetup{font=small,labelfont=bf}
+\titleformat{\section}{\large\bfseries}{}{0pt}{}
+\titlespacing*{\section}{0pt}{0.9em}{0.3em}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.45em}
+\setlist[itemize]{leftmargin=1.2em,itemsep=0.15em,topsep=0.2em}
+\pagestyle{plain}
+% Text to be written once the results have been read
+\newcommand{\tbc}[1]{\textcolor{red}{[TO BE COMPLETED: #1]}}
+% Sample period written by Stata in graphs/smp_*.tex (n.a. if the file does not exist yet)
+\newcommand{\smp}[1]{\IfFileExists{graphs/smp_#1.tex}{\input{graphs/smp_#1.tex}\unskip}{n.a.}}
+
+\begin{document}
+
+{\small POLICY NOTE \quad|\quad \tbc{authors, directorate} \quad|\quad \today}\par
+\vspace{0.4em}
+{\LARGE\bfseries Do energy price shocks feed into euro-area wages?}\par
+\vspace{0.8em}
+
+\textbf{Bottom line.} \tbc{one-sentence policy message on the pass-through of oil and gas
+price shocks to negotiated and actual wages in the euro area}.
+
+\section*{Main findings}
+
+\begin{itemize}
+\item \textbf{Negotiated wages.} \tbc{size, timing and persistence of the euro-area response
+  to a 10 percentage point increase in the year-on-year growth of oil and gas prices}.
+\item \textbf{Actual hourly wages.} \tbc{response of gross wages per hour (national accounts)
+  and comparison with negotiated wages, i.e.\ wage drift}.
+\item \textbf{Oil versus gas.} \tbc{differences in the size and timing of the responses}.
+\item \textbf{Countries.} \tbc{heterogeneity across Germany, France, Italy, Spain, the
+  Netherlands and Belgium}.
+\end{itemize}
+
+\section*{Why it matters}
+
+Whether energy-driven inflation spills over into wages is central to how persistent it
+turns out to be. For consumer prices, Corsello and Foschi (2026) find that oil supply
+shocks have short-lived effects, whereas gas supply shocks have stronger and more
+persistent ones, and that indirect effects are muted when inflation is low but become
+pronounced in high-inflation regimes. This note asks the same question for wages,
+distinguishing negotiated wages, set in collective agreements, from actual wages per
+hour worked.
+
+\section*{How we estimate it}
+
+We estimate local projections (Jordà, 2005) on quarterly data for the euro area and for
+Germany, France, Italy, Spain, the Netherlands and Belgium, up to 12 quarters after the
+shock. The shock is the year-on-year change in the spot price of oil (in US dollars) or
+of natural gas (TTF); responses are scaled to a 10 percentage point increase in that
+change. The outcomes are year-on-year growth in negotiated wages (ECB indicator) and in
+gross wages per hour worked (Eurostat national accounts); HICP inflation, hours worked
+and the unemployment rate are reported in the working document.
+
+Following Corsello and Foschi (2026), all regressions control for four lags of the
+outcome and of the shock, of log industrial production, of the unemployment rate and of
+the 1-year Bund yield, and include a dummy for 2020--2022. Estimates are country by
+country (time series, Newey--West standard errors); pooled estimates for the six
+countries (country fixed effects, employment weights, Driscoll--Kraay standard errors;
+Driscoll and Kraay, 1998) are in the working document. As a robustness check, all
+estimates are repeated on pre-2020 data only. Euro-area sample for negotiated wages
+(shock dates): \smp{lp_og_EA_contr}.
+
+Unlike Corsello and Foschi (2026), who identify oil and gas supply shocks with external
+instruments, we use observed price changes, net of their own past dynamics and of the
+controls: the responses are a reduced-form measure of pass-through, not the causal
+effect of an identified supply shock.
+
+\section*{Discussion and policy implications}
+
+\tbc{reading of the main results: size and timing of the response of negotiated and
+actual hourly wages, compared with the pass-through to consumer prices}.
+
+\textbf{Heterogeneity.} \tbc{oil versus gas and across countries (Figure 1)}.
+
+\textbf{Robustness.} \tbc{comparison with the estimates on pre-COVID data only}.
+
+\textbf{Implications.} \tbc{what the results imply for the risk of second-round effects
+from the current energy price shock}.
+
+{\footnotesize
+\textbf{References.} Corsello, F.\ and Foschi, A.\ (2026), ``The different effects of oil
+and gas supply shocks on euro-area inflation'', Banca d'Italia, Questioni di Economia e
+Finanza (Occasional Papers), 1024. Driscoll, J.C.\ and Kraay, A.C.\ (1998), ``Consistent
+covariance matrix estimation with spatially dependent panel data'', \emph{Review of
+Economics and Statistics}, 80(4). Jordà, \`O.\ (2005), ``Estimation and inference of
+impulse responses by local projections'', \emph{American Economic Review}, 95(1).\par}
+
+\begin{figure}[b!]
+  \centering
+  \includegraphics[width=0.49\textwidth]{lp_og_ctry_contr_sq.png}\hfill
+  \includegraphics[width=0.49\textwidth]{lp_og_ctry_wageH_sq.png}
+  \caption{Response of negotiated wages (left) and gross wages per hour worked (right) to
+  oil and gas price shocks}
+  \label{fig:countries}
+  \begin{minipage}{\textwidth}\scriptsize
+  \emph{Notes}: response (percentage points) of year-on-year wage growth to a 10
+  percentage point increase in the year-on-year growth of the oil and natural gas prices;
+  90\% confidence bands. Time series for the euro area and for each country; same vertical
+  scale in all panels; the sample (shock dates) for oil and gas is shown under each panel
+  name.
+  \end{minipage}
+\end{figure}
+
+\end{document}

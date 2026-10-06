@@ -6,14 +6,14 @@ cap log close
 log using ${log}/log_cr_dataset_ea.txt, t replace
 
 * Dati CNQ Eurostat
-use anno trim wageHT* compHT* deflT* clupHT* vaghT* occPT* using ${source_na}/CN_dataset_dest.dta, clear
+use anno trim wageHT* compHT* deflT* clupHT* vaghT* occPT* occHT* using ${source_na}/CN_dataset_dest.dta, clear
 keep anno trim *DE *IT *FR *ES *NL *BE *EA
 gen int year    = round(anno)
 gen int quarter    = round(trim)
 gen int timeq = yq(year, quarter)
 format timeq %tq
 drop anno trim
-reshape long wageHT compHT deflT clupHT vaghT occPT, j(geo) i(timeq year quarter) string
+reshape long wageHT compHT deflT clupHT vaghT occPT occHT, j(geo) i(timeq year quarter) string
 rename *T *
 tempfile cnq_ea
 save `cnq_ea'
@@ -234,6 +234,12 @@ xtset
 gen _vagh = 100*vagh/l.vagh-100 if _n>1
 drop vagh
 rename _vagh vagh
+* Ore lavorate, totale economia: var. % congiunturale
+gen _occH = 100*occH/l.occH-100 if _n>1
+drop occH
+rename _occH occH
+* Tasso di disoccupazione: differenza congiunturale (il livello ur resta tra i controlli)
+gen dur = ur - l.ur
 * Logaritmo della produzione industriale
 gen lip = ln(ip)
 drop ip

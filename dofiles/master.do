@@ -42,14 +42,15 @@ global covid_dum = 1
 * --- Parametri delle Local Projections (an_lp_energy_ea.do) ------------------
 * lp_lags     : numero di ritardi di outcome e shock inclusi come controlli
 * lp_shocks   : prezzi energetici (var. % tendenziali); lo shock è scalato a 10 pp
-* lp_outcomes : variabili di risposta (var. % tendenziali)
+* lp_outcomes : variabili di risposta (var. % tendenziali; occH: var. % congiunturale delle ore
+*               lavorate; dur: differenza congiunturale del tasso di disoccupazione)
 * lp_controls : controlli macro come in Corsello e Foschi (2026), inclusi con $lp_lags ritardi:
 *               log produzione industriale, tasso di disoccupazione, rendimento Bund 1 anno
 * lp_panel    : paesi del panel (EA esclusa: è l'aggregato degli altri);
 *               le stime panel sono ponderate per gli occupati medi del paese (occP)
 global lp_lags     = 4
 global lp_shocks   "OilSpotUSDBarrel TTFSpotEURMWH ELEEURMWH"
-global lp_outcomes "contr hicp wageH compH"
+global lp_outcomes "contr hicp wageH occH dur"
 global lp_controls "lip ur bund1y"
 global lp_panel    "DE IT NL ES FR BE"
 

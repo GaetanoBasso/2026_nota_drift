@@ -21,8 +21,15 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   `cap log close` then `log using ${log}/log_<dofile name>.txt, t replace`, and ends
   with `log close`. Logs are committed to git.
 - **Git tracks only** `dofiles/`, `logfiles/`, `graphs/`, `README.md`, `CLAUDE.md`,
-  `main_graphs.tex` (`.gitignore` ignores everything else). Graphs are committed so that
-  Overleaf (GitHub sync of `main`) can compile `main_graphs.tex`. Never commit data or output.
+  `main_graphs.tex`, `nota_drift.tex`, `slides_drift.pptx`, `make_slides_drift.js`
+  (`.gitignore` ignores everything else). Graphs are committed so that Overleaf (GitHub sync of `main`) can compile the
+  `.tex` files. Never commit data or output.
+- In the note never describe results that have not been read from the logs or graphs:
+  leave `\tbc{...}` placeholders.
+- Language: graph labels/legends, the `.tex` files and the slides are in **English**; dofile
+  comments stay in Italian. The note is a policy brief (sans serif, narrow margins, no
+  section numbers). Rebuild `slides_drift.pptx` with `node make_slides_drift.js` after each
+  Stata run.
 - Do not commit Stata swap files (`~*.stswp`).
 - Raw sources on the shared drive (`${source_*}`, `${home}/rawdata`) are **read-only**.
   Never save into them.
@@ -53,14 +60,15 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   +10 pp; `$lp_lags` lags of the outcome and the shock; panel = country FE +
   Driscoll–Kraay (`xtscc`, lag h+1), weighted by fixed country weights `[aw=wP]` (country mean of employment `occP`); country time series = `newey`, lag h+1. Controls: `$lp_lags` lags of
   `$lp_controls` plus the COVID dummy `dcovid` (2020q1–2022q4). Robustness variants are
-  stored in `variant` (base/seas/pre). Results
+  stored in `variant` (base/pre). Results
   go to a `postfile` dataset. The estimation sample is marked explicitly
   (`smp` + `markout`), its period is posted as `tmin`/`tmax` and shown in the panel labels of the appendix
   figures or, for the main figures, written to `graphs/smp_*.tex` for the TeX notes. State-dependent variants (if added) interact all regressors
   with the state dummy and carry the state in the output name.
-- Graphs: no titles or notes in Stata (they go in `main_graphs.tex`); multi-panel graphs
-  use `graph combine ..., ycommon`; main figures = EA for oil and gas, panel for
-  electricity; panel and countries go to the appendix.
+- Graphs: no titles or notes in Stata (they go in the `.tex` files); 90% bands only;
+  multi-panel graphs use `graph combine ..., ycommon`; main text of `main_graphs.tex` =
+  oil (blue) and gas (red) together (`lp_og_*`); single energy price graphs, hours and
+  unemployment go to the appendix. Square versions (`_sq`) only where a layout needs them.
 
 ## Karpathy guidelines
 

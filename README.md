@@ -4,11 +4,13 @@ Note on the pass-through of energy price shocks (oil, gas, electricity) to wages
 in the main euro area countries (DE, FR, IT, ES, NL, BE) and the euro area aggregate (EA),
 at quarterly frequency.
 
-Three wage/price measures are compared:
+Outcomes:
 
 - **negotiated wages** (ECB indicator of negotiated wage rates, `contr`);
-- **national accounts wages per hour** (`wageH`) and **compensation per hour** (`compH`);
-- **HICP inflation** (`hicp`).
+- **national accounts gross wages per hour** (`wageH`);
+- **HICP inflation** (`hicp`);
+- in the appendix: **hours worked** (`occH`, quarter-on-quarter % change) and the
+  **unemployment rate** (`dur`, quarter-on-quarter change in pp).
 
 The gap between negotiated wages and national accounts wages is the *wage drift*,
 which gives the note its name.
@@ -22,10 +24,14 @@ dofiles/
   an_lp_energy_ea.do     Local Projections of energy shocks -> output/, graphs/
 logfiles/                one text log per dofile (log_<dofile name>.txt)
 main_graphs.tex          LaTeX file collecting the graphs (compile in ${home}, next to graphs/)
+nota_drift.tex           2-page policy note (English): results (placeholders), methodology, discussion
+slides_drift.pptx        2-slide PowerPoint deck (English) with the oil+gas wage graphs
+make_slides_drift.js     builds slides_drift.pptx from graphs/ (node + npm package pptxgenjs)
 ```
 
-Only `dofiles/`, `logfiles/`, `graphs/`, `README.md`, `CLAUDE.md` and `main_graphs.tex` are tracked
-(see `.gitignore`); graphs are committed so that Overleaf can compile `main_graphs.tex`.
+Only `dofiles/`, `logfiles/`, `graphs/`, `README.md`, `CLAUDE.md`, the two `.tex` files and the
+slides (`slides_drift.pptx`, `make_slides_drift.js`) are tracked (see `.gitignore`); graphs are
+committed so that Overleaf can compile the `.tex` files.
 Data and output live on the shared drive under `${home}`
 (`/home/group/main/892fl/policy/2026/2026_nota_drift` on Unix,
 `//osiride-fs/group/main/892fl/...` on Windows).
@@ -55,11 +61,13 @@ Requirements:
 | `wageH`, `compH`, `defl`, `clupH` | National accounts: wages per hour, compensation of employees per hour, GDP deflator, unit labour cost per hour (year-on-year % change) | Eurostat quarterly national accounts, from the internal file `${source_na}/CN_dataset_dest.dta` (variables `*HT*`, `deflT*`) |
 | `vagh` | Total economy value added, quarter-on-quarter % change | same file (variables `vaghT*`) |
 | `occP` | Employment (persons), level; weight of the panel LPs | same file (variables `occPT*`) |
+| `occH` | Hours worked, total economy, quarter-on-quarter % change | same file (variables `occHT*`) |
 | `contr` | Indicator of negotiated wage rates (INWR), total economy, annual growth rate (`GY`), quarterly | ECB INW dataset, downloaded with `getTimeSeries ECB_RESTR INW/.......`. For DE and FR the national provider series (`DE2`, `FR2`) are used |
 | `hicp` | HICP all items (index 2015=100), year-on-year % change of the quarterly average | Eurostat `prc_hicp_midx`, downloaded with `getTimeSeries`; EA = EA20 |
 | `hicpx` | Core HICP: all items excluding energy, food, alcohol and tobacco (index 2015=100), year-on-year % change. Kept in the dataset, not used in the estimates | Eurostat `prc_hicp_midx` (`TOT_X_NRG_FOOD`), `getTimeSeries` |
 | `lip` | Log of industrial production (B–D, seasonally and calendar adjusted, 2021=100), quarterly average | Eurostat `sts_inpr_m`, `getTimeSeries` |
 | `ur` | Unemployment rate (seasonally adjusted, % of labour force), quarterly average | Eurostat `une_rt_m`, `getTimeSeries` |
+| `dur` | Quarter-on-quarter change of `ur` (pp) | computed from `ur` |
 | `bund1y` | 1-year Bund yield (Svensson term structure, residual maturity 1 year), quarterly average, common to all countries | Deutsche Bundesbank, series `BBSIS.M.I.ZST.ZI.EUR.S1311.B.A604.R01XX.R.A.A._Z._Z.A` |
 | `OilSpotUSDBarrel` | Oil spot price, USD per barrel | `rawdata/Data_OIL_ELE_GAS.xlsx` (monthly) |
 | `TTFSpotEURMWH` | Dutch TTF natural gas spot price, EUR/MWh | same file |
@@ -82,13 +90,14 @@ Steps:
    gas are also available for EA.
 6. All sources are merged (the Bund yield by quarter). `wageH compH defl clupH hicpx` are turned into
    year-on-year % changes (`100*x/L4.x - 100`) and `vagh` into a quarter-on-quarter
-   % change (`100*x/L.x - 100`); `lip = ln(ip)`.
+   % change (`100*x/L.x - 100`), as are hours worked `occH`; `dur = ur - L.ur`;
+   `lip = ln(ip)`.
 7. The result is saved to `${data}/dataset_ea.dta`.
 
 ## Analysis (`an_lp_energy_ea.do`)
 
 Local Projections (Jordà, 2005). Each energy price is used as a shock on its own, and
-each variable in `$lp_outcomes` (`contr hicp wageH compH`) is used as the outcome
+each variable in `$lp_outcomes` (`contr hicp wageH occH dur`) is used as the outcome
 on its own, for
 horizons h = 0, …, 12 quarters (`$hmax`):
 
@@ -97,13 +106,15 @@ y(i,t+h) = a(i,h) + b(h) s(i,t) + Σ_{l=1..p} [ c(l,h) y(i,t-l) + d(l,h) s(i,t-l
            + k(h) covid(t) + e(i,t+h)
 ```
 
-- `y` and `s` are year-on-year % changes. `s` is divided by 10, so `b(h)` is the
-  response in percentage points of the outcome's year-on-year growth to a
-  **+10 pp increase in the year-on-year growth of the energy price**.
+- `s` is the year-on-year % change of the energy price, divided by 10, so `b(h)` is the
+  response (in pp) to a **+10 pp increase in the year-on-year growth of the energy
+  price**. `y` is a year-on-year % change (`contr hicp wageH`), a quarter-on-quarter
+  % change (`occH`) or a quarter-on-quarter difference (`dur`).
 - `p = $lp_lags` (default 4 quarters) lags of the outcome, the shock and the macro
   controls `x` = `$lp_controls` (log industrial production, unemployment rate, 1-year
   Bund yield, as in Corsello and Foschi, 2026) are used as controls, plus a COVID dummy
-  for 2020q1–2022q4 when `$covid_dum = 1` (default).
+  for 2020q1–2022q4 when `$covid_dum = 1` (default). For `dur` the lags of `ur` are left
+  out, because they are collinear with the lags of the outcome.
 - **Panel LP**: pooled over `$lp_panel` (DE IT NL ES FR BE). EA is left out because it
   is the aggregate of the other countries. The regression is weighted by fixed
   country weights, equal to each country's average employment over the whole period
@@ -115,24 +126,36 @@ y(i,t+h) = a(i,h) + b(h) s(i,t) + Σ_{l=1..p} [ c(l,h) y(i,t-l) + d(l,h) s(i,t-l
 - **Time-series LP**: one regression per country in `$countries` (including EA), with
   Newey–West standard errors (Newey and West, 1987) and h+1 lags. Electricity is
   skipped for EA because there is no series for it.
-- **Robustness variants** (`variant`): `base`; `seas` = `base` plus quarter fixed effects;
-  `pre` = pre-Covid data only (t and t+h up to 2019q4), without the COVID dummy.
+- **Robustness variant** (`variant`): `base`; `pre` = pre-Covid data only (t and t+h up
+  to 2019q4), without the COVID dummy.
 - **Sample period**: stored as `tmin`/`tmax` (first and last shock date t at h = 0).
   It is shown in the panel labels of the appendix figures and written to
-  `graphs/smp_<figure>.tex` for the main figures, which `main_graphs.tex` reads.
+  `graphs/smp_<figure>.tex` for `lp_main_*` and `lp_og_EA_*`, which the `.tex` files read.
 
 Outputs:
 
 - `${out}/lp_energy_ea.dta` / `.xlsx`: one row per `spec` (panel/ts) × `geo` ×
   `variant` × `shock` × `outcome` × `h`, with `b`, `se`, `N`, `tmin`, `tmax` and
-  68% / 90% bands.
-- Graphs (no titles: titles and notes are in `main_graphs.tex`):
-  - `lp_main_<shock>_<outcome>.png`: main figure, EA for oil and gas, panel for
-    electricity;
-  - `lp_app_<shock>_<outcome>.png`: appendix, the panel (oil, gas) and the countries,
-    with a common y axis;
-  - `lp_rob_<shock>_<outcome>.png`: appendix, baseline vs quarter fixed effects and
-    pre-Covid sample for the main unit.
+  90% bands.
+- Graphs (no titles: titles and notes are in the `.tex` files; 90% bands only):
+  - `lp_og_EA_<outcome>.png`: EA, oil (blue) and gas (red) in the same graph, with a
+    legend — main text of `main_graphs.tex` for `contr hicp wageH`, appendix for `occH dur`;
+  - `lp_og_ctry_<outcome>.png`: EA and the six countries, oil and gas, common y axis,
+    legend in a cell of its own (`_sq`: square version, used in the note and the slides);
+  - `lp_main_<shock>_<outcome>.png`: appendix, one energy price, EA for oil and gas,
+    panel for electricity;
+  - `lp_app_<shock>_<outcome>.png`: appendix, one energy price, the panel (oil, gas)
+    and the countries, with a common y axis;
+  - `lp_rob_<shock>_<outcome>.png`: appendix, baseline vs pre-Covid sample for the
+    unit of `lp_main_*`.
+
+Graph labels, the `.tex` files and the slides are in English (dofile comments stay in
+Italian). `nota_drift.tex` (2-page policy note) and `slides_drift.pptx` (2 slides) use the
+oil+gas graphs for negotiated wages and hourly wages. The note leaves placeholders
+(`\tbc{...}`, shown in red) where the results have to be described. The slides are built
+by `node make_slides_drift.js` from the repository root: missing graphs become placeholder
+boxes and the EA sample periods are read from `graphs/smp_lp_og_EA_*.tex`, so the deck has
+to be rebuilt after each Stata run.
 
 Caveat: the "shocks" are observed energy price changes, conditioned on their own lags
 and on lags of the outcome. They are not identified structural shocks, so the

@@ -20,6 +20,9 @@
 !/README.md
 !/CLAUDE.md
 !/main_graphs.tex
+!/nota_drift.tex
+!/slides_drift.pptx
+!/make_slides_drift.js
 
 # Allow also all figures
 !/graphs/
