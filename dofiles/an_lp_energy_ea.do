@@ -270,7 +270,7 @@ foreach y of global lp_outcomes {
 		local pg0 : di %tq r(min)
 		qui su tmax `cg' & h == 0
 		local pg1 : di %tq r(max)
-		local pl `"(rarea lo90 hi90 h `co', color(navy%25) lwidth(none)) (rarea lo90 hi90 h `cg', color(cranberry%25) lwidth(none)) (line b h `co', lcolor(navy) lwidth(medthick)) (line b h `cg', lcolor(cranberry) lwidth(medthick))"'
+		local pl `"(rarea lo90 hi90 h `co', color(navy%25) lwidth(none)) (rarea lo90 hi90 h `cg', color(cranberry%25) lwidth(none)) (line b h `co', lcolor(navy) lwidth(medthick)) (line b h `cg', lcolor(cranberry) lp(longdash) lwidth(medthick))"'
 		* Grafico EA a sé stante, con legenda
 		if "`c'" == "EA" {
 			file open `fh' using "${gph}/smp_lp_og_EA_`y'.tex", write replace
@@ -282,13 +282,13 @@ foreach y of global lp_outcomes {
 			graph export ${gph}/lp_og_EA_`y'.png, replace
 		}
 		twoway `pl', yline(0, lcolor(black)) legend(off) ///
-			subtitle("`c'" "Oil `po0'-`po1'; gas `pg0'-`pg1'", size(medsmall)) ///
-			xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
+			subtitle("`c'" "Oil `po0'-`po1'; gas `pg0'-`pg1'", size(small)) ///
+			xtitle("Quarters", size(small)) ytitle("pp") xlabel(0(2)$hmax) ///
 			graphregion(color(white)) name(g_`c', replace) nodraw
 		local gl "`gl' g_`c'"
 	}
 	* Riquadro con la sola legenda: un solo punto per serie, quindi le linee non si vedono
-	twoway (line b h `lco', lcolor(navy) lwidth(medthick)) (line b h `lcg', lcolor(cranberry) lwidth(medthick)), ///
+	twoway (line b h `lco', lcolor(navy) lwidth(medthick)) (line b h `lcg', lcolor(cranberry) lp(longdash) lwidth(medthick)), ///
 		legend(order(1 "Oil price" 2 "Gas price") cols(1) ring(0) position(0) size(large) region(lstyle(none))) ///
 		xscale(off) yscale(off) xlabel(none) ylabel(none) xtitle("") ytitle("") ///
 		plotregion(style(none)) graphregion(color(white)) name(g_leg, replace) nodraw

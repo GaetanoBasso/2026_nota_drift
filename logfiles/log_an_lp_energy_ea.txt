@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lp_energy_ea.txt
   log type:  text
- opened on:   6 Oct 2026, 15:46:05
+ opened on:   6 Oct 2026, 21:03:03
 
 . 
 . *******************************************************************************
@@ -12,22 +12,25 @@
 . *   y(i,t+h) = a(i,h) + b(h)*s(i,t)
 . *              + sum_{l=1..p} [c(l,h)*y(i,t-l) + d(l,h)*s(i,t-l) + f(l,h)'x(i,t-l)]
 . *              + k(h)*covid(t) + e(i,t+h)
-. * - y, s: variazioni % tendenziali; s è diviso per 10, quindi b(h) è l'effetto
-. *   (in pp) di un aumento di 10 pp della variazione tendenziale del prezzo
-. * - x: controlli macro in $lp_controls (come in Corsello e Foschi, 2026);
-. *   covid: dummy 2020q1-2022q4 (se $covid_dum == 1)
+. * - s: variazione % tendenziale, divisa per 10, quindi b(h) è l'effetto di un aumento
+. *   di 10 pp della variazione tendenziale del prezzo; y: variazione % tendenziale
+. *   (contr, hicp, wageH), var. % congiunturale (occH) o differenza congiunturale (dur)
+. * - x: controlli macro in $lp_controls (come in Corsello e Foschi, 2026); per dur senza
+. *   ur (collineare con i ritardi di dur); covid: dummy 2020q1-2022q4 (se $covid_dum == 1)
 . * - Panel: effetti fissi paese sui paesi in $lp_panel, ponderato con pesi fissi
 . *   (media degli occupati del paese sul periodo, wP, aweight), errori standard Driscoll-Kraay
 . *   (xtscc >= 1.4, necessario per aweight con fe) con lag h+1
 . * - Serie storiche: una regressione per paese in $countries, errori standard
 . *   Newey-West con lag h+1
-. * - Varianti (variabile variant): base; seas = base con effetti fissi trimestrali;
-. *   pre = solo dati pre-Covid (t e t+h fino al 2019q4), senza dummy Covid
-. * - Grafici senza titoli (titoli e note nel file TeX):
-. *   principali  lp_main_*: EA per petrolio e gas, panel per l'elettricità
-. *   appendice   lp_app_* : panel e paesi restanti, stesso asse y
-. *   robustezza  lp_rob_* : base, effetti fissi trimestrali e pre-Covid per l'unità del grafico principale
-. *   il periodo campionario dei grafici principali è scritto in graphs/smp_*.tex
+. * - Varianti (variabile variant): base; pre = solo dati pre-Covid (t e t+h fino al 2019q4),
+. *   senza dummy Covid
+. * - Grafici senza titoli (titoli e note nel file TeX), bande al 90%:
+. *   lp_og_EA_*      : EA, petrolio (blu) e gas (rosso) nello stesso grafico
+. *   lp_og_ctry_*    : EA e paesi, petrolio e gas, stesso asse y (_sq: versione quadrata)
+. *   lp_main_*       : singolo prezzo, EA per petrolio e gas, panel per l'elettricità
+. *   lp_app_*        : singolo prezzo, panel e paesi restanti, stesso asse y
+. *   lp_rob_*        : base e pre-Covid per l'unità di lp_main_*
+. *   il periodo campionario di lp_main_* e lp_og_EA_* è scritto in graphs/smp_*.tex
 . *******************************************************************************
 . 
 . cap which xtscc
@@ -87,10 +90,14 @@ Panel variable: geocode (unbalanced)
 (301 missing values generated)
 (308 missing values generated)
 (315 missing values generated)
-(295 missing values generated)
-(301 missing values generated)
-(308 missing values generated)
-(315 missing values generated)
+(274 missing values generated)
+(280 missing values generated)
+(287 missing values generated)
+(294 missing values generated)
+(63 missing values generated)
+(70 missing values generated)
+(77 missing values generated)
+(84 missing values generated)
 (222 missing values generated)
 (229 missing values generated)
 (236 missing values generated)
@@ -105,12 +112,8 @@ Panel variable: geocode (unbalanced)
 (28 missing values generated)
 
 . 
-. * Dummy Covid ed effetti fissi trimestrali
+. * Dummy Covid
 . gen byte dcovid = inrange(timeq, tq(2020q1), tq(2022q4))
-
-. forv q = 2/4 {
-  2.         gen byte q`q' = quarter == `q'
-  3. }
 
 . 
 . * Paesi del panel
@@ -136,15 +139,7 @@ Panel variable: geocode (unbalanced)
          Delta: 1 quarter
 
 . 
-. * Ritardi dei controlli macro e dummy Covid (comuni a tutte le specificazioni)
-. local xctrl ""
-
-. foreach v of global lp_controls {
-  2.         forv l = 1/$lp_lags {
-  3.                 local xctrl "`xctrl' L`l'_`v'"
-  4.         }
-  5. }
-
+. * Dummy Covid (in tutte le specificazioni tranne pre)
 . local cv ""
 
 . if $covid_dum == 1 local cv "dcovid"
@@ -165,44 +160,52 @@ Panel variable: geocode (unbalanced)
   4.                 forv l = 1/$lp_lags {
   5.                         local ctrl "`ctrl' L`l'_`y' L`l'_`s'"
   6.                 }
-  7.                 local ctrl "`ctrl' `xctrl'"
-  8.                 foreach vr in base seas pre {
-  9.                         local xr "`cv'"
- 10.                         if "`vr'" == "seas" local xr "`cv' q2 q3 q4"
- 11.                         if "`vr'" == "pre"  local xr ""
- 12.                         forv h = 0/$hmax {
- 13.                                 local xc ""
- 14.                                 if "`vr'" == "pre" local xc "& timeq + `h' <= tq(2019q4)"
- 15.                                 cap drop lhs smp
- 16.                                 qui gen lhs = F`h'.`y'
- 17.                                 qui gen byte smp = inpanel `xc'
- 18.                                 markout smp lhs `s' `ctrl' `xr' wP
- 19.                                 qui su timeq if smp
- 20.                                 local t0 = r(min)
- 21.                                 local t1 = r(max)
- 22.                                 cap xtscc lhs `s' `ctrl' `xr' if smp [aw=wP], fe lag(`=`h'+1')
- 23.                                 if _rc {
- 24.                                         di as txt "Salto: PANEL `vr' `s' -> `y', h=`h' (rc=" _rc ")"
- 25.                                         continue
- 26.                                 }
- 27.                                 post `pf' ("panel") ("PANEL") ("`vr'") ("`s'") ("`y'") (`h') (_b[`s']) (_se[`s']) (e(N)) (`t0') (`t1')
- 28.                         }
- 29.                 }
- 30.                 di as txt "Panel LP: `s' -> `y' fatto"
- 31.         }
- 32. }
+  7.                 foreach v of global lp_controls {
+  8.                         * dur: il livello ur è collineare con i ritardi di dur
+.                         if "`y'" == "dur" & "`v'" == "ur" continue
+  9.                         forv l = 1/$lp_lags {
+ 10.                                 local ctrl "`ctrl' L`l'_`v'"
+ 11.                         }
+ 12.                 }
+ 13.                 foreach vr in base pre {
+ 14.                         local xr "`cv'"
+ 15.                         if "`vr'" == "pre"  local xr ""
+ 16.                         forv h = 0/$hmax {
+ 17.                                 local xc ""
+ 18.                                 if "`vr'" == "pre" local xc "& timeq + `h' <= tq(2019q4)"
+ 19.                                 cap drop lhs smp
+ 20.                                 qui gen lhs = F`h'.`y'
+ 21.                                 qui gen byte smp = inpanel `xc'
+ 22.                                 markout smp lhs `s' `ctrl' `xr' wP
+ 23.                                 qui su timeq if smp
+ 24.                                 local t0 = r(min)
+ 25.                                 local t1 = r(max)
+ 26.                                 cap xtscc lhs `s' `ctrl' `xr' if smp [aw=wP], fe lag(`=`h'+1')
+ 27.                                 if _rc {
+ 28.                                         di as txt "Salto: PANEL `vr' `s' -> `y', h=`h' (rc=" _rc ")"
+ 29.                                         continue
+ 30.                                 }
+ 31.                                 post `pf' ("panel") ("PANEL") ("`vr'") ("`s'") ("`y'") (`h') (_b[`s']) (_se[`s']) (e(N)) (`t0') (`t1')
+ 32.                         }
+ 33.                 }
+ 34.                 di as txt "Panel LP: `s' -> `y' fatto"
+ 35.         }
+ 36. }
 Panel LP: OilSpotUSDBarrel -> contr fatto
 Panel LP: OilSpotUSDBarrel -> hicp fatto
 Panel LP: OilSpotUSDBarrel -> wageH fatto
-Panel LP: OilSpotUSDBarrel -> compH fatto
+Panel LP: OilSpotUSDBarrel -> occH fatto
+Panel LP: OilSpotUSDBarrel -> dur fatto
 Panel LP: TTFSpotEURMWH -> contr fatto
 Panel LP: TTFSpotEURMWH -> hicp fatto
 Panel LP: TTFSpotEURMWH -> wageH fatto
-Panel LP: TTFSpotEURMWH -> compH fatto
+Panel LP: TTFSpotEURMWH -> occH fatto
+Panel LP: TTFSpotEURMWH -> dur fatto
 Panel LP: ELEEURMWH -> contr fatto
 Panel LP: ELEEURMWH -> hicp fatto
 Panel LP: ELEEURMWH -> wageH fatto
-Panel LP: ELEEURMWH -> compH fatto
+Panel LP: ELEEURMWH -> occH fatto
+Panel LP: ELEEURMWH -> dur fatto
 
 . 
 . *******************************************************************************
@@ -219,34 +222,39 @@ Panel LP: ELEEURMWH -> compH fatto
   8.                         forv l = 1/$lp_lags {
   9.                                 local ctrl "`ctrl' L`l'_`y' L`l'_`s'"
  10.                         }
- 11.                         local ctrl "`ctrl' `xctrl'"
- 12.                         foreach vr in base seas pre {
- 13.                                 local xr "`cv'"
- 14.                                 if "`vr'" == "seas" local xr "`cv' q2 q3 q4"
- 15.                                 if "`vr'" == "pre"  local xr ""
- 16.                                 forv h = 0/$hmax {
- 17.                                         local xc ""
- 18.                                         if "`vr'" == "pre" local xc "& timeq + `h' <= tq(2019q4)"
- 19.                                         cap drop lhs smp
- 20.                                         qui gen lhs = F`h'.`y'
- 21.                                         qui gen byte smp = 1 `xc'
- 22.                                         markout smp lhs `s' `ctrl' `xr'
- 23.                                         qui su timeq if smp
- 24.                                         local t0 = r(min)
- 25.                                         local t1 = r(max)
- 26.                                         * ELEEURMWH non esiste per EA e BE: la stima fallisce e si salta
+ 11.                         foreach v of global lp_controls {
+ 12.                                 * dur: il livello ur è collineare con i ritardi di dur
+.                                 if "`y'" == "dur" & "`v'" == "ur" continue
+ 13.                                 forv l = 1/$lp_lags {
+ 14.                                         local ctrl "`ctrl' L`l'_`v'"
+ 15.                                 }
+ 16.                         }
+ 17.                         foreach vr in base pre {
+ 18.                                 local xr "`cv'"
+ 19.                                 if "`vr'" == "pre"  local xr ""
+ 20.                                 forv h = 0/$hmax {
+ 21.                                         local xc ""
+ 22.                                         if "`vr'" == "pre" local xc "& timeq + `h' <= tq(2019q4)"
+ 23.                                         cap drop lhs smp
+ 24.                                         qui gen lhs = F`h'.`y'
+ 25.                                         qui gen byte smp = 1 `xc'
+ 26.                                         markout smp lhs `s' `ctrl' `xr'
+ 27.                                         qui su timeq if smp
+ 28.                                         local t0 = r(min)
+ 29.                                         local t1 = r(max)
+ 30.                                         * ELEEURMWH non esiste per EA e BE: la stima fallisce e si salta
 .                                         cap newey lhs `s' `ctrl' `xr' if smp, lag(`=`h'+1') force
- 27.                                         if _rc {
- 28.                                                 di as txt "Salto: `c' `vr' `s' -> `y', h=`h' (rc=" _rc ")"
- 29.                                                 continue
- 30.                                         }
- 31.                                         post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (_b[`s']) (_se[`s']) (e(N)) (`t0') (`t1')
- 32.                                 }
- 33.                         }
- 34.                 }
- 35.         }
- 36.         restore
- 37. }
+ 31.                                         if _rc {
+ 32.                                                 di as txt "Salto: `c' `vr' `s' -> `y', h=`h' (rc=" _rc ")"
+ 33.                                                 continue
+ 34.                                         }
+ 35.                                         post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (_b[`s']) (_se[`s']) (e(N)) (`t0') (`t1')
+ 36.                                 }
+ 37.                         }
+ 38.                 }
+ 39.         }
+ 40.         restore
+ 41. }
 (1,005 observations deleted)
 
 Time variable: timeq, 1991q1 to 2026q3
@@ -284,19 +292,6 @@ Salto: BE base ELEEURMWH -> contr, h=9 (rc=2000)
 Salto: BE base ELEEURMWH -> contr, h=10 (rc=2000)
 Salto: BE base ELEEURMWH -> contr, h=11 (rc=2000)
 Salto: BE base ELEEURMWH -> contr, h=12 (rc=2000)
-Salto: BE seas ELEEURMWH -> contr, h=0 (rc=2000)
-Salto: BE seas ELEEURMWH -> contr, h=1 (rc=2000)
-Salto: BE seas ELEEURMWH -> contr, h=2 (rc=2000)
-Salto: BE seas ELEEURMWH -> contr, h=3 (rc=2000)
-Salto: BE seas ELEEURMWH -> contr, h=4 (rc=2000)
-Salto: BE seas ELEEURMWH -> contr, h=5 (rc=2000)
-Salto: BE seas ELEEURMWH -> contr, h=6 (rc=2000)
-Salto: BE seas ELEEURMWH -> contr, h=7 (rc=2000)
-Salto: BE seas ELEEURMWH -> contr, h=8 (rc=2000)
-Salto: BE seas ELEEURMWH -> contr, h=9 (rc=2000)
-Salto: BE seas ELEEURMWH -> contr, h=10 (rc=2000)
-Salto: BE seas ELEEURMWH -> contr, h=11 (rc=2000)
-Salto: BE seas ELEEURMWH -> contr, h=12 (rc=2000)
 Salto: BE pre ELEEURMWH -> contr, h=0 (rc=2000)
 Salto: BE pre ELEEURMWH -> contr, h=1 (rc=2000)
 Salto: BE pre ELEEURMWH -> contr, h=2 (rc=2000)
@@ -323,19 +318,6 @@ Salto: BE base ELEEURMWH -> hicp, h=9 (rc=2000)
 Salto: BE base ELEEURMWH -> hicp, h=10 (rc=2000)
 Salto: BE base ELEEURMWH -> hicp, h=11 (rc=2000)
 Salto: BE base ELEEURMWH -> hicp, h=12 (rc=2000)
-Salto: BE seas ELEEURMWH -> hicp, h=0 (rc=2000)
-Salto: BE seas ELEEURMWH -> hicp, h=1 (rc=2000)
-Salto: BE seas ELEEURMWH -> hicp, h=2 (rc=2000)
-Salto: BE seas ELEEURMWH -> hicp, h=3 (rc=2000)
-Salto: BE seas ELEEURMWH -> hicp, h=4 (rc=2000)
-Salto: BE seas ELEEURMWH -> hicp, h=5 (rc=2000)
-Salto: BE seas ELEEURMWH -> hicp, h=6 (rc=2000)
-Salto: BE seas ELEEURMWH -> hicp, h=7 (rc=2000)
-Salto: BE seas ELEEURMWH -> hicp, h=8 (rc=2000)
-Salto: BE seas ELEEURMWH -> hicp, h=9 (rc=2000)
-Salto: BE seas ELEEURMWH -> hicp, h=10 (rc=2000)
-Salto: BE seas ELEEURMWH -> hicp, h=11 (rc=2000)
-Salto: BE seas ELEEURMWH -> hicp, h=12 (rc=2000)
 Salto: BE pre ELEEURMWH -> hicp, h=0 (rc=2000)
 Salto: BE pre ELEEURMWH -> hicp, h=1 (rc=2000)
 Salto: BE pre ELEEURMWH -> hicp, h=2 (rc=2000)
@@ -362,19 +344,6 @@ Salto: BE base ELEEURMWH -> wageH, h=9 (rc=2000)
 Salto: BE base ELEEURMWH -> wageH, h=10 (rc=2000)
 Salto: BE base ELEEURMWH -> wageH, h=11 (rc=2000)
 Salto: BE base ELEEURMWH -> wageH, h=12 (rc=2000)
-Salto: BE seas ELEEURMWH -> wageH, h=0 (rc=2000)
-Salto: BE seas ELEEURMWH -> wageH, h=1 (rc=2000)
-Salto: BE seas ELEEURMWH -> wageH, h=2 (rc=2000)
-Salto: BE seas ELEEURMWH -> wageH, h=3 (rc=2000)
-Salto: BE seas ELEEURMWH -> wageH, h=4 (rc=2000)
-Salto: BE seas ELEEURMWH -> wageH, h=5 (rc=2000)
-Salto: BE seas ELEEURMWH -> wageH, h=6 (rc=2000)
-Salto: BE seas ELEEURMWH -> wageH, h=7 (rc=2000)
-Salto: BE seas ELEEURMWH -> wageH, h=8 (rc=2000)
-Salto: BE seas ELEEURMWH -> wageH, h=9 (rc=2000)
-Salto: BE seas ELEEURMWH -> wageH, h=10 (rc=2000)
-Salto: BE seas ELEEURMWH -> wageH, h=11 (rc=2000)
-Salto: BE seas ELEEURMWH -> wageH, h=12 (rc=2000)
 Salto: BE pre ELEEURMWH -> wageH, h=0 (rc=2000)
 Salto: BE pre ELEEURMWH -> wageH, h=1 (rc=2000)
 Salto: BE pre ELEEURMWH -> wageH, h=2 (rc=2000)
@@ -388,45 +357,58 @@ Salto: BE pre ELEEURMWH -> wageH, h=9 (rc=2000)
 Salto: BE pre ELEEURMWH -> wageH, h=10 (rc=2000)
 Salto: BE pre ELEEURMWH -> wageH, h=11 (rc=2000)
 Salto: BE pre ELEEURMWH -> wageH, h=12 (rc=2000)
-Salto: BE base ELEEURMWH -> compH, h=0 (rc=2000)
-Salto: BE base ELEEURMWH -> compH, h=1 (rc=2000)
-Salto: BE base ELEEURMWH -> compH, h=2 (rc=2000)
-Salto: BE base ELEEURMWH -> compH, h=3 (rc=2000)
-Salto: BE base ELEEURMWH -> compH, h=4 (rc=2000)
-Salto: BE base ELEEURMWH -> compH, h=5 (rc=2000)
-Salto: BE base ELEEURMWH -> compH, h=6 (rc=2000)
-Salto: BE base ELEEURMWH -> compH, h=7 (rc=2000)
-Salto: BE base ELEEURMWH -> compH, h=8 (rc=2000)
-Salto: BE base ELEEURMWH -> compH, h=9 (rc=2000)
-Salto: BE base ELEEURMWH -> compH, h=10 (rc=2000)
-Salto: BE base ELEEURMWH -> compH, h=11 (rc=2000)
-Salto: BE base ELEEURMWH -> compH, h=12 (rc=2000)
-Salto: BE seas ELEEURMWH -> compH, h=0 (rc=2000)
-Salto: BE seas ELEEURMWH -> compH, h=1 (rc=2000)
-Salto: BE seas ELEEURMWH -> compH, h=2 (rc=2000)
-Salto: BE seas ELEEURMWH -> compH, h=3 (rc=2000)
-Salto: BE seas ELEEURMWH -> compH, h=4 (rc=2000)
-Salto: BE seas ELEEURMWH -> compH, h=5 (rc=2000)
-Salto: BE seas ELEEURMWH -> compH, h=6 (rc=2000)
-Salto: BE seas ELEEURMWH -> compH, h=7 (rc=2000)
-Salto: BE seas ELEEURMWH -> compH, h=8 (rc=2000)
-Salto: BE seas ELEEURMWH -> compH, h=9 (rc=2000)
-Salto: BE seas ELEEURMWH -> compH, h=10 (rc=2000)
-Salto: BE seas ELEEURMWH -> compH, h=11 (rc=2000)
-Salto: BE seas ELEEURMWH -> compH, h=12 (rc=2000)
-Salto: BE pre ELEEURMWH -> compH, h=0 (rc=2000)
-Salto: BE pre ELEEURMWH -> compH, h=1 (rc=2000)
-Salto: BE pre ELEEURMWH -> compH, h=2 (rc=2000)
-Salto: BE pre ELEEURMWH -> compH, h=3 (rc=2000)
-Salto: BE pre ELEEURMWH -> compH, h=4 (rc=2000)
-Salto: BE pre ELEEURMWH -> compH, h=5 (rc=2000)
-Salto: BE pre ELEEURMWH -> compH, h=6 (rc=2000)
-Salto: BE pre ELEEURMWH -> compH, h=7 (rc=2000)
-Salto: BE pre ELEEURMWH -> compH, h=8 (rc=2000)
-Salto: BE pre ELEEURMWH -> compH, h=9 (rc=2000)
-Salto: BE pre ELEEURMWH -> compH, h=10 (rc=2000)
-Salto: BE pre ELEEURMWH -> compH, h=11 (rc=2000)
-Salto: BE pre ELEEURMWH -> compH, h=12 (rc=2000)
+Salto: BE base ELEEURMWH -> occH, h=0 (rc=2000)
+Salto: BE base ELEEURMWH -> occH, h=1 (rc=2000)
+Salto: BE base ELEEURMWH -> occH, h=2 (rc=2000)
+Salto: BE base ELEEURMWH -> occH, h=3 (rc=2000)
+Salto: BE base ELEEURMWH -> occH, h=4 (rc=2000)
+Salto: BE base ELEEURMWH -> occH, h=5 (rc=2000)
+Salto: BE base ELEEURMWH -> occH, h=6 (rc=2000)
+Salto: BE base ELEEURMWH -> occH, h=7 (rc=2000)
+Salto: BE base ELEEURMWH -> occH, h=8 (rc=2000)
+Salto: BE base ELEEURMWH -> occH, h=9 (rc=2000)
+Salto: BE base ELEEURMWH -> occH, h=10 (rc=2000)
+Salto: BE base ELEEURMWH -> occH, h=11 (rc=2000)
+Salto: BE base ELEEURMWH -> occH, h=12 (rc=2000)
+Salto: BE pre ELEEURMWH -> occH, h=0 (rc=2000)
+Salto: BE pre ELEEURMWH -> occH, h=1 (rc=2000)
+Salto: BE pre ELEEURMWH -> occH, h=2 (rc=2000)
+Salto: BE pre ELEEURMWH -> occH, h=3 (rc=2000)
+Salto: BE pre ELEEURMWH -> occH, h=4 (rc=2000)
+Salto: BE pre ELEEURMWH -> occH, h=5 (rc=2000)
+Salto: BE pre ELEEURMWH -> occH, h=6 (rc=2000)
+Salto: BE pre ELEEURMWH -> occH, h=7 (rc=2000)
+Salto: BE pre ELEEURMWH -> occH, h=8 (rc=2000)
+Salto: BE pre ELEEURMWH -> occH, h=9 (rc=2000)
+Salto: BE pre ELEEURMWH -> occH, h=10 (rc=2000)
+Salto: BE pre ELEEURMWH -> occH, h=11 (rc=2000)
+Salto: BE pre ELEEURMWH -> occH, h=12 (rc=2000)
+Salto: BE base ELEEURMWH -> dur, h=0 (rc=2000)
+Salto: BE base ELEEURMWH -> dur, h=1 (rc=2000)
+Salto: BE base ELEEURMWH -> dur, h=2 (rc=2000)
+Salto: BE base ELEEURMWH -> dur, h=3 (rc=2000)
+Salto: BE base ELEEURMWH -> dur, h=4 (rc=2000)
+Salto: BE base ELEEURMWH -> dur, h=5 (rc=2000)
+Salto: BE base ELEEURMWH -> dur, h=6 (rc=2000)
+Salto: BE base ELEEURMWH -> dur, h=7 (rc=2000)
+Salto: BE base ELEEURMWH -> dur, h=8 (rc=2000)
+Salto: BE base ELEEURMWH -> dur, h=9 (rc=2000)
+Salto: BE base ELEEURMWH -> dur, h=10 (rc=2000)
+Salto: BE base ELEEURMWH -> dur, h=11 (rc=2000)
+Salto: BE base ELEEURMWH -> dur, h=12 (rc=2000)
+Salto: BE pre ELEEURMWH -> dur, h=0 (rc=2000)
+Salto: BE pre ELEEURMWH -> dur, h=1 (rc=2000)
+Salto: BE pre ELEEURMWH -> dur, h=2 (rc=2000)
+Salto: BE pre ELEEURMWH -> dur, h=3 (rc=2000)
+Salto: BE pre ELEEURMWH -> dur, h=4 (rc=2000)
+Salto: BE pre ELEEURMWH -> dur, h=5 (rc=2000)
+Salto: BE pre ELEEURMWH -> dur, h=6 (rc=2000)
+Salto: BE pre ELEEURMWH -> dur, h=7 (rc=2000)
+Salto: BE pre ELEEURMWH -> dur, h=8 (rc=2000)
+Salto: BE pre ELEEURMWH -> dur, h=9 (rc=2000)
+Salto: BE pre ELEEURMWH -> dur, h=10 (rc=2000)
+Salto: BE pre ELEEURMWH -> dur, h=11 (rc=2000)
+Salto: BE pre ELEEURMWH -> dur, h=12 (rc=2000)
 (1,005 observations deleted)
 
 Time variable: timeq, 1991q1 to 2026q3
@@ -444,19 +426,6 @@ Salto: EA base ELEEURMWH -> contr, h=9 (rc=2000)
 Salto: EA base ELEEURMWH -> contr, h=10 (rc=2000)
 Salto: EA base ELEEURMWH -> contr, h=11 (rc=2000)
 Salto: EA base ELEEURMWH -> contr, h=12 (rc=2000)
-Salto: EA seas ELEEURMWH -> contr, h=0 (rc=2000)
-Salto: EA seas ELEEURMWH -> contr, h=1 (rc=2000)
-Salto: EA seas ELEEURMWH -> contr, h=2 (rc=2000)
-Salto: EA seas ELEEURMWH -> contr, h=3 (rc=2000)
-Salto: EA seas ELEEURMWH -> contr, h=4 (rc=2000)
-Salto: EA seas ELEEURMWH -> contr, h=5 (rc=2000)
-Salto: EA seas ELEEURMWH -> contr, h=6 (rc=2000)
-Salto: EA seas ELEEURMWH -> contr, h=7 (rc=2000)
-Salto: EA seas ELEEURMWH -> contr, h=8 (rc=2000)
-Salto: EA seas ELEEURMWH -> contr, h=9 (rc=2000)
-Salto: EA seas ELEEURMWH -> contr, h=10 (rc=2000)
-Salto: EA seas ELEEURMWH -> contr, h=11 (rc=2000)
-Salto: EA seas ELEEURMWH -> contr, h=12 (rc=2000)
 Salto: EA pre ELEEURMWH -> contr, h=0 (rc=2000)
 Salto: EA pre ELEEURMWH -> contr, h=1 (rc=2000)
 Salto: EA pre ELEEURMWH -> contr, h=2 (rc=2000)
@@ -483,19 +452,6 @@ Salto: EA base ELEEURMWH -> hicp, h=9 (rc=2000)
 Salto: EA base ELEEURMWH -> hicp, h=10 (rc=2000)
 Salto: EA base ELEEURMWH -> hicp, h=11 (rc=2000)
 Salto: EA base ELEEURMWH -> hicp, h=12 (rc=2000)
-Salto: EA seas ELEEURMWH -> hicp, h=0 (rc=2000)
-Salto: EA seas ELEEURMWH -> hicp, h=1 (rc=2000)
-Salto: EA seas ELEEURMWH -> hicp, h=2 (rc=2000)
-Salto: EA seas ELEEURMWH -> hicp, h=3 (rc=2000)
-Salto: EA seas ELEEURMWH -> hicp, h=4 (rc=2000)
-Salto: EA seas ELEEURMWH -> hicp, h=5 (rc=2000)
-Salto: EA seas ELEEURMWH -> hicp, h=6 (rc=2000)
-Salto: EA seas ELEEURMWH -> hicp, h=7 (rc=2000)
-Salto: EA seas ELEEURMWH -> hicp, h=8 (rc=2000)
-Salto: EA seas ELEEURMWH -> hicp, h=9 (rc=2000)
-Salto: EA seas ELEEURMWH -> hicp, h=10 (rc=2000)
-Salto: EA seas ELEEURMWH -> hicp, h=11 (rc=2000)
-Salto: EA seas ELEEURMWH -> hicp, h=12 (rc=2000)
 Salto: EA pre ELEEURMWH -> hicp, h=0 (rc=2000)
 Salto: EA pre ELEEURMWH -> hicp, h=1 (rc=2000)
 Salto: EA pre ELEEURMWH -> hicp, h=2 (rc=2000)
@@ -522,19 +478,6 @@ Salto: EA base ELEEURMWH -> wageH, h=9 (rc=2000)
 Salto: EA base ELEEURMWH -> wageH, h=10 (rc=2000)
 Salto: EA base ELEEURMWH -> wageH, h=11 (rc=2000)
 Salto: EA base ELEEURMWH -> wageH, h=12 (rc=2000)
-Salto: EA seas ELEEURMWH -> wageH, h=0 (rc=2000)
-Salto: EA seas ELEEURMWH -> wageH, h=1 (rc=2000)
-Salto: EA seas ELEEURMWH -> wageH, h=2 (rc=2000)
-Salto: EA seas ELEEURMWH -> wageH, h=3 (rc=2000)
-Salto: EA seas ELEEURMWH -> wageH, h=4 (rc=2000)
-Salto: EA seas ELEEURMWH -> wageH, h=5 (rc=2000)
-Salto: EA seas ELEEURMWH -> wageH, h=6 (rc=2000)
-Salto: EA seas ELEEURMWH -> wageH, h=7 (rc=2000)
-Salto: EA seas ELEEURMWH -> wageH, h=8 (rc=2000)
-Salto: EA seas ELEEURMWH -> wageH, h=9 (rc=2000)
-Salto: EA seas ELEEURMWH -> wageH, h=10 (rc=2000)
-Salto: EA seas ELEEURMWH -> wageH, h=11 (rc=2000)
-Salto: EA seas ELEEURMWH -> wageH, h=12 (rc=2000)
 Salto: EA pre ELEEURMWH -> wageH, h=0 (rc=2000)
 Salto: EA pre ELEEURMWH -> wageH, h=1 (rc=2000)
 Salto: EA pre ELEEURMWH -> wageH, h=2 (rc=2000)
@@ -548,45 +491,58 @@ Salto: EA pre ELEEURMWH -> wageH, h=9 (rc=2000)
 Salto: EA pre ELEEURMWH -> wageH, h=10 (rc=2000)
 Salto: EA pre ELEEURMWH -> wageH, h=11 (rc=2000)
 Salto: EA pre ELEEURMWH -> wageH, h=12 (rc=2000)
-Salto: EA base ELEEURMWH -> compH, h=0 (rc=2000)
-Salto: EA base ELEEURMWH -> compH, h=1 (rc=2000)
-Salto: EA base ELEEURMWH -> compH, h=2 (rc=2000)
-Salto: EA base ELEEURMWH -> compH, h=3 (rc=2000)
-Salto: EA base ELEEURMWH -> compH, h=4 (rc=2000)
-Salto: EA base ELEEURMWH -> compH, h=5 (rc=2000)
-Salto: EA base ELEEURMWH -> compH, h=6 (rc=2000)
-Salto: EA base ELEEURMWH -> compH, h=7 (rc=2000)
-Salto: EA base ELEEURMWH -> compH, h=8 (rc=2000)
-Salto: EA base ELEEURMWH -> compH, h=9 (rc=2000)
-Salto: EA base ELEEURMWH -> compH, h=10 (rc=2000)
-Salto: EA base ELEEURMWH -> compH, h=11 (rc=2000)
-Salto: EA base ELEEURMWH -> compH, h=12 (rc=2000)
-Salto: EA seas ELEEURMWH -> compH, h=0 (rc=2000)
-Salto: EA seas ELEEURMWH -> compH, h=1 (rc=2000)
-Salto: EA seas ELEEURMWH -> compH, h=2 (rc=2000)
-Salto: EA seas ELEEURMWH -> compH, h=3 (rc=2000)
-Salto: EA seas ELEEURMWH -> compH, h=4 (rc=2000)
-Salto: EA seas ELEEURMWH -> compH, h=5 (rc=2000)
-Salto: EA seas ELEEURMWH -> compH, h=6 (rc=2000)
-Salto: EA seas ELEEURMWH -> compH, h=7 (rc=2000)
-Salto: EA seas ELEEURMWH -> compH, h=8 (rc=2000)
-Salto: EA seas ELEEURMWH -> compH, h=9 (rc=2000)
-Salto: EA seas ELEEURMWH -> compH, h=10 (rc=2000)
-Salto: EA seas ELEEURMWH -> compH, h=11 (rc=2000)
-Salto: EA seas ELEEURMWH -> compH, h=12 (rc=2000)
-Salto: EA pre ELEEURMWH -> compH, h=0 (rc=2000)
-Salto: EA pre ELEEURMWH -> compH, h=1 (rc=2000)
-Salto: EA pre ELEEURMWH -> compH, h=2 (rc=2000)
-Salto: EA pre ELEEURMWH -> compH, h=3 (rc=2000)
-Salto: EA pre ELEEURMWH -> compH, h=4 (rc=2000)
-Salto: EA pre ELEEURMWH -> compH, h=5 (rc=2000)
-Salto: EA pre ELEEURMWH -> compH, h=6 (rc=2000)
-Salto: EA pre ELEEURMWH -> compH, h=7 (rc=2000)
-Salto: EA pre ELEEURMWH -> compH, h=8 (rc=2000)
-Salto: EA pre ELEEURMWH -> compH, h=9 (rc=2000)
-Salto: EA pre ELEEURMWH -> compH, h=10 (rc=2000)
-Salto: EA pre ELEEURMWH -> compH, h=11 (rc=2000)
-Salto: EA pre ELEEURMWH -> compH, h=12 (rc=2000)
+Salto: EA base ELEEURMWH -> occH, h=0 (rc=2000)
+Salto: EA base ELEEURMWH -> occH, h=1 (rc=2000)
+Salto: EA base ELEEURMWH -> occH, h=2 (rc=2000)
+Salto: EA base ELEEURMWH -> occH, h=3 (rc=2000)
+Salto: EA base ELEEURMWH -> occH, h=4 (rc=2000)
+Salto: EA base ELEEURMWH -> occH, h=5 (rc=2000)
+Salto: EA base ELEEURMWH -> occH, h=6 (rc=2000)
+Salto: EA base ELEEURMWH -> occH, h=7 (rc=2000)
+Salto: EA base ELEEURMWH -> occH, h=8 (rc=2000)
+Salto: EA base ELEEURMWH -> occH, h=9 (rc=2000)
+Salto: EA base ELEEURMWH -> occH, h=10 (rc=2000)
+Salto: EA base ELEEURMWH -> occH, h=11 (rc=2000)
+Salto: EA base ELEEURMWH -> occH, h=12 (rc=2000)
+Salto: EA pre ELEEURMWH -> occH, h=0 (rc=2000)
+Salto: EA pre ELEEURMWH -> occH, h=1 (rc=2000)
+Salto: EA pre ELEEURMWH -> occH, h=2 (rc=2000)
+Salto: EA pre ELEEURMWH -> occH, h=3 (rc=2000)
+Salto: EA pre ELEEURMWH -> occH, h=4 (rc=2000)
+Salto: EA pre ELEEURMWH -> occH, h=5 (rc=2000)
+Salto: EA pre ELEEURMWH -> occH, h=6 (rc=2000)
+Salto: EA pre ELEEURMWH -> occH, h=7 (rc=2000)
+Salto: EA pre ELEEURMWH -> occH, h=8 (rc=2000)
+Salto: EA pre ELEEURMWH -> occH, h=9 (rc=2000)
+Salto: EA pre ELEEURMWH -> occH, h=10 (rc=2000)
+Salto: EA pre ELEEURMWH -> occH, h=11 (rc=2000)
+Salto: EA pre ELEEURMWH -> occH, h=12 (rc=2000)
+Salto: EA base ELEEURMWH -> dur, h=0 (rc=2000)
+Salto: EA base ELEEURMWH -> dur, h=1 (rc=2000)
+Salto: EA base ELEEURMWH -> dur, h=2 (rc=2000)
+Salto: EA base ELEEURMWH -> dur, h=3 (rc=2000)
+Salto: EA base ELEEURMWH -> dur, h=4 (rc=2000)
+Salto: EA base ELEEURMWH -> dur, h=5 (rc=2000)
+Salto: EA base ELEEURMWH -> dur, h=6 (rc=2000)
+Salto: EA base ELEEURMWH -> dur, h=7 (rc=2000)
+Salto: EA base ELEEURMWH -> dur, h=8 (rc=2000)
+Salto: EA base ELEEURMWH -> dur, h=9 (rc=2000)
+Salto: EA base ELEEURMWH -> dur, h=10 (rc=2000)
+Salto: EA base ELEEURMWH -> dur, h=11 (rc=2000)
+Salto: EA base ELEEURMWH -> dur, h=12 (rc=2000)
+Salto: EA pre ELEEURMWH -> dur, h=0 (rc=2000)
+Salto: EA pre ELEEURMWH -> dur, h=1 (rc=2000)
+Salto: EA pre ELEEURMWH -> dur, h=2 (rc=2000)
+Salto: EA pre ELEEURMWH -> dur, h=3 (rc=2000)
+Salto: EA pre ELEEURMWH -> dur, h=4 (rc=2000)
+Salto: EA pre ELEEURMWH -> dur, h=5 (rc=2000)
+Salto: EA pre ELEEURMWH -> dur, h=6 (rc=2000)
+Salto: EA pre ELEEURMWH -> dur, h=7 (rc=2000)
+Salto: EA pre ELEEURMWH -> dur, h=8 (rc=2000)
+Salto: EA pre ELEEURMWH -> dur, h=9 (rc=2000)
+Salto: EA pre ELEEURMWH -> dur, h=10 (rc=2000)
+Salto: EA pre ELEEURMWH -> dur, h=11 (rc=2000)
+Salto: EA pre ELEEURMWH -> dur, h=12 (rc=2000)
 
 . 
 . postclose `pf'
@@ -602,10 +558,6 @@ Salto: EA pre ELEEURMWH -> compH, h=12 (rc=2000)
 
 . gen hi90 = b + invnormal(0.95)*se
 
-. gen lo68 = b - se
-
-. gen hi68 = b + se
-
 . save ${out}/lp_energy_ea.dta, replace
 file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_ea.dta saved
 
@@ -613,15 +565,11 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_ea.dta 
 file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_ea.xlsx saved
 
 . 
-. local lab_base "Base"
-
-. local lab_seas "Eff. fissi trimestrali"
+. local lab_base "Baseline"
 
 . local lab_pre  "Pre-Covid"
 
 . local sty_base "lcolor(navy) lwidth(medthick)"
-
-. local sty_seas "lcolor(maroon) lwidth(medthick) lpattern(longdash_dot)"
 
 . local sty_pre  "lcolor(forest_green) lwidth(medthick) lpattern(dash)"
 
@@ -645,10 +593,9 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_ea.xlsx
  12.                 file write `fh' "`p0'--`p1'"
  13.                 file close `fh'
  14.                 twoway (rarea lo90 hi90 h `cond', color(gs13)) ///
->                         (rarea lo68 hi68 h `cond', color(gs10)) ///
 >                         (line b h `cond', `sty_base'), ///
 >                         yline(0, lcolor(black)) legend(off) ///
->                         xtitle("Trimestri") ytitle("pp") xlabel(0(2)$hmax) ///
+>                         xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
 >                         graphregion(color(white)) name(gmain, replace)
  15.                 graph export ${gph}/lp_main_`s'_`y'.png, replace
  16. 
@@ -664,22 +611,21 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_ea.xlsx
  24.                         qui su tmax `cond' & h == 0
  25.                         local p1 : di %tq r(max)
  26.                         twoway (rarea lo90 hi90 h `cond', color(gs13)) ///
->                                 (rarea lo68 hi68 h `cond', color(gs10)) ///
 >                                 (line b h `cond', `sty_base'), ///
 >                                 yline(0, lcolor(black)) legend(off) subtitle("`g' (`p0'-`p1')") ///
->                                 xtitle("Trimestri") ytitle("pp") xlabel(0(2)$hmax) ///
+>                                 xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
 >                                 graphregion(color(white)) name(g_`g', replace) nodraw
  27.                         local gl "`gl' g_`g'"
  28.                 }
  29.                 graph combine `gl', ycommon graphregion(color(white)) name(comb, replace)
  30.                 graph export ${gph}/lp_app_`s'_`y'.png, replace
  31. 
-.                 * --- Robustezza: effetti fissi trimestrali e pre-Covid per l'unità del grafico principale --- *
+.                 * --- Robustezza: pre-Covid per l'unità del grafico principale --- *
 .                 local rc `"if geo == "`mg'" & shock == "`s'" & outcome == "`y'""'
  32.                 local pl `"(rarea lo90 hi90 h `rc' & variant == "base", color(gs13))"'
  33.                 local lg ""
  34.                 local k = 1
- 35.                 foreach vr in base seas pre {
+ 35.                 foreach vr in base pre {
  36.                         qui count `rc' & variant == "`vr'"
  37.                         if r(N) == 0 continue
  38.                         local ++k
@@ -687,7 +633,7 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_ea.xlsx
  40.                         local lg `"`lg' `k' "`lab_`vr''""'
  41.                 }
  42.                 twoway `pl', yline(0, lcolor(black)) legend(order(`lg') rows(1) position(6)) ///
->                         xtitle("Trimestri") ytitle("pp") xlabel(0(2)$hmax) ///
+>                         xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
 >                         graphregion(color(white)) name(grob, replace)
  43.                 graph export ${gph}/lp_rob_`s'_`y'.png, replace
  44.         }
@@ -701,9 +647,20 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_OilSpotUSD
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_OilSpotUSDBarrel_wageH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_OilSpotUSDBarrel_wageH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_OilSpotUSDBarrel_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_OilSpotUSDBarrel_compH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_OilSpotUSDBarrel_compH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_OilSpotUSDBarrel_compH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_main_OilSpotUSDBarrel_occH.tex not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_OilSpotUSDBarrel_occH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_OilSpotUSDBarrel_occH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_OilSpotUSDBarrel_occH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_OilSpotUSDBarrel_occH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_OilSpotUSDBarrel_occH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_OilSpotUSDBarrel_occH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_main_OilSpotUSDBarrel_dur.tex not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_OilSpotUSDBarrel_dur.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_OilSpotUSDBarrel_dur.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_OilSpotUSDBarrel_dur.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_OilSpotUSDBarrel_dur.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_OilSpotUSDBarrel_dur.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_OilSpotUSDBarrel_dur.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_TTFSpotEURMWH_contr.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_TTFSpotEURMWH_contr.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_TTFSpotEURMWH_contr.png saved as PNG format
@@ -713,9 +670,20 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_TTFSpotEUR
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_TTFSpotEURMWH_wageH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_TTFSpotEURMWH_wageH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_TTFSpotEURMWH_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_TTFSpotEURMWH_compH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_TTFSpotEURMWH_compH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_TTFSpotEURMWH_compH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_main_TTFSpotEURMWH_occH.tex not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_TTFSpotEURMWH_occH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_TTFSpotEURMWH_occH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_TTFSpotEURMWH_occH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_TTFSpotEURMWH_occH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_TTFSpotEURMWH_occH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_TTFSpotEURMWH_occH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_main_TTFSpotEURMWH_dur.tex not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_TTFSpotEURMWH_dur.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_TTFSpotEURMWH_dur.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_TTFSpotEURMWH_dur.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_TTFSpotEURMWH_dur.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_TTFSpotEURMWH_dur.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_TTFSpotEURMWH_dur.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_ELEEURMWH_contr.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_ELEEURMWH_contr.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_ELEEURMWH_contr.png saved as PNG format
@@ -725,14 +693,123 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_ELEEURMWH_
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_ELEEURMWH_wageH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_ELEEURMWH_wageH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_ELEEURMWH_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_ELEEURMWH_compH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_ELEEURMWH_compH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_ELEEURMWH_compH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_main_ELEEURMWH_occH.tex not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_ELEEURMWH_occH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_ELEEURMWH_occH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_ELEEURMWH_occH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_ELEEURMWH_occH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_ELEEURMWH_occH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_ELEEURMWH_occH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_main_ELEEURMWH_dur.tex not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_ELEEURMWH_dur.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_ELEEURMWH_dur.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_ELEEURMWH_dur.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_ELEEURMWH_dur.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_ELEEURMWH_dur.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_ELEEURMWH_dur.png saved as PNG format
+
+. 
+. * --- Petrolio (blu) e gas (rosso) nello stesso grafico, bande al 90% --- *
+. local o "OilSpotUSDBarrel"
+
+. local g "TTFSpotEURMWH"
+
+. local others : subinstr global countries "EA" "", word
+
+. foreach y of global lp_outcomes {
+  2.         local gl ""
+  3.         local lco ""
+  4.         foreach c in EA `others' {
+  5.                 local co `"if geo == "`c'" & variant == "base" & shock == "`o'" & outcome == "`y'""'
+  6.                 local cg `"if geo == "`c'" & variant == "base" & shock == "`g'" & outcome == "`y'""'
+  7.                 * Serve la stima per entrambi gli shock
+.                 qui count `co'
+  8.                 local no = r(N)
+  9.                 qui count `cg'
+ 10.                 if `no' == 0 | r(N) == 0 continue
+ 11.                 * Condizioni per il riquadro della legenda (primo paese disponibile, solo h = 0)
+.                 if "`lco'" == "" {
+ 12.                         local lco `"`co' & h == 0"'
+ 13.                         local lcg `"`cg' & h == 0"'
+ 14.                 }
+ 15.                 qui su tmin `co' & h == 0
+ 16.                 local po0 : di %tq r(min)
+ 17.                 qui su tmax `co' & h == 0
+ 18.                 local po1 : di %tq r(max)
+ 19.                 qui su tmin `cg' & h == 0
+ 20.                 local pg0 : di %tq r(min)
+ 21.                 qui su tmax `cg' & h == 0
+ 22.                 local pg1 : di %tq r(max)
+ 23.                 local pl `"(rarea lo90 hi90 h `co', color(navy%25) lwidth(none)) (rarea lo90 hi90 h `cg', color(cranberry%25) lwidth(none)) (line b h `co', lcolor(navy) lwidth(
+> medthick)) (line b h `cg', lcolor(cranberry) lwidth(medthick))"'
+ 24.                 * Grafico EA a sé stante, con legenda
+.                 if "`c'" == "EA" {
+ 25.                         file open `fh' using "${gph}/smp_lp_og_EA_`y'.tex", write replace
+ 26.                         file write `fh' "oil `po0'--`po1'; gas `pg0'--`pg1'"
+ 27.                         file close `fh'
+ 28.                         twoway `pl', yline(0, lcolor(black)) legend(order(3 "Oil price" 4 "Gas price") rows(1) position(6)) ///
+>                                 xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
+>                                 graphregion(color(white)) name(gog, replace)
+ 29.                         graph export ${gph}/lp_og_EA_`y'.png, replace
+ 30.                 }
+ 31.                 twoway `pl', yline(0, lcolor(black)) legend(off) ///
+>                         subtitle("`c'" "Oil `po0'-`po1'; gas `pg0'-`pg1'", size(medsmall)) ///
+>                         xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
+>                         graphregion(color(white)) name(g_`c', replace) nodraw
+ 32.                 local gl "`gl' g_`c'"
+ 33.         }
+ 34.         * Riquadro con la sola legenda: un solo punto per serie, quindi le linee non si vedono
+.         twoway (line b h `lco', lcolor(navy) lwidth(medthick)) (line b h `lcg', lcolor(cranberry) lwidth(medthick)), ///
+>                 legend(order(1 "Oil price" 2 "Gas price") cols(1) ring(0) position(0) size(large) region(lstyle(none))) ///
+>                 xscale(off) yscale(off) xlabel(none) ylabel(none) xtitle("") ytitle("") ///
+>                 plotregion(style(none)) graphregion(color(white)) name(g_leg, replace) nodraw
+ 35.         local gl "`gl' g_leg"
+ 36.         graph combine `gl', ycommon graphregion(color(white)) name(comb, replace)
+ 37.         graph export ${gph}/lp_og_ctry_`y'.png, replace
+ 38.         * Versione quadrata (nota e slide)
+.         graph combine `gl', ycommon cols(3) xsize(6) ysize(6) graphregion(color(white)) name(combsq, replace)
+ 39.         graph export ${gph}/lp_og_ctry_`y'_sq.png, replace
+ 40. }
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_og_EA_contr.tex not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_contr.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_contr.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_contr.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_contr.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_contr_sq.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_contr_sq.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_og_EA_hicp.tex not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_hicp.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_hicp.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_hicp.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_hicp.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_hicp_sq.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_hicp_sq.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_og_EA_wageH.tex not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_wageH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_wageH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_wageH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_wageH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_wageH_sq.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_wageH_sq.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_og_EA_occH.tex not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_occH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_occH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_occH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_occH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_occH_sq.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_occH_sq.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_og_EA_dur.tex not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_dur.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_dur.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_dur.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_dur.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_dur_sq.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_dur_sq.png saved as PNG format
 
 . 
 . log close
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lp_energy_ea.txt
   log type:  text
- closed on:   6 Oct 2026, 15:53:53
+ closed on:   6 Oct 2026, 21:10:05
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
