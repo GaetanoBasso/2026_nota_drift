@@ -7,35 +7,44 @@ log using ${log}/log_an_lpiv_energy_ea.txt, t replace
 
 *******************************************************************************
 * Local Projections con variabili strumentali (LP-IV; Stock e Watson, 2018) degli
-* shock ai prezzi di petrolio e gas
+* shock ai prezzi di petrolio e gas, su serie storiche (EA e singoli paesi)
 *
-* Stessa specificazione delle LP OLS (an_lp_energy_ea.do), ma la variazione tendenziale
-* del prezzo s(i,t) è strumentata con uno shock esterno z(t), comune ai paesi:
+* Stessa specificazione delle LP OLS su serie storiche (an_lp_energy_ea.do), ma la
+* variazione tendenziale del prezzo s(t) è strumentata con shock esterni mensili, comuni ai paesi:
 *   petrolio (OilSpotUSDBarrel): shock di offerta di petrolio (news) di Mori e Peersman (oilMP)
 *   gas (TTFSpotEURMWH)        : shock di offerta di gas di Alessandri e Gazzani, 2025 (gasAG)
 * (coppie prezzo-strumento in $lp_ivshocks / $lp_ivinstr; nessuno strumento per l'elettricità)
-*   1° stadio: s(i,t)   = c(i,h) + g(h)*z(t)      + controlli + u(i,t)
-*   2° stadio: y(i,t+h) = a(i,h) + b(h)*s_hat(i,t) + controlli + e(i,t+h)
+*
+* Frequenza mista: gli strumenti sono mensili, le LP trimestrali. Nella specificazione di base
+* i 3 shock mensili del trimestre t (z1, z2, z3: 1°, 2° e 3° mese) sono strumenti separati
+* (U-MIDAS, Foroni, Marcellino e Schumacher, 2015): il 1° stadio stima quanto pesa ciascun
+* mese sul prezzo medio del trimestre (uno shock a inizio trimestre incide su tutti e 3 i
+* mesi della media, uno a fine trimestre su uno solo), condizionando su tutti i controlli
+* trimestrali, inclusi i ritardi di y
+*   1° stadio: s(t)   = c(h) + g1(h)*z1(t) + g2(h)*z2(t) + g3(h)*z3(t) + controlli + u(t)
+*   2° stadio: y(t+h) = a(h) + b(h)*s_hat(t) + controlli + e(t+h)
 * - s: variazione % tendenziale, divisa per 10, quindi b(h) è l'effetto di un aumento
-*   di 10 pp della variazione tendenziale del prezzo (il segno dello strumento è irrilevante)
+*   di 10 pp della variazione tendenziale del prezzo (il segno degli strumenti è irrilevante)
 * - controlli: gli stessi delle LP OLS: $lp_lags ritardi di y, s e $lp_controls (per dur
 *   senza ur, collineare con i ritardi di dur); dummy Covid 2020q1-2022q4 (se $covid_dum == 1)
-* - Panel: paesi in $lp_panel, effetti fissi paese (dummy), pesi fissi wP (aweight),
-*   errori standard Driscoll-Kraay: ivreg2, dkraay(h+2), cioè h+1 ritardi come xtscc lag(h+1)
-* - Serie storiche: una regressione per paese in $countries, errori standard Newey-West:
-*   ivreg2, robust kernel(bartlett) bw(h+2), cioè h+1 ritardi come newey lag(h+1)
+* - errori standard Newey-West: ivreg2, robust kernel(bartlett) bw(h+2), cioè h+1 ritardi
+*   come newey lag(h+1)
 * - Forza del 1° stadio: F di Kleibergen-Paap (e(widstat)), riportato solo nel log
-*   (minimo e massimo sugli orizzonti); strumento segnalato come debole se F < $lp_ivweakF
-* - Varianti (variabile variant): base; pre = solo dati pre-Covid (t e t+h fino al 2019q4),
-*   senza dummy Covid
-* - Il campione è limitato al periodo coperto dagli strumenti
-* - Risultati in ${out}/lp_energy_iv_ea.dta; grafici senza titoli, bande al 90%, con la
-*   stessa struttura dei grafici OLS ma prefisso lp_iv_ (solo petrolio e gas):
+*   (minimo, massimo e valore per ogni orizzonte); strumento segnalato come debole se
+*   F < $lp_ivweakF
+* - Varianti (variabile variant): base = strumenti mensili separati; qsum = un solo strumento,
+*   media trimestrale dei 3 shock mensili (pesi uguali); pre = come base, solo dati pre-Covid
+*   (t e t+h fino al 2019q4), senza dummy Covid
+* - Campione: le date dello shock t richiedono strumenti, prezzo e controlli; l'outcome
+*   y(t+h) può andare oltre la fine degli strumenti (nel log: date dello shock e ultimo
+*   trimestre dell'outcome usato)
+* - Risultati in ${out}/lp_energy_iv_ea.dta; grafici senza titoli, bande al 90%, prefisso
+*   lp_iv_ (solo petrolio e gas):
 *   lp_iv_og_EA_*   : EA, petrolio (blu) e gas (rosso) nello stesso grafico
 *   lp_iv_og_ctry_* : EA e paesi, petrolio e gas, stesso asse y stretto (_sq: versione quadrata)
 *   lp_iv_main_*    : singolo prezzo, EA
-*   lp_iv_app_*     : singolo prezzo, panel e paesi, stesso asse y stretto
-*   lp_iv_rob_*     : base e pre-Covid per l'EA
+*   lp_iv_app_*     : singolo prezzo, paesi, stesso asse y stretto
+*   lp_iv_rob_*     : base, pre-Covid e strumento trimestrale (qsum) per l'EA
 *   il periodo campionario di lp_iv_main_* e lp_iv_og_EA_* è scritto in graphs/smp_lp_iv_*.tex
 *******************************************************************************
 
@@ -79,29 +88,13 @@ foreach v in $lp_ivshocks $lp_outcomes $lp_controls {
 * Dummy Covid
 gen byte dcovid = inrange(timeq, tq(2020q1), tq(2022q4))
 
-* Paesi del panel
-gen byte inpanel = 0
-foreach c of global lp_panel {
-	replace inpanel = 1 if geo == "`c'"
-}
-* Pesi fissi del panel: occupati medi del paese sul periodo
-egen wP = mean(occP), by(geocode)
-* Effetti fissi paese del panel (dummy; il primo paese di $lp_panel è la base)
-local fe ""
-foreach c of global lp_panel {
-	if "`c'" == word("$lp_panel", 1) continue
-	gen byte fe_`c' = geo == "`c'"
-	local fe "`fe' fe_`c'"
-}
-xtset geocode timeq
-
 * Dummy Covid (in tutte le specificazioni tranne pre)
 local cv ""
 if $covid_dum == 1 local cv "dcovid"
 
-* Strumenti disponibili
+* Strumenti disponibili (mensili per posizione nel trimestre e media trimestrale)
 foreach z of global lp_ivinstr {
-	su `z'
+	su `z'1 `z'2 `z'3 `z' if geo == "EA"
 }
 
 tempname pf
@@ -110,63 +103,7 @@ postfile `pf' str5 spec str5 geo str4 variant str20 shock str8 outcome byte h do
 local nz : word count $lp_ivshocks
 
 *******************************************************************************
-* 1) LP-IV panel
-*******************************************************************************
-
-forv j = 1/`nz' {
-	local s : word `j' of $lp_ivshocks
-	local z : word `j' of $lp_ivinstr
-	foreach y of global lp_outcomes {
-		local ctrl ""
-		forv l = 1/$lp_lags {
-			local ctrl "`ctrl' L`l'_`y' L`l'_`s'"
-		}
-		foreach v of global lp_controls {
-			* dur: il livello ur è collineare con i ritardi di dur
-			if "`y'" == "dur" & "`v'" == "ur" continue
-			forv l = 1/$lp_lags {
-				local ctrl "`ctrl' L`l'_`v'"
-			}
-		}
-		foreach vr in base pre {
-			local xr "`cv'"
-			if "`vr'" == "pre"  local xr ""
-			local fmin = .
-			local fmax = .
-			local weak ""
-			local flist ""
-			forv h = 0/$hmax {
-				local xc ""
-				if "`vr'" == "pre" local xc "& timeq + `h' <= tq(2019q4)"
-				cap drop lhs smp
-				qui gen lhs = F`h'.`y'
-				qui gen byte smp = inpanel `xc'
-				markout smp lhs `s' `z' `ctrl' `xr' wP
-				qui su timeq if smp
-				local t0 = r(min)
-				local t1 = r(max)
-				cap ivreg2 lhs `ctrl' `xr' `fe' (`s' = `z') if smp [aw=wP], dkraay(`=`h'+2') small
-				if _rc {
-					di as txt "Salto: PANEL `vr' `s' -> `y', h=`h' (rc=" _rc ")"
-					local flist "`flist' n.a."
-					continue
-				}
-				local F = e(widstat)
-				local flist "`flist' `: di %5.1f `F''"
-				local fmin = min(`fmin', `F')
-				local fmax = max(`fmax', `F')
-				if `F' < $lp_ivweakF local weak "`weak' `h'"
-				post `pf' ("panel") ("PANEL") ("`vr'") ("`s'") ("`y'") (`h') (_b[`s']) (_se[`s']) (e(N)) (`t0') (`t1')
-			}
-			di as txt "1° stadio PANEL `vr' `s' (strumento `z') -> `y': F di Kleibergen-Paap min " %6.1f `fmin' ", max " %6.1f `fmax'
-			di as txt "  F per h = 0,...,$hmax:`flist'"
-			if "`weak'" != "" di as err "  ATTENZIONE: possibile strumento debole (F < $lp_ivweakF) per h =`weak'"
-		}
-	}
-}
-
-*******************************************************************************
-* 2) LP-IV serie storiche, un paese alla volta
+* 1) LP-IV serie storiche, un paese alla volta
 *******************************************************************************
 
 foreach c of global countries {
@@ -188,24 +125,30 @@ foreach c of global countries {
 					local ctrl "`ctrl' L`l'_`v'"
 				}
 			}
-			foreach vr in base pre {
+			foreach vr in base qsum pre {
+				* Strumenti: shock mensili separati (base, pre) o media trimestrale (qsum)
+				local zi "`z'1 `z'2 `z'3"
+				if "`vr'" == "qsum" local zi "`z'"
 				local xr "`cv'"
 				if "`vr'" == "pre"  local xr ""
 				local fmin = .
 				local fmax = .
 				local weak ""
 				local flist ""
+				local s0 = .
+				local s1 = .
+				local ylast = .
 				forv h = 0/$hmax {
 					local xc ""
 					if "`vr'" == "pre" local xc "& timeq + `h' <= tq(2019q4)"
 					cap drop lhs smp
 					qui gen lhs = F`h'.`y'
 					qui gen byte smp = 1 `xc'
-					markout smp lhs `s' `z' `ctrl' `xr'
+					markout smp lhs `s' `zi' `ctrl' `xr'
 					qui su timeq if smp
 					local t0 = r(min)
 					local t1 = r(max)
-					cap ivreg2 lhs `ctrl' `xr' (`s' = `z') if smp, robust kernel(bartlett) bw(`=`h'+2') small
+					cap ivreg2 lhs `ctrl' `xr' (`s' = `zi') if smp, robust kernel(bartlett) bw(`=`h'+2') small
 					if _rc {
 						di as txt "Salto: `c' `vr' `s' -> `y', h=`h' (rc=" _rc ")"
 						local flist "`flist' n.a."
@@ -216,10 +159,17 @@ foreach c of global countries {
 					local fmin = min(`fmin', `F')
 					local fmax = max(`fmax', `F')
 					if `F' < $lp_ivweakF local weak "`weak' `h'"
+					* Date dello shock (orizzonte 0) e ultimo trimestre dell'outcome usato
+					if `h' == 0 {
+						local s0 = `t0'
+						local s1 = `t1'
+					}
+					local ylast = max(`ylast', `t1' + `h')
 					post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (_b[`s']) (_se[`s']) (e(N)) (`t0') (`t1')
 				}
-				di as txt "1° stadio `c' `vr' `s' (strumento `z') -> `y': F di Kleibergen-Paap min " %6.1f `fmin' ", max " %6.1f `fmax'
+				di as txt "1° stadio `c' `vr' `s' (strumenti `zi') -> `y': F di Kleibergen-Paap min " %6.1f `fmin' ", max " %6.1f `fmax'
 				di as txt "  F per h = 0,...,$hmax:`flist'"
+				di as txt "  campione: shock " %tq `s0' "-" %tq `s1' " (h = 0); outcome fino a " %tq `ylast'
 				if "`weak'" != "" di as err "  ATTENZIONE: possibile strumento debole (F < $lp_ivweakF) per h =`weak'"
 			}
 		}
@@ -230,7 +180,7 @@ foreach c of global countries {
 postclose `pf'
 
 *******************************************************************************
-* 3) Risultati: intervalli di confidenza, Excel e grafici
+* 2) Risultati: intervalli di confidenza, Excel e grafici
 *******************************************************************************
 
 use ${out}/lp_energy_iv_ea.dta, clear
@@ -241,8 +191,10 @@ export excel using ${out}/lp_energy_iv_ea.xlsx, firstrow(var) replace
 
 local lab_base "Baseline"
 local lab_pre  "Pre-Covid"
+local lab_qsum "Quarterly-average instrument"
 local sty_base "lcolor(navy) lwidth(medthick)"
 local sty_pre  "lcolor(forest_green) lwidth(medthick) lpattern(dash)"
+local sty_qsum "lcolor(maroon) lwidth(medthick) lpattern(shortdash)"
 
 tempname fh
 foreach s of global lp_ivshocks {
@@ -272,7 +224,7 @@ foreach s of global lp_ivshocks {
 			graphregion(color(white)) name(gmain, replace)
 		graph export ${gph}/lp_iv_main_`s'_`y'.png, replace
 
-		* --- Appendice: panel e paesi restanti, stesso asse y (stretto) --- *
+		* --- Appendice: paesi, stesso asse y (stretto) --- *
 		local gl ""
 		qui count if geo != "`mg'" & `sel'
 		if r(N) > 0 {
@@ -282,7 +234,7 @@ foreach s of global lp_ivshocks {
 			lp_yaxis `a' `r(max)'
 			local yax `"`r(opt)'"'
 		}
-		foreach g in PANEL $countries {
+		foreach g of global countries {
 			if "`g'" == "`mg'" continue
 			qui count if geo == "`g'" & `sel'
 			if r(N) == 0 continue
@@ -303,12 +255,12 @@ foreach s of global lp_ivshocks {
 			graph export ${gph}/lp_iv_app_`s'_`y'.png, replace
 		}
 
-		* --- Robustezza: pre-Covid per l'EA --- *
+		* --- Robustezza: pre-Covid e strumento trimestrale per l'EA --- *
 		local rc `"if geo == "`mg'" & shock == "`s'" & outcome == "`y'""'
 		local pl `"(rarea lo90 hi90 h `rc' & variant == "base", color(gs13))"'
 		local lg ""
 		local k = 1
-		foreach vr in base pre {
+		foreach vr in base pre qsum {
 			qui count `rc' & variant == "`vr'"
 			if r(N) == 0 continue
 			local ++k
@@ -327,11 +279,11 @@ local o : word 1 of $lp_ivshocks
 local g : word 2 of $lp_ivshocks
 local others : subinstr global countries "EA" "", word
 foreach y of global lp_outcomes {
-	qui count if spec == "ts" & variant == "base" & inlist(shock, "`o'", "`g'") & outcome == "`y'"
+	qui count if variant == "base" & inlist(shock, "`o'", "`g'") & outcome == "`y'"
 	if r(N) == 0 continue
-	qui su lo90 if spec == "ts" & variant == "base" & inlist(shock, "`o'", "`g'") & outcome == "`y'"
+	qui su lo90 if variant == "base" & inlist(shock, "`o'", "`g'") & outcome == "`y'"
 	local a = r(min)
-	qui su hi90 if spec == "ts" & variant == "base" & inlist(shock, "`o'", "`g'") & outcome == "`y'"
+	qui su hi90 if variant == "base" & inlist(shock, "`o'", "`g'") & outcome == "`y'"
 	lp_yaxis `a' `r(max)'
 	local yax `"`r(opt)'"'
 	local gl ""

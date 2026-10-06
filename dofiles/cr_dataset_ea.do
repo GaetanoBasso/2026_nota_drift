@@ -196,8 +196,14 @@ if !_rc gen timem = mofd(date)
 else gen timem = monthly(date, "YM")
 keep if !missing(gasAG)
 assert !missing(timem)
+* Shock dei 3 mesi del trimestre come variabili separate (gasAG1-gasAG3, strumenti a frequenza
+* mista nelle LP-IV) e media trimestrale (gasAG); trimestri incompleti: gasAG mancante
 gen timeq = qofd(dofm(timem))
-collapse (mean) gasAG, by(timeq)
+gen byte mq = mod(month(dofm(timem)) - 1, 3) + 1
+keep timeq mq gasAG
+isid timeq mq
+reshape wide gasAG, i(timeq) j(mq)
+gen gasAG = (gasAG1 + gasAG2 + gasAG3)/3
 format timeq %tq
 isid timeq
 tempfile gasag
@@ -227,8 +233,14 @@ if !_rc gen timem = mofd(date)
 else gen timem = monthly(date, "YM")
 keep if !missing(oilMP)
 assert !missing(timem)
+* Shock dei 3 mesi del trimestre come variabili separate (oilMP1-oilMP3, strumenti a frequenza
+* mista nelle LP-IV) e media trimestrale (oilMP); trimestri incompleti: oilMP mancante
 gen timeq = qofd(dofm(timem))
-collapse (mean) oilMP, by(timeq)
+gen byte mq = mod(month(dofm(timem)) - 1, 3) + 1
+keep timeq mq oilMP
+isid timeq mq
+reshape wide oilMP, i(timeq) j(mq)
+gen oilMP = (oilMP1 + oilMP2 + oilMP3)/3
 format timeq %tq
 isid timeq
 tempfile oilmp

@@ -48,9 +48,12 @@ global covid_dum = 1
 *               log produzione industriale, tasso di disoccupazione, rendimento Bund 1 anno
 * lp_panel    : paesi del panel (EA esclusa: è l'aggregato degli altri);
 *               le stime panel sono ponderate per gli occupati medi del paese (occP)
-* lp_ivshocks : prezzi strumentati nelle LP-IV (an_lpiv_energy_ea.do)
+* lp_ivshocks : prezzi strumentati nelle LP-IV su serie storiche (an_lpiv_energy_ea.do)
 * lp_ivinstr  : strumenti, nello stesso ordine di lp_ivshocks: shock di offerta di petrolio
-*               di Mori e Peersman (oilMP), shock di offerta di gas di Alessandri e Gazzani (gasAG)
+*               di Mori e Peersman (oilMP), shock di offerta di gas di Alessandri e Gazzani (gasAG);
+*               nella specificazione di base si usano i 3 shock mensili del trimestre come
+*               strumenti separati (oilMP1-oilMP3, gasAG1-gasAG3), nella variante qsum la
+*               loro media trimestrale
 * lp_ivweakF  : soglia del F di 1° stadio (Kleibergen-Paap) sotto cui lo strumento è segnalato
 *               come debole nel log
 global lp_lags     = 4
@@ -79,5 +82,5 @@ do ${do}/cr_dataset_ea.do
 do ${do}/an_lp_energy_ea.do
 */
 
-* Local Projections con variabili strumentali: petrolio strumentato con Mori-Peersman, gas con Alessandri-Gazzani
+* Local Projections con variabili strumentali (serie storiche): petrolio strumentato con Mori-Peersman, gas con Alessandri-Gazzani
 do ${do}/an_lpiv_energy_ea.do
