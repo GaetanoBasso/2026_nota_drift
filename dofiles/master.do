@@ -54,8 +54,9 @@ global covid_dum = 1
 *               nella specificazione di base si usano i 3 shock mensili del trimestre come
 *               strumenti separati (oilMP1-oilMP3, gasAG1-gasAG3), nella variante qsum la
 *               loro media trimestrale
-* lp_ivweakF  : soglia del F di 1° stadio (Kleibergen-Paap) sotto cui lo strumento è segnalato
-*               come debole nel log
+* lp_ivtau    : distorsione massima della 2SLS (in %: 5, 10, 20 o 30) per il valore critico del
+*               F efficace di Montiel Olea e Pflueger; sotto il valore critico gli strumenti sono
+*               segnalati come deboli nel log
 global lp_lags     = 4
 global lp_shocks   "OilSpotUSDBarrel TTFSpotEURMWH ELEEURMWH"
 global lp_outcomes "contr hicp wageH occH dur"
@@ -63,7 +64,7 @@ global lp_controls "lip ur bund1y"
 global lp_panel    "DE IT NL ES FR BE"
 global lp_ivshocks "OilSpotUSDBarrel TTFSpotEURMWH"
 global lp_ivinstr  "oilMP gasAG"
-global lp_ivweakF  = 10
+global lp_ivtau    = 10
 
 *******************************************************************************
 * 1) CREAZIONE DATASET

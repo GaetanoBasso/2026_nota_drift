@@ -25,13 +25,16 @@ log using ${log}/log_an_lpiv_energy_ea.txt, t replace
 *   2° stadio: y(t+h) = a(h) + b(h)*s_hat(t) + controlli + e(t+h)
 * - s: variazione % tendenziale, divisa per 10, quindi b(h) è l'effetto di un aumento
 *   di 10 pp della variazione tendenziale del prezzo (il segno degli strumenti è irrilevante)
-* - controlli: gli stessi delle LP OLS: $lp_lags ritardi di y, s e $lp_controls (per dur
-*   senza ur, collineare con i ritardi di dur); dummy Covid 2020q1-2022q4 (se $covid_dum == 1)
+* - controlli (in entrambi gli stadi): gli stessi delle LP OLS: $lp_lags ritardi di y, s e
+*   $lp_controls (per dur senza ur, collineare con i ritardi di dur); dummy Covid 2020q1-2022q4
+*   (se $covid_dum == 1)
 * - errori standard Newey-West: ivreg2, robust kernel(bartlett) bw(h+2), cioè h+1 ritardi
 *   come newey lag(h+1)
-* - Forza del 1° stadio: F di Kleibergen-Paap (e(widstat)), riportato solo nel log
-*   (minimo, massimo e valore per ogni orizzonte); strumento segnalato come debole se
-*   F < $lp_ivweakF
+* - Forza del 1° stadio: F efficace di Montiel Olea e Pflueger (2013) (weakivtest, Pflueger e
+*   Wang, 2015; robusto a eteroschedasticità e autocorrelazione come gli errori standard),
+*   riportato solo nel log (minimo, massimo e valore per ogni orizzonte, con il valore critico);
+*   strumenti segnalati come deboli se F efficace < valore critico per una distorsione massima
+*   della 2SLS del $lp_ivtau% (livello 5%)
 * - Varianti (variabile variant): base = strumenti mensili separati; qsum = un solo strumento,
 *   media trimestrale dei 3 shock mensili (pesi uguali); pre = come base, solo dati pre-Covid
 *   (t e t+h fino al 2019q4), senza dummy Covid
@@ -48,7 +51,7 @@ log using ${log}/log_an_lpiv_energy_ea.txt, t replace
 *   il periodo campionario di lp_iv_main_* e lp_iv_og_EA_* è scritto in graphs/smp_lp_iv_*.tex
 *******************************************************************************
 
-foreach p in ivreg2 ranktest {
+foreach p in ivreg2 ranktest weakivtest avar {
 	cap which `p'
 	if _rc ssc install `p'
 }
@@ -135,6 +138,7 @@ foreach c of global countries {
 				local fmax = .
 				local weak ""
 				local flist ""
+				local clist ""
 				local s0 = .
 				local s1 = .
 				local ylast = .
@@ -152,25 +156,38 @@ foreach c of global countries {
 					if _rc {
 						di as txt "Salto: `c' `vr' `s' -> `y', h=`h' (rc=" _rc ")"
 						local flist "`flist' n.a."
+						local clist "`clist' n.a."
 						continue
 					}
-					local F = e(widstat)
+					local b = _b[`s']
+					local se = _se[`s']
+					local N = e(N)
+					* F efficace di Montiel Olea e Pflueger e valore critico (tau = $lp_ivtau%)
+					local F = .
+					local ccrit = .
+					cap weakivtest, level(0.05)
+					if !_rc {
+						local F = r(F_eff)
+						local ccrit = r(c_TSLS_$lp_ivtau)
+					}
 					local flist "`flist' `: di %5.1f `F''"
+					local clist "`clist' `: di %5.1f `ccrit''"
 					local fmin = min(`fmin', `F')
 					local fmax = max(`fmax', `F')
-					if `F' < $lp_ivweakF local weak "`weak' `h'"
+					if !missing(`F', `ccrit') & `F' < `ccrit' local weak "`weak' `h'"
 					* Date dello shock (orizzonte 0) e ultimo trimestre dell'outcome usato
 					if `h' == 0 {
 						local s0 = `t0'
 						local s1 = `t1'
 					}
 					local ylast = max(`ylast', `t1' + `h')
-					post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (_b[`s']) (_se[`s']) (e(N)) (`t0') (`t1')
+					post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (`b') (`se') (`N') (`t0') (`t1')
 				}
-				di as txt "1° stadio `c' `vr' `s' (strumenti `zi') -> `y': F di Kleibergen-Paap min " %6.1f `fmin' ", max " %6.1f `fmax'
-				di as txt "  F per h = 0,...,$hmax:`flist'"
+				di as txt "1° stadio `c' `vr' `s' (strumenti `zi') -> `y': F efficace di Montiel Olea-Pflueger min " %6.1f `fmin' ", max " %6.1f `fmax'
+				di as txt "  F efficace per h = 0,...,$hmax:`flist'"
+				di as txt "  valore critico (tau = $lp_ivtau%):`clist'"
 				di as txt "  campione: shock " %tq `s0' "-" %tq `s1' " (h = 0); outcome fino a " %tq `ylast'
-				if "`weak'" != "" di as err "  ATTENZIONE: possibile strumento debole (F < $lp_ivweakF) per h =`weak'"
+				if "`weak'" != "" di as err "  ATTENZIONE: strumenti deboli (F efficace < valore critico) per h =`weak'"
 			}
 		}
 	}

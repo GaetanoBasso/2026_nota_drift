@@ -181,11 +181,18 @@ gas supply shock (`$lp_ivshocks`, `$lp_ivinstr`); electricity has no instrument.
 - **Sample.** Shock dates t need the instruments, the price and the controls; the outcome
   at t+h can extend beyond the end of the instruments. The log reports, for each series,
   the shock dates and the last outcome quarter used.
-- **First stage.** Kleibergen–Paap F reported only in the log (minimum, maximum and value
-  at each horizon), with a warning when below `$lp_ivweakF` (default 10).
+- **Controls.** Both stages include the lags of the outcome, of the price change and of
+  the macro controls, as in the OLS LPs.
+- **First stage.** Effective F of Montiel Olea and Pflueger (2013), computed with
+  `weakivtest` (Pflueger and Wang, 2015; SSC, needs `avar`) after each `ivreg2`, robust to
+  heteroskedasticity and autocorrelation. Reported only in the log (minimum, maximum and
+  value at each horizon, with the critical value); a warning is printed when it is below
+  the critical value for a maximum 2SLS bias of `$lp_ivtau`% (default 10%).
 - **Outputs.** `${out}/lp_energy_iv_ea.dta` / `.xlsx`; graphs with prefix `lp_iv_`
   (`og_EA`, `og_ctry` and `_sq`, `main`, `app`, `rob` with baseline, pre-Covid and
-  quarterly-average instrument). The `.tex` files and the slides still use the OLS graphs.
+  quarterly-average instrument). The `.tex` files and the slides use the IV graphs; the
+  OLS graphs of the last OLS run are shown in an appendix of `main_graphs.tex` for
+  comparison (including electricity, which has no instrument).
 
 Caveat (OLS): the "shocks" are observed energy price changes, conditioned on their own lags
 and on lags of the outcome. They are not identified structural shocks, so the
@@ -211,6 +218,10 @@ responses should be read as conditional reduced-form pass-through.
 - Stock, J. H. and Watson, M. W. (2018), "Identification and Estimation of Dynamic Causal
   Effects in Macroeconomics Using External Instruments", *Economic Journal*, 128(610),
   917–948. <https://doi.org/10.1111/ecoj.12593>
+- Montiel Olea, J. L. and Pflueger, C. (2013), "A Robust Test for Weak Instruments",
+  *Journal of Business and Economic Statistics*, 31(3), 358–369.
+- Pflueger, C. and Wang, S. (2015), "A Robust Test for Weak Instruments in Stata",
+  *Stata Journal*, 15(1), 216–225. <https://doi.org/10.1177/1536867X1501500113>
 - Newey, W. K. and West, K. D. (1987), "A Simple, Positive Semi-Definite,
   Heteroskedasticity and Autocorrelation Consistent Covariance Matrix",
   *Econometrica*, 55(3), 703–708. <https://doi.org/10.2307/1913610>

@@ -69,12 +69,14 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   panel); oil instrumented with Mori–Peersman, gas with Alessandri–Gazzani (`$lp_ivshocks`,
   `$lp_ivinstr`); baseline instruments = the 3 monthly shocks of the quarter (`z1 z2 z3`,
   U-MIDAS), variants `qsum` (quarterly average) and `pre`; `ivreg2 ..., robust kernel(bartlett)
-  bw(h+2)` (= Newey–West lag h+1); first-stage KP F only in the log, weak if `< $lp_ivweakF`;
+  bw(h+2)` (= Newey–West lag h+1); lags of y, s and controls in both stages; first-stage
+  effective F of Montiel Olea–Pflueger (`weakivtest`) only in the log, weak if below the critical
+  value for a `$lp_ivtau`% maximum bias;
   outputs prefixed `lp_iv_`.
 - Graphs: no titles or notes in Stata (they go in the `.tex` files); 90% bands only;
   multi-panel graphs share an explicit, tight y range (`lp_yaxis`: data range incl. 0, no `ycommon`)
   with small margins (`imargin(tiny)`, `margin(vsmall)`); main text of `main_graphs.tex` =
-  oil (blue) and gas (red) together (`lp_og_*`); single energy price graphs, hours and
+  IV oil (blue) and gas (red) together (`lp_iv_og_*`), OLS graphs in an appendix; single energy price graphs, hours and
   unemployment go to the appendix. Square versions (`_sq`) only where a layout needs them.
 
 ## Karpathy guidelines
