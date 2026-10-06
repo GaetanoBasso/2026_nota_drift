@@ -21,11 +21,15 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   `cap log close` then `log using ${log}/log_<dofile name>.txt, t replace`, and ends
   with `log close`. Logs are committed to git.
 - **Git tracks only** `dofiles/`, `logfiles/`, `graphs/`, `README.md`, `CLAUDE.md`,
-  `main_graphs.tex`, `nota_drift.tex`, `slides_drift.tex` (`.gitignore` ignores everything
-  else). Graphs are committed so that Overleaf (GitHub sync of `main`) can compile the
+  `main_graphs.tex`, `nota_drift.tex`, `slides_drift.pptx`, `make_slides_drift.js`
+  (`.gitignore` ignores everything else). Graphs are committed so that Overleaf (GitHub sync of `main`) can compile the
   `.tex` files. Never commit data or output.
 - In the note never describe results that have not been read from the logs or graphs:
-  leave `\dacompletare{...}` placeholders.
+  leave `\tbc{...}` placeholders.
+- Language: graph labels/legends, the `.tex` files and the slides are in **English**; dofile
+  comments stay in Italian. The note is a policy brief (sans serif, narrow margins, no
+  section numbers). Rebuild `slides_drift.pptx` with `node make_slides_drift.js` after each
+  Stata run.
 - Do not commit Stata swap files (`~*.stswp`).
 - Raw sources on the shared drive (`${source_*}`, `${home}/rawdata`) are **read-only**.
   Never save into them.

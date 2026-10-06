@@ -24,12 +24,14 @@ dofiles/
   an_lp_energy_ea.do     Local Projections of energy shocks -> output/, graphs/
 logfiles/                one text log per dofile (log_<dofile name>.txt)
 main_graphs.tex          LaTeX file collecting the graphs (compile in ${home}, next to graphs/)
-nota_drift.tex           2-page note: results (placeholders), methodology, discussion
-slides_drift.tex         2-slide Beamer presentation (16:9) with the oil+gas graphs
+nota_drift.tex           2-page policy note (English): results (placeholders), methodology, discussion
+slides_drift.pptx        2-slide PowerPoint deck (English) with the oil+gas wage graphs
+make_slides_drift.js     builds slides_drift.pptx from graphs/ (node + npm package pptxgenjs)
 ```
 
-Only `dofiles/`, `logfiles/`, `graphs/`, `README.md`, `CLAUDE.md` and the three `.tex` files are
-tracked (see `.gitignore`); graphs are committed so that Overleaf can compile the `.tex` files.
+Only `dofiles/`, `logfiles/`, `graphs/`, `README.md`, `CLAUDE.md`, the two `.tex` files and the
+slides (`slides_drift.pptx`, `make_slides_drift.js`) are tracked (see `.gitignore`); graphs are
+committed so that Overleaf can compile the `.tex` files.
 Data and output live on the shared drive under `${home}`
 (`/home/group/main/892fl/policy/2026/2026_nota_drift` on Unix,
 `//osiride-fs/group/main/892fl/...` on Windows).
@@ -136,10 +138,10 @@ Outputs:
   `variant` × `shock` × `outcome` × `h`, with `b`, `se`, `N`, `tmin`, `tmax` and
   90% bands.
 - Graphs (no titles: titles and notes are in the `.tex` files; 90% bands only):
-  - `lp_og_EA_<outcome>.png`: EA, oil (blue) and gas (red) in the same graph — main
-    text of `main_graphs.tex` for `contr hicp wageH`, appendix for `occH dur`;
-  - `lp_og_ctry_<outcome>.png`: EA and the six countries, oil and gas, common y axis
-    (`_sq`: square version, used in the note and the slides);
+  - `lp_og_EA_<outcome>.png`: EA, oil (blue) and gas (red) in the same graph, with a
+    legend — main text of `main_graphs.tex` for `contr hicp wageH`, appendix for `occH dur`;
+  - `lp_og_ctry_<outcome>.png`: EA and the six countries, oil and gas, common y axis,
+    legend in a cell of its own (`_sq`: square version, used in the note and the slides);
   - `lp_main_<shock>_<outcome>.png`: appendix, one energy price, EA for oil and gas,
     panel for electricity;
   - `lp_app_<shock>_<outcome>.png`: appendix, one energy price, the panel (oil, gas)
@@ -147,9 +149,13 @@ Outputs:
   - `lp_rob_<shock>_<outcome>.png`: appendix, baseline vs pre-Covid sample for the
     unit of `lp_main_*`.
 
-`nota_drift.tex` (2 pages) and `slides_drift.tex` (2 slides) use the oil+gas graphs
-for negotiated wages and hourly wages. The text of the note leaves placeholders
-(`\dacompletare{...}`) where the results have to be described.
+Graph labels, the `.tex` files and the slides are in English (dofile comments stay in
+Italian). `nota_drift.tex` (2-page policy note) and `slides_drift.pptx` (2 slides) use the
+oil+gas graphs for negotiated wages and hourly wages. The note leaves placeholders
+(`\tbc{...}`, shown in red) where the results have to be described. The slides are built
+by `node make_slides_drift.js` from the repository root: missing graphs become placeholder
+boxes and the EA sample periods are read from `graphs/smp_lp_og_EA_*.tex`, so the deck has
+to be rebuilt after each Stata run.
 
 Caveat: the "shocks" are observed energy price changes, conditioned on their own lags
 and on lags of the outcome. They are not identified structural shocks, so the

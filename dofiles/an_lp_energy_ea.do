@@ -173,7 +173,7 @@ gen hi90 = b + invnormal(0.95)*se
 save ${out}/lp_energy_ea.dta, replace
 export excel using ${out}/lp_energy_ea.xlsx, firstrow(var) replace
 
-local lab_base "Base"
+local lab_base "Baseline"
 local lab_pre  "Pre-Covid"
 local sty_base "lcolor(navy) lwidth(medthick)"
 local sty_pre  "lcolor(forest_green) lwidth(medthick) lpattern(dash)"
@@ -198,7 +198,7 @@ foreach s of global lp_shocks {
 		twoway (rarea lo90 hi90 h `cond', color(gs13)) ///
 			(line b h `cond', `sty_base'), ///
 			yline(0, lcolor(black)) legend(off) ///
-			xtitle("Trimestri") ytitle("pp") xlabel(0(2)$hmax) ///
+			xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
 			graphregion(color(white)) name(gmain, replace)
 		graph export ${gph}/lp_main_`s'_`y'.png, replace
 
@@ -216,7 +216,7 @@ foreach s of global lp_shocks {
 			twoway (rarea lo90 hi90 h `cond', color(gs13)) ///
 				(line b h `cond', `sty_base'), ///
 				yline(0, lcolor(black)) legend(off) subtitle("`g' (`p0'-`p1')") ///
-				xtitle("Trimestri") ytitle("pp") xlabel(0(2)$hmax) ///
+				xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
 				graphregion(color(white)) name(g_`g', replace) nodraw
 			local gl "`gl' g_`g'"
 		}
@@ -236,7 +236,7 @@ foreach s of global lp_shocks {
 			local lg `"`lg' `k' "`lab_`vr''""'
 		}
 		twoway `pl', yline(0, lcolor(black)) legend(order(`lg') rows(1) position(6)) ///
-			xtitle("Trimestri") ytitle("pp") xlabel(0(2)$hmax) ///
+			xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
 			graphregion(color(white)) name(grob, replace)
 		graph export ${gph}/lp_rob_`s'_`y'.png, replace
 	}
@@ -248,6 +248,7 @@ local g "TTFSpotEURMWH"
 local others : subinstr global countries "EA" "", word
 foreach y of global lp_outcomes {
 	local gl ""
+	local lco ""
 	foreach c in EA `others' {
 		local co `"if geo == "`c'" & variant == "base" & shock == "`o'" & outcome == "`y'""'
 		local cg `"if geo == "`c'" & variant == "base" & shock == "`g'" & outcome == "`y'""'
@@ -256,6 +257,11 @@ foreach y of global lp_outcomes {
 		local no = r(N)
 		qui count `cg'
 		if `no' == 0 | r(N) == 0 continue
+		* Condizioni per il riquadro della legenda (primo paese disponibile, solo h = 0)
+		if "`lco'" == "" {
+			local lco `"`co' & h == 0"'
+			local lcg `"`cg' & h == 0"'
+		}
 		qui su tmin `co' & h == 0
 		local po0 : di %tq r(min)
 		qui su tmax `co' & h == 0
@@ -268,19 +274,25 @@ foreach y of global lp_outcomes {
 		* Grafico EA a sé stante, con legenda
 		if "`c'" == "EA" {
 			file open `fh' using "${gph}/smp_lp_og_EA_`y'.tex", write replace
-			file write `fh' "petrolio `po0'--`po1'; gas `pg0'--`pg1'"
+			file write `fh' "oil `po0'--`po1'; gas `pg0'--`pg1'"
 			file close `fh'
-			twoway `pl', yline(0, lcolor(black)) legend(order(3 "Petrolio" 4 "Gas") rows(1) position(6)) ///
-				xtitle("Trimestri") ytitle("pp") xlabel(0(2)$hmax) ///
+			twoway `pl', yline(0, lcolor(black)) legend(order(3 "Oil price" 4 "Gas price") rows(1) position(6)) ///
+				xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
 				graphregion(color(white)) name(gog, replace)
 			graph export ${gph}/lp_og_EA_`y'.png, replace
 		}
 		twoway `pl', yline(0, lcolor(black)) legend(off) ///
-			subtitle("`c'" "P: `po0'-`po1'; G: `pg0'-`pg1'", size(medsmall)) ///
-			xtitle("Trimestri") ytitle("pp") xlabel(0(2)$hmax) ///
+			subtitle("`c'" "Oil `po0'-`po1'; gas `pg0'-`pg1'", size(medsmall)) ///
+			xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
 			graphregion(color(white)) name(g_`c', replace) nodraw
 		local gl "`gl' g_`c'"
 	}
+	* Riquadro con la sola legenda: un solo punto per serie, quindi le linee non si vedono
+	twoway (line b h `lco', lcolor(navy) lwidth(medthick)) (line b h `lcg', lcolor(cranberry) lwidth(medthick)), ///
+		legend(order(1 "Oil price" 2 "Gas price") cols(1) ring(0) position(0) size(large) region(lstyle(none))) ///
+		xscale(off) yscale(off) xlabel(none) ylabel(none) xtitle("") ytitle("") ///
+		plotregion(style(none)) graphregion(color(white)) name(g_leg, replace) nodraw
+	local gl "`gl' g_leg"
 	graph combine `gl', ycommon graphregion(color(white)) name(comb, replace)
 	graph export ${gph}/lp_og_ctry_`y'.png, replace
 	* Versione quadrata (nota e slide)
