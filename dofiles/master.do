@@ -64,5 +64,5 @@ do ${do}/cr_dataset_ea.do
 * 2) ANALISI
 *******************************************************************************
 
-* Local Projections (Jordà, 2005): shock dei prezzi energetici su retribuzioni e prezzi; eterogeneità per inflazione; robustezza
+* Local Projections (Jordà, 2005): shock dei prezzi energetici su retribuzioni e prezzi; robustezza
 do ${do}/an_lp_energy_ea.do

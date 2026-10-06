@@ -21,13 +21,13 @@ log using ${log}/log_an_lp_energy_ea.txt, t replace
 *   (xtscc >= 1.4, necessario per aweight con fe) con lag h+1
 * - Serie storiche: una regressione per paese in $countries, errori standard
 *   Newey-West con lag h+1
-* - Varianti (variabile variant): base; seas = base con effetti fissi trimestrali
+* - Varianti (variabile variant): base; seas = base con effetti fissi trimestrali;
+*   pre = solo dati pre-Covid (t e t+h fino al 2019q4), senza dummy Covid
 * - Grafici senza titoli (titoli e note nel file TeX):
 *   principali  lp_main_*: EA per petrolio e gas, panel per l'elettricità
 *   appendice   lp_app_* : panel e paesi restanti, stesso asse y
-*   robustezza  lp_rob_* : base ed effetti fissi trimestrali per l'unità del grafico principale
+*   robustezza  lp_rob_* : base, effetti fissi trimestrali e pre-Covid per l'unità del grafico principale
 *   il periodo campionario dei grafici principali è scritto in graphs/smp_*.tex
-* - Sezione 4: LP per stato di alta/bassa inflazione di fondo prima dello shock
 *******************************************************************************
 
 cap which xtscc
@@ -63,8 +63,6 @@ foreach c of global lp_panel {
 * Pesi fissi del panel: occupati medi del paese sul periodo
 egen wP = mean(occP), by(geocode)
 xtset geocode timeq
-tempfile lpdata
-save `lpdata'
 
 * Ritardi dei controlli macro e dummy Covid (comuni a tutte le specificazioni)
 local xctrl ""
@@ -90,13 +88,16 @@ foreach s of global lp_shocks {
 			local ctrl "`ctrl' L`l'_`y' L`l'_`s'"
 		}
 		local ctrl "`ctrl' `xctrl'"
-		foreach vr in base seas {
+		foreach vr in base seas pre {
 			local xr "`cv'"
 			if "`vr'" == "seas" local xr "`cv' q2 q3 q4"
+			if "`vr'" == "pre"  local xr ""
 			forv h = 0/$hmax {
+				local xc ""
+				if "`vr'" == "pre" local xc "& timeq + `h' <= tq(2019q4)"
 				cap drop lhs smp
 				qui gen lhs = F`h'.`y'
-				qui gen byte smp = inpanel
+				qui gen byte smp = inpanel `xc'
 				markout smp lhs `s' `ctrl' `xr' wP
 				qui su timeq if smp
 				local t0 = r(min)
@@ -128,13 +129,16 @@ foreach c of global countries {
 				local ctrl "`ctrl' L`l'_`y' L`l'_`s'"
 			}
 			local ctrl "`ctrl' `xctrl'"
-			foreach vr in base seas {
+			foreach vr in base seas pre {
 				local xr "`cv'"
 				if "`vr'" == "seas" local xr "`cv' q2 q3 q4"
+				if "`vr'" == "pre"  local xr ""
 				forv h = 0/$hmax {
+					local xc ""
+					if "`vr'" == "pre" local xc "& timeq + `h' <= tq(2019q4)"
 					cap drop lhs smp
 					qui gen lhs = F`h'.`y'
-					qui gen byte smp = 1
+					qui gen byte smp = 1 `xc'
 					markout smp lhs `s' `ctrl' `xr'
 					qui su timeq if smp
 					local t0 = r(min)
@@ -169,8 +173,10 @@ export excel using ${out}/lp_energy_ea.xlsx, firstrow(var) replace
 
 local lab_base "Base"
 local lab_seas "Eff. fissi trimestrali"
+local lab_pre  "Pre-Covid"
 local sty_base "lcolor(navy) lwidth(medthick)"
 local sty_seas "lcolor(maroon) lwidth(medthick) lpattern(longdash_dot)"
+local sty_pre  "lcolor(forest_green) lwidth(medthick) lpattern(dash)"
 
 tempname fh
 foreach s of global lp_shocks {
@@ -219,12 +225,12 @@ foreach s of global lp_shocks {
 		graph combine `gl', ycommon graphregion(color(white)) name(comb, replace)
 		graph export ${gph}/lp_app_`s'_`y'.png, replace
 
-		* --- Robustezza: effetti fissi trimestrali per l'unità del grafico principale --- *
+		* --- Robustezza: effetti fissi trimestrali e pre-Covid per l'unità del grafico principale --- *
 		local rc `"if geo == "`mg'" & shock == "`s'" & outcome == "`y'""'
 		local pl `"(rarea lo90 hi90 h `rc' & variant == "base", color(gs13))"'
 		local lg ""
 		local k = 1
-		foreach vr in base seas {
+		foreach vr in base seas pre {
 			qui count `rc' & variant == "`vr'"
 			if r(N) == 0 continue
 			local ++k
@@ -235,165 +241,6 @@ foreach s of global lp_shocks {
 			xtitle("Trimestri") ytitle("pp") xlabel(0(2)$hmax) ///
 			graphregion(color(white)) name(grob, replace)
 		graph export ${gph}/lp_rob_`s'_`y'.png, replace
-	}
-}
-
-*******************************************************************************
-* 4) LP per stato dell'inflazione di fondo allo shock: alta vs bassa
-*
-* Adattato da Corsello e Foschi (2026): pi_bar(t) = media della var. % a/a trimestrale
-* dell'HICP core (esclusi energia, alimentari, alcol e tabacchi, non destagionalizzato)
-* nei 2 trimestri precedenti t (hicpx_bar; C-F usano la media della var. % congiunturale
-* mensile nei 6 mesi precedenti). Trimestre t ad alta inflazione (hinf = 1) se pi_bar(t) supera
-* il 75° percentile di pi_bar del paese sull'intero periodo; altrimenti bassa inflazione
-* (hinf = 0); hinf mancante se manca hicpx_bar.
-* Specificazione completamente interagita con lo stato (come Ramey e Zubairy, 2018):
-*   y(i,t+h) = a(i,h) + g(h)*hinf(i,t)
-*              + hinf(i,t)*[bH(h)*s(i,t) + controlli] + (1-hinf(i,t))*[bL(h)*s(i,t) + controlli] + e(i,t+h)
-* pdiff: p-value del test bH(h) = bL(h). NH: osservazioni ad alta inflazione nel campione.
-*******************************************************************************
-
-use `lpdata', clear
-egen p75_hicpx_bar = pctile(hicpx_bar), p(75) by(geocode)
-gen byte hinf = hicpx_bar > p75_hicpx_bar if !missing(hicpx_bar)
-tab geo hinf, missing
-
-tempname pf
-postfile `pf' str5 spec str5 geo str20 shock str8 outcome byte h double(bH seH bL seL pdiff) int(N NH tmin tmax) using ${out}/lp_energy_inflstate_ea.dta, replace
-
-* --- LP panel --- *
-foreach s of global lp_shocks {
-	foreach y of global lp_outcomes {
-		local ctrl ""
-		forv l = 1/$lp_lags {
-			local ctrl "`ctrl' L`l'_`y' L`l'_`s'"
-		}
-		local rhs ""
-		foreach v in `s' `ctrl' `xctrl' `cv' {
-			qui gen hi_`v' = `v'*hinf
-			qui gen lo_`v' = `v'*(1-hinf)
-			local rhs "`rhs' hi_`v' lo_`v'"
-		}
-		forv h = 0/$hmax {
-			cap drop lhs smp
-			qui gen lhs = F`h'.`y'
-			qui gen byte smp = inpanel
-			markout smp lhs hinf `rhs' wP
-			qui su timeq if smp
-			local t0 = r(min)
-			local t1 = r(max)
-			qui count if smp & hinf == 1
-			local nh = r(N)
-			qui xtscc lhs hinf `rhs' if smp [aw=wP], fe lag(`=`h'+1')
-			qui test hi_`s' = lo_`s'
-			post `pf' ("panel") ("PANEL") ("`s'") ("`y'") (`h') (_b[hi_`s']) (_se[hi_`s']) (_b[lo_`s']) (_se[lo_`s']) (r(p)) (e(N)) (`nh') (`t0') (`t1')
-		}
-		drop hi_* lo_*
-		di as txt "Panel LP per stato: `s' -> `y' fatto"
-	}
-}
-
-* --- LP serie storiche, un paese alla volta --- *
-foreach c of global countries {
-	preserve
-	keep if geo == "`c'"
-	tsset timeq
-	foreach s of global lp_shocks {
-		foreach y of global lp_outcomes {
-			local ctrl ""
-			forv l = 1/$lp_lags {
-				local ctrl "`ctrl' L`l'_`y' L`l'_`s'"
-			}
-			local rhs ""
-			foreach v in `s' `ctrl' `xctrl' `cv' {
-				qui gen hi_`v' = `v'*hinf
-				qui gen lo_`v' = `v'*(1-hinf)
-				local rhs "`rhs' hi_`v' lo_`v'"
-			}
-			forv h = 0/$hmax {
-				cap drop lhs smp
-				qui gen lhs = F`h'.`y'
-				qui gen byte smp = 1
-				markout smp lhs hinf `rhs'
-				qui su timeq if smp
-				local t0 = r(min)
-				local t1 = r(max)
-				qui count if smp & hinf == 1
-				local nh = r(N)
-				* ELEEURMWH non esiste per EA e BE: la stima fallisce e si salta
-				cap newey lhs hinf `rhs' if smp, lag(`=`h'+1') force
-				if _rc {
-					di as txt "Salto: `c' `s' -> `y', h=`h' (rc=" _rc ")"
-					continue
-				}
-				qui test hi_`s' = lo_`s'
-				* Coefficiente omesso (nessuna osservazione nello stato): risposta mancante
-				post `pf' ("ts") ("`c'") ("`s'") ("`y'") (`h') (cond(_se[hi_`s'] > 0, _b[hi_`s'], .)) (_se[hi_`s']) (cond(_se[lo_`s'] > 0, _b[lo_`s'], .)) (_se[lo_`s']) (r(p)) (e(N)) (`nh') (`t0') (`t1')
-			}
-			drop hi_* lo_*
-		}
-	}
-	restore
-}
-
-postclose `pf'
-
-* --- Risultati: intervalli, Excel e grafici --- *
-use ${out}/lp_energy_inflstate_ea.dta, clear
-foreach k in H L {
-	gen lo90`k' = b`k' - invnormal(0.95)*se`k'
-	gen hi90`k' = b`k' + invnormal(0.95)*se`k'
-}
-save ${out}/lp_energy_inflstate_ea.dta, replace
-export excel using ${out}/lp_energy_inflstate_ea.xlsx, firstrow(var) replace
-
-* Rosso = alta inflazione, blu tratteggiato = bassa inflazione
-foreach s of global lp_shocks {
-	local mg "EA"
-	if "`s'" == "ELEEURMWH" local mg "PANEL"
-	foreach y of global lp_outcomes {
-		local sel `"shock == "`s'" & outcome == "`y'""'
-
-		* --- Grafico principale --- *
-		local cond `"if geo == "`mg'" & `sel'"'
-		qui su tmin `cond' & h == 0
-		local p0 : di %tq r(min)
-		qui su tmax `cond' & h == 0
-		local p1 : di %tq r(max)
-		file open `fh' using "${gph}/smp_lp_inflstate_main_`s'_`y'.tex", write replace
-		file write `fh' "`p0'--`p1'"
-		file close `fh'
-		twoway (rarea lo90H hi90H h `cond', color(cranberry%20) lwidth(none)) ///
-			(rarea lo90L hi90L h `cond', color(navy%20) lwidth(none)) ///
-			(line bH h `cond', lcolor(cranberry) lwidth(medthick)) ///
-			(line bL h `cond', lcolor(navy) lwidth(medthick) lpattern(dash)), ///
-			yline(0, lcolor(black)) legend(order(3 "Alta inflazione" 4 "Bassa inflazione") rows(1) position(6)) ///
-			xtitle("Trimestri") ytitle("pp") xlabel(0(2)$hmax) ///
-			graphregion(color(white)) name(gmain, replace)
-		graph export ${gph}/lp_inflstate_main_`s'_`y'.png, replace
-
-		* --- Appendice: panel e paesi restanti, stesso asse y --- *
-		local gl ""
-		foreach g in PANEL $countries {
-			if "`g'" == "`mg'" continue
-			qui count if geo == "`g'" & `sel'
-			if r(N) == 0 continue
-			local cond `"if geo == "`g'" & `sel'"'
-			qui su tmin `cond' & h == 0
-			local p0 : di %tq r(min)
-			qui su tmax `cond' & h == 0
-			local p1 : di %tq r(max)
-			twoway (rarea lo90H hi90H h `cond', color(cranberry%20) lwidth(none)) ///
-				(rarea lo90L hi90L h `cond', color(navy%20) lwidth(none)) ///
-				(line bH h `cond', lcolor(cranberry) lwidth(medthick)) ///
-				(line bL h `cond', lcolor(navy) lwidth(medthick) lpattern(dash)), ///
-				yline(0, lcolor(black)) legend(off) subtitle("`g' (`p0'-`p1')") ///
-				xtitle("Trimestri") ytitle("pp") xlabel(0(2)$hmax) ///
-				graphregion(color(white)) name(g_`g', replace) nodraw
-			local gl "`gl' g_`g'"
-		}
-		graph combine `gl', ycommon graphregion(color(white)) name(comb, replace)
-		graph export ${gph}/lp_inflstate_app_`s'_`y'.png, replace
 	}
 }
 

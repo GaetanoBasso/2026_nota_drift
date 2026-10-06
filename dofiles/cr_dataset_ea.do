@@ -234,9 +234,6 @@ xtset
 gen _vagh = 100*vagh/l.vagh-100 if _n>1
 drop vagh
 rename _vagh vagh
-* Inflazione di fondo media dei 2 trimestri precedenti (var. % a/a): adattamento trimestrale
-* della media dei 6 mesi precedenti di Corsello e Foschi (2026), che usano la var. % congiunturale mensile
-gen hicpx_bar = (L1.hicpx + L2.hicpx)/2
 * Logaritmo della produzione industriale
 gen lip = ln(ip)
 drop ip
