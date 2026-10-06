@@ -111,7 +111,7 @@ tempfile hicp_ea
 save `hicp_ea'
 
 * Dati mensili Eurostat aggiuntivi: HICP core, produzione industriale, tasso di disoccupazione
-* hicpx: HICP esclusi energia, alimentari, alcol e tabacchi (indice 2015=100, non destagionalizzato, come hicp)
+* hicpx: HICP esclusi energia, alimentari, alcol e tabacchi (indice 2015=100, come hicp)
 * ip   : produzione industriale B-D, dest. e corretta per i giorni lavorativi (indice 2021=100)
 * ur   : tasso di disoccupazione, destagionalizzato, % forze di lavoro
 local k_hicpx "PRC_HICP_MIDX/M.I15.TOT_X_NRG_FOOD"
@@ -138,7 +138,6 @@ foreach v in hicpx ip {
 	save ``v'_ea'
 }
 
-local v ur
 clear
 getTimeSeries EUROSTAT UNE_RT_M/M.SA.TOTAL.PC_ACT.T. "" "" 0 0
 rename *, low replace
@@ -147,18 +146,16 @@ replace geo = "EA" if geo == "EA21"
 keep if inlist(geo, "EA", "DE", "IT", "ES", "NL", "FR", "BE")
 replace date = subinstr(date, "-", " ", .)
 gen year = real(word(date, 1))
-gen quarter = ceil(real(word(date, 2))/3)
-* solo trimestri completi (3 mesi disponibili)
-egen nm = count(value), by(geo year quarter)
-keep if nm == 3
+gen quarter = real(word(date, 2))
+replace quarter = ceil(quarter/3)
 collapse (mean) value, by(geo year quarter)
 gen int timeq = yq(year, quarter)
 format timeq %tq
-rename value `v'
-keep timeq geo `v'
+rename value ur
+keep timeq geo ur
 isid geo timeq
-tempfile `v'_ea
-save ``v'_ea'
+tempfile ur_ea
+save `ur_ea'
 
 * Rendimento del Bund a 1 anno (Bundesbank: struttura per scadenza dei titoli federali,
 * metodo Svensson, vita residua 1 anno, dati mensili), comune a tutti i paesi
@@ -234,9 +231,6 @@ xtset
 gen _vagh = 100*vagh/l.vagh-100 if _n>1
 drop vagh
 rename _vagh vagh
-* Inflazione di fondo media dei 2 trimestri precedenti (var. % a/a): adattamento trimestrale
-* della media dei 6 mesi precedenti di Corsello e Foschi (2026), che usano la var. % congiunturale mensile
-gen hicpx_bar = (L1.hicpx + L2.hicpx)/2
 * Logaritmo della produzione industriale
 gen lip = ln(ip)
 drop ip

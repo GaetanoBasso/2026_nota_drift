@@ -1,8 +1,8 @@
-------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_cr_dataset_ea.txt
   log type:  text
- opened on:  30 Sep 2026, 17:23:26
+ opened on:   6 Oct 2026, 15:24:35
 
 . 
 . * Dati CNQ Eurostat
@@ -42,7 +42,7 @@ xij variables:
 . tempfile cnq_ea
 
 . save `cnq_ea'
-file /tmp/work/m029601/St226263.000001 saved as .dta format
+file /tmp/work/m029601/St3433628.000001 saved as .dta format
 
 . 
 . /*
@@ -67,20 +67,18 @@ file /tmp/work/m029601/St226263.000001 saved as .dta format
 . clear
 
 . getTimeSeries ECB_RESTR INW/....... "" "" 0 0
-Sep 30, 2026 5:23:28 PM it.bancaditalia.oss.sdmx.util.Configuration init
-INFO: Class configuration found: it.bancaditalia.oss.sdmx.util.SdmxConfiguration
-Sep 30, 2026 5:23:28 PM REPL.$JShell$12 SgetTimeSeries
+Oct 06, 2026 3:24:36 PM REPL.$JShell$12 SgetTimeSeries
 INFO: METADATA is disabled.
-Sep 30, 2026 5:23:41 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Oct 06, 2026 3:24:36 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://esb-ws-scde.eu.escb.eu/ws/SDW21/REST/service/dataflow/all/INW/latest
-Sep 30, 2026 5:23:41 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Oct 06, 2026 3:24:36 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://esb-ws-scde.eu.escb.eu/ws/SDW21/REST/service/datastructure/ECB/ECB_BCS1/1.0?references=descendants
-Sep 30, 2026 5:23:42 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Oct 06, 2026 3:24:36 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://esb-ws-scde.eu.escb.eu/ws/SDW21/REST/service/data/ECB,INW,1.0/.......
-Sep 30, 2026 5:23:45 PM REPL.$JShell$12 SgetTimeSeries
+Oct 06, 2026 3:24:38 PM REPL.$JShell$12 SgetTimeSeries
 INFO: The query returned 650 time series.
-Sep 30, 2026 5:23:45 PM REPL.$JShell$12 SgetTimeSeries
-INFO: The query returned 87479 observations.
+Oct 06, 2026 3:24:38 PM REPL.$JShell$12 SgetTimeSeries
+INFO: The query returned 87499 observations.
 
 . rename *,l
 
@@ -99,7 +97,7 @@ tsname1  tsname2  tsname3  tsname4  tsname5  tsname6  tsname7  tsname8  tsname9
 . rename tsname8 measure
 
 . keep if freq=="Q"
-(71,211 observations deleted)
+(71,222 observations deleted)
 
 . drop tsname
 
@@ -109,17 +107,17 @@ tsname1  tsname2  tsname3  tsname4  tsname5  tsname6  tsname7  tsname8  tsname9
 (276 real changes made)
 
 . keep if inlist(geo, "EA", "DE", "IT", "ES", "NL", "FR", "BE")
-(7,021 observations deleted)
+(7,022 observations deleted)
 
 . assert inlist(geo, "EA", "DE", "IT", "ES", "NL", "FR", "BE")
 
 . replace date=subinstr(date,"-"," ",.)
-(9,247 real changes made)
+(9,255 real changes made)
 
 . gen year=real(word(date,1))
 
 . replace date=subinstr(date,"Q","",.)
-(9,247 real changes made)
+(9,255 real changes made)
 
 . gen quarter=real(word(date,2))
 
@@ -132,10 +130,10 @@ tsname1  tsname2  tsname3  tsname4  tsname5  tsname6  tsname7  tsname8  tsname9
 . rename value contr
 
 . keep if withwithoutoneoff=="INWR"
-(1,476 observations deleted)
+(1,480 observations deleted)
 
 . keep if sector=="000000"
-(6,253 observations deleted)
+(6,256 observations deleted)
 
 . keep if measure=="GY"
 (238 observations deleted)
@@ -156,26 +154,24 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/data/ecb_inwr_q.dta save
 . tempfile contr_ea
 
 . save `contr_ea'
-file /tmp/work/m029601/St226263.000002 saved as .dta format
+file /tmp/work/m029601/St3433628.000002 saved as .dta format
 
 . 
 . * Dati IPCA vari paesi
 . clear
 
 . getTimeSeries EUROSTAT PRC_HICP_MIDX/.I15.CP00.DE+FR+NL+IT+ES+BE+EA20 "" "" 0 0
-Sep 30, 2026 5:23:46 PM REPL.$JShell$12 SgetTimeSeries
+Oct 06, 2026 3:24:39 PM REPL.$JShell$12 SgetTimeSeries
 INFO: METADATA is disabled.
-Sep 30, 2026 5:23:46 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Oct 06, 2026 3:24:39 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/dataflow/all/PRC_HICP_MIDX/latest
-Sep 30, 2026 5:23:46 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
-INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/datastructure/ESTAT/PRC_HICP_MIDX/108.0?references=descend
-> ants
-Sep 30, 2026 5:23:48 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
-INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/ESTAT,PRC_HICP_MIDX,1.0/.I15.CP00.DE+FR+NL+IT+ES+BE+E
-> A20
-Sep 30, 2026 5:23:48 PM REPL.$JShell$12 SgetTimeSeries
+Oct 06, 2026 3:24:40 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/datastructure/ESTAT/PRC_HICP_MIDX/108.0?references=descendants
+Oct 06, 2026 3:24:42 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/ESTAT,PRC_HICP_MIDX,1.0/.I15.CP00.DE+FR+NL+IT+ES+BE+EA20
+Oct 06, 2026 3:24:42 PM REPL.$JShell$12 SgetTimeSeries
 INFO: The query returned 7 time series.
-Sep 30, 2026 5:23:48 PM REPL.$JShell$12 SgetTimeSeries
+Oct 06, 2026 3:24:42 PM REPL.$JShell$12 SgetTimeSeries
 INFO: The query returned 2473 observations.
 
 . rename *, low replace
@@ -276,7 +272,164 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/data/eurostat_hicp_ea_q.
 . tempfile hicp_ea
 
 . save `hicp_ea'
-file /tmp/work/m029601/St226263.000003 saved as .dta format
+file /tmp/work/m029601/St3433628.000003 saved as .dta format
+
+. 
+. * Dati mensili Eurostat aggiuntivi: HICP core, produzione industriale, tasso di disoccupazione
+. * hicpx: HICP esclusi energia, alimentari, alcol e tabacchi (indice 2015=100, non destagionalizzato, come hicp)
+. * ip   : produzione industriale B-D, dest. e corretta per i giorni lavorativi (indice 2021=100)
+. * ur   : tasso di disoccupazione, destagionalizzato, % forze di lavoro
+. local k_hicpx "PRC_HICP_MIDX/M.I15.TOT_X_NRG_FOOD"
+
+. local k_ip    "STS_INPR_M/M.PRD.B-D.SCA.I21"
+
+. foreach v in hicpx ip {
+  2.         clear
+  3.         getTimeSeries EUROSTAT `k_`v''.DE+FR+NL+IT+ES+BE+EA20 "" "" 0 0
+  4.         rename *, low replace
+  5.         gen geo = word(subinstr(tsname, ".", " ", .), -1)
+  6.         replace geo = "EA" if geo == "EA20"
+  7.         replace date = subinstr(date, "-", " ", .)
+  8.         gen year = real(word(date, 1))
+  9.         gen quarter = ceil(real(word(date, 2))/3)
+ 10.         * solo trimestri completi (3 mesi disponibili)
+.         egen nm = count(value), by(geo year quarter)
+ 11.         keep if nm == 3
+ 12.         collapse (mean) value, by(geo year quarter)
+ 13.         gen int timeq = yq(year, quarter)
+ 14.         format timeq %tq
+ 15.         rename value `v'
+ 16.         keep timeq geo `v'
+ 17.         isid geo timeq
+ 18.         tempfile `v'_ea
+ 19.         save ``v'_ea'
+ 20. }
+Oct 06, 2026 3:24:42 PM REPL.$JShell$12 SgetTimeSeries
+INFO: METADATA is disabled.
+Oct 06, 2026 3:24:42 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/ESTAT,PRC_HICP_MIDX,1.0/M.I15.TOT_X_NRG_FOOD.DE+FR+NL+IT+ES+BE+EA20
+Oct 06, 2026 3:24:43 PM REPL.$JShell$12 SgetTimeSeries
+INFO: The query returned 7 time series.
+Oct 06, 2026 3:24:43 PM REPL.$JShell$12 SgetTimeSeries
+INFO: The query returned 2273 observations.
+(301 real changes made)
+(2,273 real changes made)
+(5 observations deleted)
+file /tmp/work/m029601/St3433628.000004 saved as .dta format
+Oct 06, 2026 3:24:43 PM REPL.$JShell$12 SgetTimeSeries
+INFO: METADATA is disabled.
+Oct 06, 2026 3:24:43 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/dataflow/all/STS_INPR_M/latest
+Oct 06, 2026 3:24:43 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/datastructure/ESTAT/STS_INPR_M/174.0?references=descendants
+Oct 06, 2026 3:24:44 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/ESTAT,STS_INPR_M,1.0/M.PRD.B-D.SCA.I21.DE+FR+NL+IT+ES+BE+EA20
+Oct 06, 2026 3:24:44 PM REPL.$JShell$12 SgetTimeSeries
+INFO: The query returned 7 time series.
+Oct 06, 2026 3:24:44 PM REPL.$JShell$12 SgetTimeSeries
+INFO: The query returned 2785 observations.
+(427 real changes made)
+(2,785 real changes made)
+(7 observations deleted)
+file /tmp/work/m029601/St3433628.000005 saved as .dta format
+
+. 
+. local v ur
+
+. clear
+
+. getTimeSeries EUROSTAT UNE_RT_M/M.SA.TOTAL.PC_ACT.T. "" "" 0 0
+Oct 06, 2026 3:24:45 PM REPL.$JShell$12 SgetTimeSeries
+INFO: METADATA is disabled.
+Oct 06, 2026 3:24:45 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/dataflow/all/UNE_RT_M/latest
+Oct 06, 2026 3:24:45 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/datastructure/ESTAT/UNE_RT_M/154.0?references=descendants
+Oct 06, 2026 3:24:46 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/ESTAT,UNE_RT_M,1.0/M.SA.TOTAL.PC_ACT.T.
+Oct 06, 2026 3:24:46 PM REPL.$JShell$12 SgetTimeSeries
+INFO: The query returned 38 time series.
+Oct 06, 2026 3:24:46 PM REPL.$JShell$12 SgetTimeSeries
+INFO: The query returned 14903 observations.
+
+. rename *, low replace
+
+. gen geo = word(subinstr(tsname, ".", " ", .), -1)
+
+. replace geo = "EA" if geo == "EA21"
+(320 real changes made)
+
+. keep if inlist(geo, "EA", "DE", "IT", "ES", "NL", "FR", "BE")
+(11,613 observations deleted)
+
+. replace date = subinstr(date, "-", " ", .)
+(3,290 real changes made)
+
+. gen year = real(word(date, 1))
+
+. gen quarter = ceil(real(word(date, 2))/3)
+
+. * solo trimestri completi (3 mesi disponibili)
+. egen nm = count(value), by(geo year quarter)
+
+. keep if nm == 3
+(14 observations deleted)
+
+. collapse (mean) value, by(geo year quarter)
+
+. gen int timeq = yq(year, quarter)
+
+. format timeq %tq
+
+. rename value `v'
+
+. keep timeq geo `v'
+
+. isid geo timeq
+
+. tempfile `v'_ea
+
+. save ``v'_ea'
+file /tmp/work/m029601/St3433628.000006 saved as .dta format
+
+. 
+. * Rendimento del Bund a 1 anno (Bundesbank: struttura per scadenza dei titoli federali,
+. * metodo Svensson, vita residua 1 anno, dati mensili), comune a tutti i paesi
+. * Serie BBSIS.M.I.ZST.ZI.EUR.S1311.B.A604.R01XX.R.A.A._Z._Z.A; se il download diretto è
+. * bloccato, scaricarla da https://www.bundesbank.de/en/statistics/money-and-capital-markets/interest-rates-and-yields
+. import delimited using "https://api.statistiken.bundesbank.de/rest/download/BBSIS/M.I.ZST.ZI.EUR.S1311.B.A604.R01XX.R.A.A._Z._Z.A?format=csv&lang=en", varnames(nonames) delimiters
+> (",") stringcols(_all) clear
+(encoding automatically selected: UTF-8)
+(3 vars, 657 obs)
+
+. keep if ustrregexm(v1, "^[0-9]{4}-[0-9]{2}$")
+(8 observations deleted)
+
+. gen year = real(substr(v1, 1, 4))
+
+. gen quarter = ceil(real(substr(v1, 6, 2))/3)
+
+. gen bund1y = real(v2)
+
+. egen nm = count(bund1y), by(year quarter)
+
+. keep if nm == 3
+(1 observation deleted)
+
+. collapse (mean) bund1y, by(year quarter)
+
+. gen int timeq = yq(year, quarter)
+
+. format timeq %tq
+
+. keep timeq bund1y
+
+. isid timeq
+
+. tempfile bund
+
+. save `bund'
+file /tmp/work/m029601/St3433628.000007 saved as .dta format
 
 . 
 . * Dati shock prezzi energetici
@@ -367,7 +520,7 @@ ELEEURMWHBE ELEEURMWHDE ... ELEEURMWHNL   ->   ELEEURMWH
 . tempfile prices
 
 . save `prices'
-file /tmp/work/m029601/St226263.000004 saved as .dta format
+file /tmp/work/m029601/St3433628.000008 saved as .dta format
 
 . 
 . * Merge
@@ -392,11 +545,11 @@ file /tmp/work/m029601/St226263.000004 saved as .dta format
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                           219
-        from master                        31  
+    Not matched                           218
+        from master                        30  
         from using                        188  
 
-    Matched                               858  
+    Matched                               859  
     -----------------------------------------
 
 . merge 1:1 timeq geo using `hicp_ea', nogen
@@ -410,6 +563,54 @@ file /tmp/work/m029601/St226263.000004 saved as .dta format
     Matched                               840  
     -----------------------------------------
 
+. foreach v in hicpx ip ur {
+  2.         merge 1:1 timeq geo using ``v'_ea', nogen
+  3. }
+(variable geo was str3, now str4 to accommodate using data's values)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                           321
+        from master                       321  
+        from using                          0  
+
+    Matched                               756  
+    -----------------------------------------
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                           159
+        from master                       155  
+        from using                          4  
+
+    Matched                               922  
+    -----------------------------------------
+(variable geo was str4, now str9 to accommodate using data's values)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                           123
+        from master                        56  
+        from using                         67  
+
+    Matched                             1,025  
+    -----------------------------------------
+
+. merge m:1 timeq using `bund', nogen keep(master match)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                             1,148  
+    -----------------------------------------
+
+. * Anno e trimestre anche per le righe aggiunte dai merge
+. replace year = year(dofq(timeq))
+(71 real changes made)
+
+. replace quarter = quarter(dofq(timeq))
+(71 real changes made)
+
 . encode geo, gen(geocode)
 
 . xtset geocode timeq
@@ -418,15 +619,16 @@ Panel variable: geocode (unbalanced)
  Time variable: timeq, 1983q1 to 2026q3
          Delta: 1 quarter
 
-. foreach v of varlist wageH compH defl clupH { 
+. foreach v of varlist wageH compH defl clupH hicpx { 
   2.         gen _`v' = 100*`v'/l4.`v'-100 if _n>4
   3.         drop `v'
   4.         rename _`v' `v'
   5. }
-(225 missing values generated)
-(225 missing values generated)
-(231 missing values generated)
-(233 missing values generated)
+(295 missing values generated)
+(295 missing values generated)
+(302 missing values generated)
+(303 missing values generated)
+(420 missing values generated)
 
 . xtset
 
@@ -435,11 +637,22 @@ Panel variable: geocode (unbalanced)
          Delta: 1 quarter
 
 . gen _vagh = 100*vagh/l.vagh-100 if _n>1
-(210 missing values generated)
+(281 missing values generated)
 
 . drop vagh
 
 . rename _vagh vagh
+
+. * Inflazione di fondo media dei 2 trimestri precedenti (var. % a/a): adattamento trimestrale
+. * della media dei 6 mesi precedenti di Corsello e Foschi (2026), che usano la var. % congiunturale mensile
+. gen hicpx_bar = (L1.hicpx + L2.hicpx)/2
+(427 missing values generated)
+
+. * Logaritmo della produzione industriale
+. gen lip = ln(ip)
+(222 missing values generated)
+
+. drop ip
 
 . 
 . 
@@ -451,8 +664,8 @@ Panel variable: geocode (unbalanced)
   variable year was float now int
   variable quarter was float now byte
   variable geocode was long now byte
-  variable geo was str3 now str2
-  (11,847 bytes saved)
+  variable geo was str9 now str2
+  (19,516 bytes saved)
 
 . save ${home}/data/dataset_ea.dta, replace
 file /home/group/main/892fl/policy/2026/2026_nota_drift/data/dataset_ea.dta saved
@@ -462,5 +675,5 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/data/dataset_ea.dta save
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_cr_dataset_ea.txt
   log type:  text
- closed on:  30 Sep 2026, 17:23:48
-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ closed on:   6 Oct 2026, 15:24:47
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
