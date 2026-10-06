@@ -111,7 +111,7 @@ tempfile hicp_ea
 save `hicp_ea'
 
 * Dati mensili Eurostat aggiuntivi: HICP core, produzione industriale, tasso di disoccupazione
-* hicpx: HICP esclusi energia, alimentari, alcol e tabacchi (indice 2015=100, come hicp)
+* hicpx: HICP esclusi energia, alimentari, alcol e tabacchi (indice 2015=100, non destagionalizzato, come hicp)
 * ip   : produzione industriale B-D, dest. e corretta per i giorni lavorativi (indice 2021=100)
 * ur   : tasso di disoccupazione, destagionalizzato, % forze di lavoro
 local k_hicpx "PRC_HICP_MIDX/M.I15.TOT_X_NRG_FOOD"
@@ -213,6 +213,9 @@ xtset
 gen _vagh = 100*vagh/l.vagh-100 if _n>1
 drop vagh
 rename _vagh vagh
+* Inflazione di fondo media dei 2 trimestri precedenti (var. % a/a): adattamento trimestrale
+* della media dei 6 mesi precedenti di Corsello e Foschi (2026), che usano la var. % congiunturale mensile
+gen hicpx_bar = (L1.hicpx + L2.hicpx)/2
 * Logaritmo della produzione industriale
 gen lip = ln(ip)
 drop ip

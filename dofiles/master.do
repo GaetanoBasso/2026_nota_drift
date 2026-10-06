@@ -45,15 +45,12 @@ global covid_dum = 1
 * lp_outcomes : variabili di risposta (var. % tendenziali)
 * lp_controls : controlli macro come in Corsello e Foschi (2026), inclusi con $lp_lags ritardi:
 *               log produzione industriale, tasso di disoccupazione, rendimento Bund 1 anno
-* infl_thr    : soglia (%, a/a) dell'inflazione di fondo (HICP core) in t-1 oltre la quale
-*               il trimestre dello shock è ad alta inflazione
 * lp_panel    : paesi del panel (EA esclusa: è l'aggregato degli altri);
 *               le stime panel sono ponderate per gli occupati medi del paese (occP)
 global lp_lags     = 4
 global lp_shocks   "OilSpotUSDBarrel TTFSpotEURMWH ELEEURMWH"
 global lp_outcomes "contr hicp wageH compH"
 global lp_controls "lip ur bund1y"
-global infl_thr    = 2
 global lp_panel    "DE IT NL ES FR BE"
 
 *******************************************************************************

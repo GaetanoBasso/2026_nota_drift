@@ -53,7 +53,7 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   +10 pp; `$lp_lags` lags of the outcome and the shock; panel = country FE +
   Driscoll–Kraay (`xtscc`, lag h+1), weighted by fixed country weights `[aw=wP]` (country mean of employment `occP`); country time series = `newey`, lag h+1. Controls: `$lp_lags` lags of
   `$lp_controls` plus the COVID dummy `dcovid` (2020q1–2022q4). Robustness variants are
-  stored in `variant` (base/pre/post/seas). Results
+  stored in `variant` (base/seas). Results
   go to a `postfile` dataset. The estimation sample is marked explicitly
   (`smp` + `markout`), its period is posted as `tmin`/`tmax` and shown in the panel labels of the appendix
   figures or, for the main figures, written to `graphs/smp_*.tex` for the TeX notes. State-dependent variants interact all regressors with the state dummy and
