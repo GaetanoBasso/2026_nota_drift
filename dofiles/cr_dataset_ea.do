@@ -192,7 +192,7 @@ tokenize `r(varlist)'
 rename `1' date
 rename `2' gasAG
 cap confirm numeric variable date
-if !_rc gen timem = mofd(date)
+if !_rc gen timem = mofd(dofc(date))
 else gen timem = monthly(date, "YM")
 keep if !missing(gasAG)
 assert !missing(timem)
@@ -227,10 +227,13 @@ tokenize `r(varlist)'
 rename `1' date
 rename `mp' oilMP
 cap confirm numeric variable oilMP
-if _rc destring oilMP, replace force
+if _rc destring oilMP, replace dpcomma
 cap confirm numeric variable date
 if !_rc gen timem = mofd(date)
-else gen timem = monthly(date, "YM")
+split date, parse("/") gen(temp)
+destring temp2, replace
+destring temp3, replace
+else gen timem = ym(temp3,temp2)
 keep if !missing(oilMP)
 assert !missing(timem)
 * Shock dei 3 mesi del trimestre come variabili separate (oilMP1-oilMP3, strumenti a frequenza
