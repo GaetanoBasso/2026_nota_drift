@@ -59,7 +59,10 @@ global covid_dum = 1
 *               F efficace di Montiel Olea e Pflueger; sotto il valore critico gli strumenti sono
 *               segnalati come deboli nel log
 * lp_slp_r    : ordine delle differenze penalizzate nelle LP smussate (Barnichon e Brownlees,
-*               2019); 3 = la risposta è contratta verso un polinomio di 2° grado
+*               2019), specificazione di base delle LP-IV; 3 = la risposta è contratta verso
+*               un polinomio di 2° grado
+* lp_slp_us   : undersmoothing per le bande delle LP smussate: errori standard e centro delle
+*               bande calcolati con lambda/lp_slp_us (lambda scelto per validazione incrociata)
 global lp_lags     = 2
 global lp_shocks   "OilSpotUSDBarrel TTFSpotEURMWH ELEEURMWH"
 global lp_outcomes "contr hicp wageH occH dur"
@@ -69,6 +72,7 @@ global lp_ivshocks "OilSpotUSDBarrel TTFSpotEURMWH"
 global lp_ivinstr  "oilMP gasAG"
 global lp_ivtau    = 10
 global lp_slp_r    = 3
+global lp_slp_us   = 10
 
 *******************************************************************************
 * 1) CREAZIONE DATASET
@@ -87,5 +91,5 @@ do ${do}/cr_dataset_ea.do
 do ${do}/an_lp_energy_ea.do
 */
 
-* Local Projections con variabili strumentali (serie storiche): petrolio strumentato con Mori-Peersman, gas con Alessandri-Gazzani; forma ridotta e LP smussate
+* Local Projections con variabili strumentali (serie storiche): petrolio strumentato con Mori-Peersman, gas con Alessandri-Gazzani; LP smussate (base), non smussate, forma ridotta
 do ${do}/an_lpiv_energy_ea.do

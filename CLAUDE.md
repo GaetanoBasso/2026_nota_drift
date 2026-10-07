@@ -68,11 +68,12 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   with the state dummy and carry the state in the output name.
 - LP-IV conventions (`an_lpiv_energy_ea.do`, run instead of the OLS file): time series only (no
   panel); oil instrumented with Mori–Peersman, gas with Alessandri–Gazzani (`$lp_ivshocks`,
-  `$lp_ivinstr`); baseline instrument = quarterly average of the monthly shocks (`z`); variants `umid`
-  (the 3 monthly shocks of the quarter, `z1 z2 z3`, U-MIDAS), `pre`, `rf` (reduced form of y on
-  `z`, `newey`, 1-s.d. shock, graphs `lp_rf_*` in an appendix) and `slp` (smooth LP-IV of
-  Barnichon–Brownlees, Mata `lp_slp()`, penalty order `$lp_slp_r`, cross-validated); `ivreg2 ..., robust kernel(bartlett)
-  bw(h+2)` (= Newey–West lag h+1); lags of y, s and controls in both stages; first-stage
+  `$lp_ivinstr`); baseline `base` = smooth LP-IV of Barnichon–Brownlees (Mata `lp_slp()`, penalty
+  order `$lp_slp_r`, cross-validated; bands by undersmoothing with penalty/`$lp_slp_us`, centred
+  on `bc`, line = `b`), instrument = quarterly average of the monthly shocks (`z`); variants `unsm`
+  (unsmoothed 2SLS per horizon), `umid` (as `unsm` with the 3 monthly shocks, `z1 z2 z3`, U-MIDAS),
+  `pre` and `rf` (reduced form of y on `z`, `newey`, 1-s.d. shock, graphs `lp_rf_*` in an
+  appendix); unsmoothed: `ivreg2 ..., robust kernel(bartlett) bw(h+2)` (= Newey–West lag h+1); lags of y, s and controls in both stages; first-stage
   effective F of Montiel Olea–Pflueger (`weakivtest`) only in the log, weak if below the critical
   value for a `$lp_ivtau`% maximum bias;
   outputs prefixed `lp_iv_`.

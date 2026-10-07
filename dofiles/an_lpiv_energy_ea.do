@@ -16,7 +16,7 @@ log using ${log}/log_an_lpiv_energy_ea.txt, t replace
 * (coppie prezzo-strumento in $lp_ivshocks / $lp_ivinstr; nessuno strumento per l'elettricità)
 *
 * Frequenza mista: gli strumenti sono mensili, le LP trimestrali. Nella specificazione di base
-* lo strumento è la media trimestrale dei 3 shock mensili (z); nella variante umid i 3 shock
+* (e in unsm, pre, rf) lo strumento è la media trimestrale dei 3 shock mensili (z); nella variante umid i 3 shock
 * mensili del trimestre t (z1, z2, z3: 1°, 2° e 3° mese) sono strumenti separati (U-MIDAS,
 * Foroni, Marcellino e Schumacher, 2015)
 *   1° stadio: s(t)   = c(h) + g(h)*z(t) + controlli + u(t)
@@ -34,18 +34,21 @@ log using ${log}/log_an_lpiv_energy_ea.txt, t replace
 *   strumenti segnalati come deboli se F efficace < valore critico per una distorsione massima
 *   della 2SLS del $lp_ivtau% (livello 5%)
 * - Varianti (variabile variant):
-*   base = strumento trimestrale (media dei 3 shock mensili)
-*   umid = 3 shock mensili come strumenti separati
-*   pre  = come base, solo dati pre-Covid (t e t+h fino al 2019q4), senza dummy Covid
-*   rf   = forma ridotta: OLS di y(t+h) sullo strumento trimestrale e sugli stessi controlli
-*          (newey lag(h+1)), risposta a uno shock di 1 deviazione standard dello strumento
-*   slp  = LP-IV smussate (Barnichon e Brownlees, 2019), strumento trimestrale: la risposta
+*   base = LP-IV smussate (Barnichon e Brownlees, 2019), strumento trimestrale: la risposta
 *          b(h) = B(h)'theta è una spline cubica (nodi a ogni orizzonte), stimata su tutti gli
 *          orizzonti insieme con una penalità lambda sulle differenze di ordine $lp_slp_r di
 *          theta; controlli specifici per orizzonte e non penalizzati (eliminati per
 *          Frisch-Waugh nel campione di ogni orizzonte); lambda scelto per validazione
-*          incrociata su 5 blocchi temporali contigui; errori standard Newey-West (h+1 ritardi)
-*          sui punteggi aggregati per trimestre dello shock
+*          incrociata su 5 blocchi temporali contigui. Intervalli di confidenza con
+*          undersmoothing: stima e errori standard con lambda/$lp_slp_us (distorsione da
+*          penalità trascurabile), bande centrate su questa stima (variabile bc), mentre la
+*          linea è la stima con il lambda della validazione incrociata (b); errori standard
+*          Newey-West (h+1 ritardi) sui punteggi aggregati per trimestre dello shock
+*   unsm = LP-IV non smussate, orizzonte per orizzonte (ivreg2), strumento trimestrale
+*   umid = come unsm, 3 shock mensili come strumenti separati
+*   pre  = come unsm, solo dati pre-Covid (t e t+h fino al 2019q4), senza dummy Covid
+*   rf   = forma ridotta: OLS di y(t+h) sullo strumento trimestrale e sugli stessi controlli
+*          (newey lag(h+1)), risposta a uno shock di 1 deviazione standard dello strumento
 * - Campione: le date dello shock t richiedono strumenti, prezzo e controlli; l'outcome
 *   y(t+h) può andare oltre la fine degli strumenti (nel log: date dello shock e ultimo
 *   trimestre dell'outcome usato)
@@ -55,7 +58,8 @@ log using ${log}/log_an_lpiv_energy_ea.txt, t replace
 *   lp_iv_og_ctry_* : EA e paesi, petrolio e gas, stesso asse y stretto (_sq: versione quadrata)
 *   lp_iv_main_*    : singolo prezzo, EA
 *   lp_iv_app_*     : singolo prezzo, paesi, stesso asse y stretto
-*   lp_iv_rob_*     : base, strumenti mensili (umid), pre-Covid e LP smussate per l'EA
+*   lp_iv_rob_*     : base (smussate), non smussate (unsm), strumenti mensili (umid) e
+*                     pre-Covid per l'EA
 *   lp_rf_og_EA_*, lp_rf_og_ctry_* : come lp_iv_og_*, forma ridotta (appendice)
 *   il periodo campionario di lp_iv_main_*, lp_iv_og_EA_* e lp_rf_og_EA_* è scritto in
 *   graphs/smp_lp_*.tex
@@ -85,10 +89,11 @@ end
 
 * LP-IV smussate (Barnichon e Brownlees, 2019). S: una riga per orizzonte e trimestre dello
 * shock, colonne y, s, z (già depurati dai controlli nel campione di ogni orizzonte), timeq, h.
-* Restituisce per h = 0,...,H: risposta, errore standard e lambda scelto (relativo)
+* Restituisce per h = 0,...,H: risposta (lambda della validazione incrociata), centro e errore
+* standard delle bande (lambda/k, undersmoothing) e lambda scelto (relativo)
 cap mata: mata drop lp_slp()
 mata:
-real matrix lp_slp(real matrix S, real scalar H, real scalar r)
+real matrix lp_slp(real matrix S, real scalar H, real scalar r, real scalar k)
 {
 	real colvector y, x, z, t, hh, xh, sel, ut, ts, cs, mse, w, e, b, se
 	real matrix B, D, P, X, Xh, A, th, g, Om, Gl, V
@@ -132,7 +137,9 @@ real matrix lp_slp(real matrix S, real scalar H, real scalar r)
 	w = order(mse, 1)
 	best = cs[w[1]]
 	lam = best * sc
-	A = cross(Xh, X) + lam * P
+	b = B * lusolve(cross(Xh, X) + lam * P, cross(Xh, y))
+	// Bande con undersmoothing: stima con lambda/k, su cui sono centrate le bande
+	A = cross(Xh, X) + (lam / k) * P
 	th = lusolve(A, cross(Xh, y))
 	// Errori standard: punteggi aggregati per trimestre dello shock, Newey-West con H+1 ritardi
 	e = y - X * th
@@ -148,9 +155,8 @@ real matrix lp_slp(real matrix S, real scalar H, real scalar r)
 	}
 	A = luinv(A)
 	V = A * Om * A'
-	b = B * th
 	se = sqrt(diagonal(B * V * B'))
-	return((b, se, J(H + 1, 1, best)))
+	return((b, B * th, se, J(H + 1, 1, best)))
 }
 end
 
@@ -193,7 +199,7 @@ foreach z of global lp_ivinstr {
 }
 
 tempname pf
-postfile `pf' str5 spec str5 geo str4 variant str20 shock str8 outcome byte h double(b se) int(N tmin tmax) using ${out}/lp_energy_iv_ea.dta, replace
+postfile `pf' str5 spec str5 geo str4 variant str20 shock str8 outcome byte h double(b bc se) int(N tmin tmax) using ${out}/lp_energy_iv_ea.dta, replace
 
 local nz : word count $lp_ivshocks
 
@@ -220,8 +226,8 @@ foreach c of global countries {
 					local ctrl "`ctrl' L`l'_`v'"
 				}
 			}
-			foreach vr in base umid pre rf slp {
-				* Strumenti: media trimestrale (base, pre, rf, slp) o shock mensili separati (umid)
+			foreach vr in unsm umid pre rf base {
+				* Strumenti: media trimestrale (base, unsm, pre, rf) o shock mensili separati (umid)
 				local zi "`z'"
 				if "`vr'" == "umid" local zi "`z'1 `z'2 `z'3"
 				local xr "`cv'"
@@ -234,7 +240,7 @@ foreach c of global countries {
 				local s0 = .
 				local s1 = .
 				local ylast = .
-				if "`vr'" == "slp" mata: S = J(0, 5, .)
+				if "`vr'" == "base" mata: S = J(0, 5, .)
 				forv h = 0/$hmax {
 					local xc ""
 					if "`vr'" == "pre" local xc "& timeq + `h' <= tq(2019q4)"
@@ -246,8 +252,8 @@ foreach c of global countries {
 					local t0 = r(min)
 					local t1 = r(max)
 					local N = r(N)
-					* LP smussate: dati dell'orizzonte h depurati dai controlli, stima dopo il ciclo
-					if "`vr'" == "slp" {
+					* LP smussate (base): dati dell'orizzonte h depurati dai controlli, stima dopo il ciclo
+					if "`vr'" == "base" {
 						if `N' == 0 continue
 						foreach v in lhs `s' `zi' {
 							qui reg `v' `ctrl' `xr' if smp
@@ -270,7 +276,7 @@ foreach c of global countries {
 							di as txt "Salto: `c' `vr' `s' -> `y', h=`h' (rc=" _rc ")"
 							continue
 						}
-						post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (_b[`zi']*`sd_`z'') (_se[`zi']*`sd_`z'') (e(N)) (`t0') (`t1')
+						post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (_b[`zi']*`sd_`z'') (_b[`zi']*`sd_`z'') (_se[`zi']*`sd_`z'') (e(N)) (`t0') (`t1')
 						continue
 					}
 					cap ivreg2 lhs `ctrl' `xr' (`s' = `zi') if smp, robust kernel(bartlett) bw(`=`h'+2') small
@@ -302,18 +308,18 @@ foreach c of global countries {
 						local s1 = `t1'
 					}
 					local ylast = max(`ylast', `t1' + `h')
-					post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (`b') (`se') (`N') (`t0') (`t1')
+					post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (`b') (`b') (`se') (`N') (`t0') (`t1')
 				}
-				if "`vr'" == "slp" {
-					mata: st_matrix("R", lp_slp(S, $hmax, $lp_slp_r))
-					di as txt "LP smussate `c' `s' -> `y': lambda relativo scelto per validazione incrociata = " %9.4g el(R, 1, 3)
+				if "`vr'" == "base" {
+					mata: st_matrix("R", lp_slp(S, $hmax, $lp_slp_r, $lp_slp_us))
+					di as txt "LP smussate `c' `s' -> `y': lambda relativo scelto per validazione incrociata = " %9.4g el(R, 1, 4) " (bande con lambda/$lp_slp_us)"
 					forv h = 0/$hmax {
 						if "`N`h''" == "" continue
-						post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (el(R, `h'+1, 1)) (el(R, `h'+1, 2)) (`N`h'') (`t0`h'') (`t1`h'')
+						post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (el(R, `h'+1, 1)) (el(R, `h'+1, 2)) (el(R, `h'+1, 3)) (`N`h'') (`t0`h'') (`t1`h'')
 						local N`h' ""
 					}
 				}
-				if inlist("`vr'", "rf", "slp") continue
+				if inlist("`vr'", "rf", "base") continue
 				di as txt "1° stadio `c' `vr' `s' (strumenti `zi') -> `y': F efficace di Montiel Olea-Pflueger min " %6.1f `fmin' ", max " %6.1f `fmax'
 				di as txt "  F efficace per h = 0,...,$hmax:`flist'"
 				di as txt "  valore critico (tau = $lp_ivtau%):`clist'"
@@ -332,19 +338,20 @@ postclose `pf'
 *******************************************************************************
 
 use ${out}/lp_energy_iv_ea.dta, clear
-gen lo90 = b - invnormal(0.95)*se
-gen hi90 = b + invnormal(0.95)*se
+* Bande centrate su bc (= b tranne che per le LP smussate: stima con undersmoothing)
+gen lo90 = bc - invnormal(0.95)*se
+gen hi90 = bc + invnormal(0.95)*se
 save ${out}/lp_energy_iv_ea.dta, replace
 export excel using ${out}/lp_energy_iv_ea.xlsx, firstrow(var) replace
 
-local lab_base "Baseline"
+local lab_base "Baseline (smooth LP)"
+local lab_unsm "Unsmoothed"
 local lab_umid "Monthly instruments"
 local lab_pre  "Pre-Covid"
-local lab_slp  "Smooth LP"
 local sty_base "lcolor(navy) lwidth(medthick)"
+local sty_unsm "lcolor(orange) lwidth(medthick) lpattern(longdash_dot)"
 local sty_umid "lcolor(maroon) lwidth(medthick) lpattern(shortdash)"
 local sty_pre  "lcolor(forest_green) lwidth(medthick) lpattern(dash)"
-local sty_slp  "lcolor(orange) lwidth(medthick) lpattern(longdash_dot)"
 
 tempname fh
 foreach s of global lp_ivshocks {
@@ -405,12 +412,12 @@ foreach s of global lp_ivshocks {
 			graph export ${gph}/lp_iv_app_`s'_`y'.png, replace
 		}
 
-		* --- Robustezza: strumenti mensili, pre-Covid e LP smussate per l'EA --- *
+		* --- Robustezza: LP non smussate, strumenti mensili e pre-Covid per l'EA --- *
 		local rc `"if geo == "`mg'" & shock == "`s'" & outcome == "`y'""'
 		local pl `"(rarea lo90 hi90 h `rc' & variant == "base", color(gs13))"'
 		local lg ""
 		local k = 1
-		foreach vr in base umid pre slp {
+		foreach vr in base unsm umid pre {
 			qui count `rc' & variant == "`vr'"
 			if r(N) == 0 continue
 			local ++k
@@ -424,8 +431,8 @@ foreach s of global lp_ivshocks {
 	}
 }
 
-* --- Petrolio (blu) e gas (rosso) nello stesso grafico, bande al 90%: LP-IV (base, prefisso
-* lp_iv_) e forma ridotta (rf, prefisso lp_rf_) --- *
+* --- Petrolio (blu) e gas (rosso) nello stesso grafico, bande al 90%: LP-IV smussate (base,
+* prefisso lp_iv_) e forma ridotta (rf, prefisso lp_rf_) --- *
 local o : word 1 of $lp_ivshocks
 local g : word 2 of $lp_ivshocks
 local others : subinstr global countries "EA" "", word

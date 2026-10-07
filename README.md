@@ -171,26 +171,33 @@ Run by `master.do` instead of the OLS file (the OLS call is in a block comment).
 time-series specification, controls and horizons as the OLS LPs, for EA and each country
 (no panel), but the quarter-on-quarter change of the oil price is instrumented with the
 Mori–Peersman oil supply news shock and that of the gas price with the Alessandri–Gazzani
-gas supply shock (`$lp_ivshocks`, `$lp_ivinstr`); electricity has no instrument. 2SLS with
-`ivreg2`, Newey–West standard errors with h+1 lags.
+gas supply shock (`$lp_ivshocks`, `$lp_ivinstr`); electricity has no instrument. The
+baseline (variant `base`) is the smooth LP-IV described below; the unsmoothed 2SLS, one
+regression per horizon with `ivreg2` and Newey–West standard errors with h+1 lags, is
+the robustness variant `unsm`.
 
-- **Mixed frequency.** The instruments are monthly, the LPs quarterly. Baseline: one
-  instrument, the quarterly average of the monthly shocks (equal weights), which gives the
-  strongest first stage. Variant `umid`: the three monthly shocks of quarter t enter as
-  three separate instruments (unrestricted MIDAS, Foroni, Marcellino and Schumacher, 2015),
-  so the first stage estimates how much each month moves the quarterly average price.
-  Variant `pre`: baseline on pre-Covid data only (t and t+h up to 2019q4, no COVID dummy).
+- **Mixed frequency.** The instruments are monthly, the LPs quarterly. Baseline and
+  `unsm`: one instrument, the quarterly average of the monthly shocks (equal weights),
+  which gives the strongest first stage. Variant `umid`: as `unsm`, with the three monthly
+  shocks of quarter t as three separate instruments (unrestricted MIDAS, Foroni,
+  Marcellino and Schumacher, 2015). Variant `pre`: `unsm` on pre-Covid data only (t and
+  t+h up to 2019q4, no COVID dummy).
 - **Reduced form** (variant `rf`): OLS of y(t+h) on the quarterly instrument and the same
   controls (Newey–West, h+1 lags), scaled to a one-standard-deviation shock. Shown in an
   appendix of `main_graphs.tex` (graphs `lp_rf_og_EA_*`, `lp_rf_og_ctry_*`).
-- **Smooth LP** (variant `slp`, robustness): smooth LP-IV of Barnichon and Brownlees
+- **Smooth LP** (baseline, variant `base`): smooth LP-IV of Barnichon and Brownlees
   (2019) with the quarterly instrument. The response is a cubic B-spline in h (knots at
   each horizon), estimated on all horizons jointly with a ridge penalty on the
   `$lp_slp_r`-th differences of the spline coefficients (default 3: shrinkage towards a
   quadratic); the controls have horizon-specific, unpenalised coefficients (partialled
   out in each horizon's sample). The penalty is chosen by 5-fold cross-validation over
-  contiguous blocks of shock dates (printed in the log); Newey–West standard errors with
-  h+1 lags on the scores summed by shock date. Implemented in the Mata function
+  contiguous blocks of shock dates (printed in the log). Confidence bands use
+  undersmoothing: the standard errors and the centre of the bands come from the same
+  estimator with the penalty divided by `$lp_slp_us` (default 10), so that the bias due
+  to the penalty is small relative to the standard error; the plotted line is the
+  cross-validated estimate (`b`), the bands are centred on the undersmoothed estimate
+  (`bc`), so the line need not be in the middle of the band. Newey–West standard errors
+  with h+1 lags on the scores summed by shock date. Implemented in the Mata function
   `lp_slp()` in the dofile.
 - **Sample.** Shock dates t need the instruments, the price and the controls; the outcome
   at t+h can extend beyond the end of the instruments. The log reports, for each series,
@@ -203,8 +210,8 @@ gas supply shock (`$lp_ivshocks`, `$lp_ivinstr`); electricity has no instrument.
   value at each horizon, with the critical value); a warning is printed when it is below
   the critical value for a maximum 2SLS bias of `$lp_ivtau`% (default 10%).
 - **Outputs.** `${out}/lp_energy_iv_ea.dta` / `.xlsx`; graphs with prefix `lp_iv_`
-  (`og_EA`, `og_ctry` and `_sq`, `main`, `app`, `rob` with baseline, monthly
-  instruments, pre-Covid and smooth LP) and `lp_rf_` (reduced form, `og_EA`, `og_ctry`). The `.tex` files and the slides use the IV graphs; the
+  (`og_EA`, `og_ctry` and `_sq`, `main`, `app`: smooth LP baseline; `rob` with baseline,
+  unsmoothed, monthly instruments and pre-Covid) and `lp_rf_` (reduced form, `og_EA`, `og_ctry`). The `.tex` files and the slides use the IV graphs; the
   OLS graphs of the last OLS run are shown in an appendix of `main_graphs.tex` for
   comparison (including electricity, which has no instrument).
 
