@@ -15,6 +15,8 @@
 \newcommand{\smp}[1]{\IfFileExists{graphs/smp_#1.tex}{\input{graphs/smp_#1.tex}\unskip}{n.a.}}
 % Text to be written once the results have been read
 \newcommand{\tbc}[1]{\textcolor{red}{[TO BE COMPLETED: #1]}}
+% Graph if it exists, otherwise a box (for graphs not yet produced by Stata)
+\newcommand{\graphornote}[2]{\IfFileExists{graphs/#2}{\includegraphics[#1]{#2}}{\fbox{\parbox{0.6\textwidth}{\centering Graph \texttt{\detokenize{#2}} available after running master.do}}}}
 
 \title{Energy price shocks, prices and wages in the euro area: graphs}
 \date{\today}
@@ -37,14 +39,14 @@
 \toprule
 Symbol & Variable & Definition & Source \\
 \midrule
-\multicolumn{4}{l}{\emph{Price change} $s_{t}$ (year-on-year \% change of the quarterly average, divided by 10)} \\
+\multicolumn{4}{l}{\emph{Price change} $s_{t}$ (quarter-on-quarter log change of the quarterly average, $100\,\Delta\ln P_t$, divided by 10)} \\
  & \texttt{OilSpotUSDBarrel} & Oil spot price, USD per barrel & \texttt{Data\_OIL\_ELE\_GAS.xlsx} \\
  & \texttt{TTFSpotEURMWH} & TTF natural gas spot price, EUR/MWh & \texttt{Data\_OIL\_ELE\_GAS.xlsx} \\
  & \texttt{ELEEURMWH} & Wholesale electricity price, EUR/MWh, by country (OLS only) & \texttt{Data\_OIL\_ELE\_GAS.xlsx} \\
 \midrule
-\multicolumn{4}{l}{\emph{Instruments} $z_{k,t}$, $k=1,2,3$ (monthly shock in the $k$-th month of quarter $t$)} \\
- & \texttt{oilMP1}--\texttt{3} & Oil supply news shock (for the oil price) & Mori and Peersman \\
- & \texttt{gasAG1}--\texttt{3} & Gas supply shock (for the gas price) & Alessandri and Gazzani (2025) \\
+\multicolumn{4}{l}{\emph{Instruments} $z_{t}$ (quarterly average of the monthly shocks; robustness: $z_{k,t}$, shock in the $k$-th month of quarter $t$)} \\
+ & \texttt{oilMP} (\texttt{oilMP1}--\texttt{3}) & Oil supply news shock (for the oil price) & Mori and Peersman \\
+ & \texttt{gasAG} (\texttt{gasAG1}--\texttt{3}) & Gas supply shock (for the gas price) & Alessandri and Gazzani (2025) \\
 \midrule
 \multicolumn{4}{l}{\emph{Outcome} $y_{t}$} \\
  & \texttt{hicp} & HICP, all items, year-on-year \% change & Eurostat \\
@@ -57,38 +59,36 @@ Symbol & Variable & Definition & Source \\
  & \texttt{lip} & Log industrial production (B--D, seasonally adjusted) & Eurostat \\
  & \texttt{ur} & Unemployment rate (seasonally adjusted, \% of labour force) & Eurostat \\
  & \texttt{bund1y} & 1-year Bund yield (common to all countries) & Bundesbank \\
-$C_t$ & \texttt{dcovid} & Dummy 2020q1--2022q4 & \\
+$C_t$ & \texttt{dcovid} & Dummy 2020q1--2022q4 (with $p$ lags) & \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \noindent Quarterly frequency (monthly series are averages over complete quarters);
-horizon $h = 0,\dots,12$ quarters; $p = 4$ lags; time series for the euro area (EA)
+horizon $h = 0,\dots,12$ quarters; $p = 2$ lags; time series for the euro area (EA)
 and for DE, IT, NL, ES, FR, BE. Main text: IV responses to oil and gas in the same
 graph, for the euro area and for the euro area with the individual countries
 (consumer prices, negotiated wages, hourly wages). Appendix: IV responses of hours
-worked and of the unemployment rate; IV robustness; OLS estimates for comparison,
+worked and of the unemployment rate; IV robustness; reduced form; OLS estimates for comparison,
 including electricity, for which no instrument is available.
 
 \subsection{IV local projections}
 
-\noindent The year-on-year change of the oil (gas) price $s_t$ is instrumented with the
-monthly oil (gas) supply shocks. The instruments are monthly and the projections
-quarterly: the three monthly shocks of quarter $t$, $z_{1,t}, z_{2,t}, z_{3,t}$, enter
-as separate instruments (unrestricted MIDAS; Foroni, Marcellino and Schumacher, 2015),
-so that the first stage estimates how much each month moves the quarterly average
-price, conditional on all controls. Two-stage least squares, one regression per
-country and horizon (Newey--West standard errors with $h+1$ lags):
+\noindent The quarter-on-quarter change of the oil (gas) price $s_t$ is instrumented with
+the oil (gas) supply shocks. The instruments are monthly and the projections quarterly:
+the baseline instrument $z_t$ is the quarterly average of the three monthly shocks of
+quarter $t$. Two-stage least squares, one regression per country and horizon
+(Newey--West standard errors with $h+1$ lags):
 \begin{align}
-s_{t} &= c^h + \sum_{k=1}^{3} g_k^h z_{k,t}
+s_{t} &= c^h + g^h z_{t}
  + \sum_{l=1}^{p} \left( \gamma_l^h y_{t-l} + \delta_l^h s_{t-l} + \phi_l^{h\prime} x_{t-l} \right)
- + \kappa^h C_t + u_{t} \\
+ + \sum_{l=0}^{p} \kappa_l^h C_{t-l} + u_{t} \\
 y_{t+h} &= \alpha^h + \beta^h \hat s_{t}
  + \sum_{l=1}^{p} \left( \tilde\gamma_l^h y_{t-l} + \tilde\delta_l^h s_{t-l} + \tilde\phi_l^{h\prime} x_{t-l} \right)
- + \tilde\kappa^h C_t + \varepsilon_{t+h}
+ + \sum_{l=0}^{p} \tilde\kappa_l^h C_{t-l} + \varepsilon_{t+h}
 \end{align}
-$\beta^h$ is the response of $y$ at horizon $h$ to a 10 percentage point increase in
-the year-on-year growth of the price. Shock dates $t$ require the instruments; the
+$\beta^h$ is the response of $y$ at horizon $h$ to a 10\% increase in the price (10 log
+points on impact). Shock dates $t$ require the instruments; the
 outcome $y_{t+h}$ can extend beyond their end. The strength of the first stage is
 measured by the effective $F$ statistic of Montiel Olea and Pflueger (2013), robust
 to heteroskedasticity and autocorrelation, against the critical value for a maximum
@@ -98,9 +98,24 @@ to heteroskedasticity and autocorrelation, against the critical value for a maxi
 
 \subsection{Robustness}
 
-\noindent For the euro area: (i) quarterly-average instrument, one instrument equal to the
-average of the three monthly shocks; (ii) pre-COVID sample, data before 2020q1 only
-($t+h \le$ 2019q4), without $C_t$.
+\noindent For the euro area: (i) monthly instruments, the three monthly shocks of quarter
+$t$, $z_{1,t}, z_{2,t}, z_{3,t}$, as separate instruments (unrestricted MIDAS; Foroni,
+Marcellino and Schumacher, 2015); (ii) pre-COVID sample, data before 2020q1 only
+($t+h \le$ 2019q4), without $C_t$; (iii) smooth local projections (Barnichon and
+Brownlees, 2019) with the baseline instrument: $\beta^h$ is a cubic B-spline in $h$,
+estimated on all horizons jointly with a penalty on the third differences of the spline
+coefficients (shrinkage towards a quadratic), chosen by cross-validation.
+
+\subsection{Reduced form (Appendix~\ref{app:rf})}
+
+\noindent OLS of the outcome on the instrument, with the same controls as the 2SLS
+estimates (Newey--West standard errors with $h+1$ lags), scaled to a one-standard-deviation
+shock $z_t$:
+\begin{equation}
+y_{t+h} = \alpha^h + \rho^h z_{t}
+ + \sum_{l=1}^{p} \left( \gamma_l^h y_{t-l} + \delta_l^h s_{t-l} + \phi_l^{h\prime} x_{t-l} \right)
+ + \sum_{l=0}^{p} \kappa_l^h C_{t-l} + \varepsilon_{t+h}
+\end{equation}
 
 \subsection{OLS local projections (Appendix~\ref{app:ols})}
 
@@ -110,7 +125,7 @@ Driscoll--Kraay standard errors):
 \begin{equation}
 y_{t+h} = \alpha^h + \beta^h s_{t}
  + \sum_{l=1}^{p} \left( \gamma_l^h y_{t-l} + \delta_l^h s_{t-l} + \phi_l^{h\prime} x_{t-l} \right)
- + \kappa^h C_t + \varepsilon_{t+h}
+ + \sum_{l=0}^{p} \kappa_l^h C_{t-l} + \varepsilon_{t+h}
 \end{equation}
 
 \subsection{Sources}
@@ -149,7 +164,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_og_EA_hicp}
   \includegraphics[width=0.7\textwidth]{lp_iv_og_EA_hicp.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year HICP inflation to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the oil price change is instrumented with the three monthly Mori--Peersman oil supply news shocks of the quarter, the gas price change with the three monthly Alessandri--Gazzani gas supply shocks of the quarter. Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sample (shock dates, $h=0$): \smp{lp_iv_og_EA_hicp}. Sources: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year HICP inflation to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the quarter-on-quarter change in the oil price is instrumented with the quarterly average of the monthly Mori--Peersman oil supply news shocks, that in the gas price with the quarterly average of the monthly Alessandri--Gazzani gas supply shocks. Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$): \smp{lp_iv_og_EA_hicp}. Sources: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -159,7 +174,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_og_ctry_hicp}
   \includegraphics[width=1\textwidth]{lp_iv_og_ctry_hicp.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year HICP inflation to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the oil price change is instrumented with the three monthly Mori--Peersman oil supply news shocks of the quarter, the gas price change with the three monthly Alessandri--Gazzani gas supply shocks of the quarter. Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sources: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year HICP inflation to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the quarter-on-quarter change in the oil price is instrumented with the quarterly average of the monthly Mori--Peersman oil supply news shocks, that in the gas price with the quarterly average of the monthly Alessandri--Gazzani gas supply shocks. Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -176,7 +191,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_og_EA_contr}
   \includegraphics[width=0.7\textwidth]{lp_iv_og_EA_contr.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year negotiated wage growth to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the oil price change is instrumented with the three monthly Mori--Peersman oil supply news shocks of the quarter, the gas price change with the three monthly Alessandri--Gazzani gas supply shocks of the quarter. Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sample (shock dates, $h=0$): \smp{lp_iv_og_EA_contr}. Sources: ECB (indicator of negotiated wage rates, INW); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year negotiated wage growth to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the quarter-on-quarter change in the oil price is instrumented with the quarterly average of the monthly Mori--Peersman oil supply news shocks, that in the gas price with the quarterly average of the monthly Alessandri--Gazzani gas supply shocks. Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$): \smp{lp_iv_og_EA_contr}. Sources: ECB (indicator of negotiated wage rates, INW); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -186,7 +201,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_og_ctry_contr}
   \includegraphics[width=1\textwidth]{lp_iv_og_ctry_contr.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year negotiated wage growth to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the oil price change is instrumented with the three monthly Mori--Peersman oil supply news shocks of the quarter, the gas price change with the three monthly Alessandri--Gazzani gas supply shocks of the quarter. Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sources: ECB (indicator of negotiated wage rates, INW); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year negotiated wage growth to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the quarter-on-quarter change in the oil price is instrumented with the quarterly average of the monthly Mori--Peersman oil supply news shocks, that in the gas price with the quarterly average of the monthly Alessandri--Gazzani gas supply shocks. Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: ECB (indicator of negotiated wage rates, INW); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -203,7 +218,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_og_EA_wageH}
   \includegraphics[width=0.7\textwidth]{lp_iv_og_EA_wageH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year growth in gross wages per hour worked to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the oil price change is instrumented with the three monthly Mori--Peersman oil supply news shocks of the quarter, the gas price change with the three monthly Alessandri--Gazzani gas supply shocks of the quarter. Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sample (shock dates, $h=0$): \smp{lp_iv_og_EA_wageH}. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year growth in gross wages per hour worked to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the quarter-on-quarter change in the oil price is instrumented with the quarterly average of the monthly Mori--Peersman oil supply news shocks, that in the gas price with the quarterly average of the monthly Alessandri--Gazzani gas supply shocks. Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$): \smp{lp_iv_og_EA_wageH}. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -213,7 +228,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_og_ctry_wageH}
   \includegraphics[width=1\textwidth]{lp_iv_og_ctry_wageH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year growth in gross wages per hour worked to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the oil price change is instrumented with the three monthly Mori--Peersman oil supply news shocks of the quarter, the gas price change with the three monthly Alessandri--Gazzani gas supply shocks of the quarter. Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year growth in gross wages per hour worked to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the quarter-on-quarter change in the oil price is instrumented with the quarterly average of the monthly Mori--Peersman oil supply news shocks, that in the gas price with the quarterly average of the monthly Alessandri--Gazzani gas supply shocks. Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -236,7 +251,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_og_EA_occH}
   \includegraphics[width=0.7\textwidth]{lp_iv_og_EA_occH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of quarter-on-quarter growth in hours worked (total economy) to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the oil price change is instrumented with the three monthly Mori--Peersman oil supply news shocks of the quarter, the gas price change with the three monthly Alessandri--Gazzani gas supply shocks of the quarter. Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sample (shock dates, $h=0$): \smp{lp_iv_og_EA_occH}. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of quarter-on-quarter growth in hours worked (total economy) to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the quarter-on-quarter change in the oil price is instrumented with the quarterly average of the monthly Mori--Peersman oil supply news shocks, that in the gas price with the quarterly average of the monthly Alessandri--Gazzani gas supply shocks. Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$): \smp{lp_iv_og_EA_occH}. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -246,7 +261,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_og_ctry_occH}
   \includegraphics[width=1\textwidth]{lp_iv_og_ctry_occH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of quarter-on-quarter growth in hours worked (total economy) to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the oil price change is instrumented with the three monthly Mori--Peersman oil supply news shocks of the quarter, the gas price change with the three monthly Alessandri--Gazzani gas supply shocks of the quarter. Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of quarter-on-quarter growth in hours worked (total economy) to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the quarter-on-quarter change in the oil price is instrumented with the quarterly average of the monthly Mori--Peersman oil supply news shocks, that in the gas price with the quarterly average of the monthly Alessandri--Gazzani gas supply shocks. Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -263,7 +278,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_og_EA_dur}
   \includegraphics[width=0.7\textwidth]{lp_iv_og_EA_dur.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of the quarter-on-quarter change in the unemployment rate to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the oil price change is instrumented with the three monthly Mori--Peersman oil supply news shocks of the quarter, the gas price change with the three monthly Alessandri--Gazzani gas supply shocks of the quarter. Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, 1-year Bund yield (the unemployment rate level is left out, as it is collinear with the lags of the outcome); COVID dummy 2020--2022. Sample (shock dates, $h=0$): \smp{lp_iv_og_EA_dur}. Sources: Eurostat (\texttt{une\_rt\_m}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of the quarter-on-quarter change in the unemployment rate to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the quarter-on-quarter change in the oil price is instrumented with the quarterly average of the monthly Mori--Peersman oil supply news shocks, that in the gas price with the quarterly average of the monthly Alessandri--Gazzani gas supply shocks. Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, 1-year Bund yield (the unemployment rate level is left out, as it is collinear with the lags of the outcome); COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$): \smp{lp_iv_og_EA_dur}. Sources: Eurostat (\texttt{une\_rt\_m}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -273,14 +288,14 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_og_ctry_dur}
   \includegraphics[width=1\textwidth]{lp_iv_og_ctry_dur.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of the quarter-on-quarter change in the unemployment rate to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the oil price change is instrumented with the three monthly Mori--Peersman oil supply news shocks of the quarter, the gas price change with the three monthly Alessandri--Gazzani gas supply shocks of the quarter. Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, 1-year Bund yield (the unemployment rate level is left out, as it is collinear with the lags of the outcome); COVID dummy 2020--2022. Sources: Eurostat (\texttt{une\_rt\_m}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of the quarter-on-quarter change in the unemployment rate to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. 2SLS local projections: the quarter-on-quarter change in the oil price is instrumented with the quarterly average of the monthly Mori--Peersman oil supply news shocks, that in the gas price with the quarterly average of the monthly Alessandri--Gazzani gas supply shocks. Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, 1-year Bund yield (the unemployment rate level is left out, as it is collinear with the lags of the outcome); COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (\texttt{une\_rt\_m}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
 \clearpage
 
 %==============================================================================
-\section{IV robustness: quarterly-average instrument and pre-COVID sample}
+\section{IV robustness: monthly instruments, pre-COVID sample and smooth LP}
 %==============================================================================
 
 \subsection{HICP}
@@ -291,7 +306,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_rob_OilSpotUSDBarrel_hicp}
   \includegraphics[width=0.7\textwidth]{lp_iv_rob_OilSpotUSDBarrel_hicp.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year HICP inflation to a 10 percentage point increase in the year-on-year growth in the oil price (spot, USD per barrel). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the three monthly shocks of the quarter as instruments (90\% band). Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Quarterly-average instrument: one instrument, the average of the three monthly shocks. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sources: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year HICP inflation to a 10\% increase in the oil price (spot, USD per barrel). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the quarterly average of the monthly shocks as instrument (90\% band). Monthly instruments: the three monthly shocks of the quarter as separate instruments. Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Smooth LP: smooth local projections (Barnichon and Brownlees, 2019) with the baseline instrument, penalty chosen by cross-validation. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -301,7 +316,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_rob_TTFSpotEURMWH_hicp}
   \includegraphics[width=0.7\textwidth]{lp_iv_rob_TTFSpotEURMWH_hicp.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year HICP inflation to a 10 percentage point increase in the year-on-year growth in the natural gas price (TTF, EUR/MWh). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the three monthly shocks of the quarter as instruments (90\% band). Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Quarterly-average instrument: one instrument, the average of the three monthly shocks. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sources: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year HICP inflation to a 10\% increase in the natural gas price (TTF, EUR/MWh). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the quarterly average of the monthly shocks as instrument (90\% band). Monthly instruments: the three monthly shocks of the quarter as separate instruments. Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Smooth LP: smooth local projections (Barnichon and Brownlees, 2019) with the baseline instrument, penalty chosen by cross-validation. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -315,7 +330,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_rob_OilSpotUSDBarrel_contr}
   \includegraphics[width=0.7\textwidth]{lp_iv_rob_OilSpotUSDBarrel_contr.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year negotiated wage growth to a 10 percentage point increase in the year-on-year growth in the oil price (spot, USD per barrel). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the three monthly shocks of the quarter as instruments (90\% band). Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Quarterly-average instrument: one instrument, the average of the three monthly shocks. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sources: ECB (indicator of negotiated wage rates, INW); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year negotiated wage growth to a 10\% increase in the oil price (spot, USD per barrel). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the quarterly average of the monthly shocks as instrument (90\% band). Monthly instruments: the three monthly shocks of the quarter as separate instruments. Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Smooth LP: smooth local projections (Barnichon and Brownlees, 2019) with the baseline instrument, penalty chosen by cross-validation. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: ECB (indicator of negotiated wage rates, INW); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -325,7 +340,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_rob_TTFSpotEURMWH_contr}
   \includegraphics[width=0.7\textwidth]{lp_iv_rob_TTFSpotEURMWH_contr.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year negotiated wage growth to a 10 percentage point increase in the year-on-year growth in the natural gas price (TTF, EUR/MWh). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the three monthly shocks of the quarter as instruments (90\% band). Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Quarterly-average instrument: one instrument, the average of the three monthly shocks. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sources: ECB (indicator of negotiated wage rates, INW); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year negotiated wage growth to a 10\% increase in the natural gas price (TTF, EUR/MWh). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the quarterly average of the monthly shocks as instrument (90\% band). Monthly instruments: the three monthly shocks of the quarter as separate instruments. Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Smooth LP: smooth local projections (Barnichon and Brownlees, 2019) with the baseline instrument, penalty chosen by cross-validation. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: ECB (indicator of negotiated wage rates, INW); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -339,7 +354,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_rob_OilSpotUSDBarrel_wageH}
   \includegraphics[width=0.7\textwidth]{lp_iv_rob_OilSpotUSDBarrel_wageH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year growth in gross wages per hour worked to a 10 percentage point increase in the year-on-year growth in the oil price (spot, USD per barrel). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the three monthly shocks of the quarter as instruments (90\% band). Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Quarterly-average instrument: one instrument, the average of the three monthly shocks. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year growth in gross wages per hour worked to a 10\% increase in the oil price (spot, USD per barrel). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the quarterly average of the monthly shocks as instrument (90\% band). Monthly instruments: the three monthly shocks of the quarter as separate instruments. Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Smooth LP: smooth local projections (Barnichon and Brownlees, 2019) with the baseline instrument, penalty chosen by cross-validation. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -349,7 +364,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_rob_TTFSpotEURMWH_wageH}
   \includegraphics[width=0.7\textwidth]{lp_iv_rob_TTFSpotEURMWH_wageH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year growth in gross wages per hour worked to a 10 percentage point increase in the year-on-year growth in the natural gas price (TTF, EUR/MWh). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the three monthly shocks of the quarter as instruments (90\% band). Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Quarterly-average instrument: one instrument, the average of the three monthly shocks. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year growth in gross wages per hour worked to a 10\% increase in the natural gas price (TTF, EUR/MWh). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the quarterly average of the monthly shocks as instrument (90\% band). Monthly instruments: the three monthly shocks of the quarter as separate instruments. Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Smooth LP: smooth local projections (Barnichon and Brownlees, 2019) with the baseline instrument, penalty chosen by cross-validation. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -363,7 +378,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_rob_OilSpotUSDBarrel_occH}
   \includegraphics[width=0.7\textwidth]{lp_iv_rob_OilSpotUSDBarrel_occH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of quarter-on-quarter growth in hours worked (total economy) to a 10 percentage point increase in the year-on-year growth in the oil price (spot, USD per barrel). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the three monthly shocks of the quarter as instruments (90\% band). Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Quarterly-average instrument: one instrument, the average of the three monthly shocks. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of quarter-on-quarter growth in hours worked (total economy) to a 10\% increase in the oil price (spot, USD per barrel). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the quarterly average of the monthly shocks as instrument (90\% band). Monthly instruments: the three monthly shocks of the quarter as separate instruments. Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Smooth LP: smooth local projections (Barnichon and Brownlees, 2019) with the baseline instrument, penalty chosen by cross-validation. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -373,7 +388,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_rob_TTFSpotEURMWH_occH}
   \includegraphics[width=0.7\textwidth]{lp_iv_rob_TTFSpotEURMWH_occH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of quarter-on-quarter growth in hours worked (total economy) to a 10 percentage point increase in the year-on-year growth in the natural gas price (TTF, EUR/MWh). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the three monthly shocks of the quarter as instruments (90\% band). Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Quarterly-average instrument: one instrument, the average of the three monthly shocks. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of quarter-on-quarter growth in hours worked (total economy) to a 10\% increase in the natural gas price (TTF, EUR/MWh). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the quarterly average of the monthly shocks as instrument (90\% band). Monthly instruments: the three monthly shocks of the quarter as separate instruments. Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Smooth LP: smooth local projections (Barnichon and Brownlees, 2019) with the baseline instrument, penalty chosen by cross-validation. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -387,7 +402,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_rob_OilSpotUSDBarrel_dur}
   \includegraphics[width=0.7\textwidth]{lp_iv_rob_OilSpotUSDBarrel_dur.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of the quarter-on-quarter change in the unemployment rate to a 10 percentage point increase in the year-on-year growth in the oil price (spot, USD per barrel). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the three monthly shocks of the quarter as instruments (90\% band). Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Quarterly-average instrument: one instrument, the average of the three monthly shocks. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, 1-year Bund yield (the unemployment rate level is left out, as it is collinear with the lags of the outcome); COVID dummy 2020--2022. Sources: Eurostat (\texttt{une\_rt\_m}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of the quarter-on-quarter change in the unemployment rate to a 10\% increase in the oil price (spot, USD per barrel). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the quarterly average of the monthly shocks as instrument (90\% band). Monthly instruments: the three monthly shocks of the quarter as separate instruments. Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Smooth LP: smooth local projections (Barnichon and Brownlees, 2019) with the baseline instrument, penalty chosen by cross-validation. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, 1-year Bund yield (the unemployment rate level is left out, as it is collinear with the lags of the outcome); COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (\texttt{une\_rt\_m}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -397,7 +412,133 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_iv_rob_TTFSpotEURMWH_dur}
   \includegraphics[width=0.7\textwidth]{lp_iv_rob_TTFSpotEURMWH_dur.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of the quarter-on-quarter change in the unemployment rate to a 10 percentage point increase in the year-on-year growth in the natural gas price (TTF, EUR/MWh). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the three monthly shocks of the quarter as instruments (90\% band). Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Quarterly-average instrument: one instrument, the average of the three monthly shocks. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, 1-year Bund yield (the unemployment rate level is left out, as it is collinear with the lags of the outcome); COVID dummy 2020--2022. Sources: Eurostat (\texttt{une\_rt\_m}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of the quarter-on-quarter change in the unemployment rate to a 10\% increase in the natural gas price (TTF, EUR/MWh). Euro area, time series, Newey--West standard errors. Baseline: 2SLS with the quarterly average of the monthly shocks as instrument (90\% band). Monthly instruments: the three monthly shocks of the quarter as separate instruments. Pre-COVID: baseline on data before 2020q1 only ($t+h \le$ 2019q4), without the COVID dummy. Smooth LP: smooth local projections (Barnichon and Brownlees, 2019) with the baseline instrument, penalty chosen by cross-validation. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, 1-year Bund yield (the unemployment rate level is left out, as it is collinear with the lags of the outcome); COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (\texttt{une\_rt\_m}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\clearpage
+
+%==============================================================================
+\section{Reduced form}\label{app:rf}
+%==============================================================================
+
+\noindent Responses to the instruments, estimated by OLS with the same controls as the 2SLS estimates.
+
+\subsection{Consumer prices}
+
+\begin{figure}[H]
+  \centering
+  \caption{Oil and gas $\rightarrow$ HICP: euro area, reduced form}
+  \label{fig:lp_rf_og_EA_hicp}
+  \graphornote{width=0.7\textwidth}{lp_rf_og_EA_hicp.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Notes}: Response (percentage points) of year-on-year HICP inflation to a one-standard-deviation oil supply news shock (Mori--Peersman) and gas supply shock (Alessandri--Gazzani), quarterly averages of the monthly shocks; 90\% confidence bands. Reduced-form local projections: OLS of the outcome on the shock, with the same controls as the 2SLS estimates. Time-series estimate for the euro area, Newey--West standard errors. Controls: 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$): \smp{lp_rf_og_EA_hicp}. Sources: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{Oil and gas $\rightarrow$ HICP: euro area and countries, reduced form}
+  \label{fig:lp_rf_og_ctry_hicp}
+  \graphornote{width=1\textwidth}{lp_rf_og_ctry_hicp.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Notes}: Response (percentage points) of year-on-year HICP inflation to a one-standard-deviation oil supply news shock (Mori--Peersman) and gas supply shock (Alessandri--Gazzani), quarterly averages of the monthly shocks; 90\% confidence bands. Reduced-form local projections: OLS of the outcome on the shock, with the same controls as the 2SLS estimates. Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls: 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\clearpage
+
+\subsection{Negotiated wages}
+
+\begin{figure}[H]
+  \centering
+  \caption{Oil and gas $\rightarrow$ negotiated wages: euro area, reduced form}
+  \label{fig:lp_rf_og_EA_contr}
+  \graphornote{width=0.7\textwidth}{lp_rf_og_EA_contr.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Notes}: Response (percentage points) of year-on-year negotiated wage growth to a one-standard-deviation oil supply news shock (Mori--Peersman) and gas supply shock (Alessandri--Gazzani), quarterly averages of the monthly shocks; 90\% confidence bands. Reduced-form local projections: OLS of the outcome on the shock, with the same controls as the 2SLS estimates. Time-series estimate for the euro area, Newey--West standard errors. Controls: 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$): \smp{lp_rf_og_EA_contr}. Sources: ECB (indicator of negotiated wage rates, INW); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{Oil and gas $\rightarrow$ negotiated wages: euro area and countries, reduced form}
+  \label{fig:lp_rf_og_ctry_contr}
+  \graphornote{width=1\textwidth}{lp_rf_og_ctry_contr.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Notes}: Response (percentage points) of year-on-year negotiated wage growth to a one-standard-deviation oil supply news shock (Mori--Peersman) and gas supply shock (Alessandri--Gazzani), quarterly averages of the monthly shocks; 90\% confidence bands. Reduced-form local projections: OLS of the outcome on the shock, with the same controls as the 2SLS estimates. Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls: 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: ECB (indicator of negotiated wage rates, INW); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\clearpage
+
+\subsection{National accounts wages}
+
+\begin{figure}[H]
+  \centering
+  \caption{Oil and gas $\rightarrow$ hourly wages: euro area, reduced form}
+  \label{fig:lp_rf_og_EA_wageH}
+  \graphornote{width=0.7\textwidth}{lp_rf_og_EA_wageH.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Notes}: Response (percentage points) of year-on-year growth in gross wages per hour worked to a one-standard-deviation oil supply news shock (Mori--Peersman) and gas supply shock (Alessandri--Gazzani), quarterly averages of the monthly shocks; 90\% confidence bands. Reduced-form local projections: OLS of the outcome on the shock, with the same controls as the 2SLS estimates. Time-series estimate for the euro area, Newey--West standard errors. Controls: 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$): \smp{lp_rf_og_EA_wageH}. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{Oil and gas $\rightarrow$ hourly wages: euro area and countries, reduced form}
+  \label{fig:lp_rf_og_ctry_wageH}
+  \graphornote{width=1\textwidth}{lp_rf_og_ctry_wageH.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Notes}: Response (percentage points) of year-on-year growth in gross wages per hour worked to a one-standard-deviation oil supply news shock (Mori--Peersman) and gas supply shock (Alessandri--Gazzani), quarterly averages of the monthly shocks; 90\% confidence bands. Reduced-form local projections: OLS of the outcome on the shock, with the same controls as the 2SLS estimates. Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls: 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\clearpage
+
+\subsection{Hours worked}
+
+\begin{figure}[H]
+  \centering
+  \caption{Oil and gas $\rightarrow$ hours worked: euro area, reduced form}
+  \label{fig:lp_rf_og_EA_occH}
+  \graphornote{width=0.7\textwidth}{lp_rf_og_EA_occH.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Notes}: Response (percentage points) of quarter-on-quarter growth in hours worked (total economy) to a one-standard-deviation oil supply news shock (Mori--Peersman) and gas supply shock (Alessandri--Gazzani), quarterly averages of the monthly shocks; 90\% confidence bands. Reduced-form local projections: OLS of the outcome on the shock, with the same controls as the 2SLS estimates. Time-series estimate for the euro area, Newey--West standard errors. Controls: 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$): \smp{lp_rf_og_EA_occH}. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{Oil and gas $\rightarrow$ hours worked: euro area and countries, reduced form}
+  \label{fig:lp_rf_og_ctry_occH}
+  \graphornote{width=1\textwidth}{lp_rf_og_ctry_occH.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Notes}: Response (percentage points) of quarter-on-quarter growth in hours worked (total economy) to a one-standard-deviation oil supply news shock (Mori--Peersman) and gas supply shock (Alessandri--Gazzani), quarterly averages of the monthly shocks; 90\% confidence bands. Reduced-form local projections: OLS of the outcome on the shock, with the same controls as the 2SLS estimates. Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls: 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (quarterly national accounts); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\clearpage
+
+\subsection{Unemployment rate}
+
+\begin{figure}[H]
+  \centering
+  \caption{Oil and gas $\rightarrow$ unemployment rate: euro area, reduced form}
+  \label{fig:lp_rf_og_EA_dur}
+  \graphornote{width=0.7\textwidth}{lp_rf_og_EA_dur.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Notes}: Response (percentage points) of the quarter-on-quarter change in the unemployment rate to a one-standard-deviation oil supply news shock (Mori--Peersman) and gas supply shock (Alessandri--Gazzani), quarterly averages of the monthly shocks; 90\% confidence bands. Reduced-form local projections: OLS of the outcome on the shock, with the same controls as the 2SLS estimates. Time-series estimate for the euro area, Newey--West standard errors. Controls: 2 lags of the outcome and of the price change, log industrial production, 1-year Bund yield (the unemployment rate level is left out, as it is collinear with the lags of the outcome); COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$): \smp{lp_rf_og_EA_dur}. Sources: Eurostat (\texttt{une\_rt\_m}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{Oil and gas $\rightarrow$ unemployment rate: euro area and countries, reduced form}
+  \label{fig:lp_rf_og_ctry_dur}
+  \graphornote{width=1\textwidth}{lp_rf_og_ctry_dur.png}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Notes}: Response (percentage points) of the quarter-on-quarter change in the unemployment rate to a one-standard-deviation oil supply news shock (Mori--Peersman) and gas supply shock (Alessandri--Gazzani), quarterly averages of the monthly shocks; 90\% confidence bands. Reduced-form local projections: OLS of the outcome on the shock, with the same controls as the 2SLS estimates. Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls: 2 lags of the outcome and of the price change, log industrial production, 1-year Bund yield (the unemployment rate level is left out, as it is collinear with the lags of the outcome); COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (\texttt{une\_rt\_m}); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -408,7 +549,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
 %==============================================================================
 
 \noindent Graphs from the last OLS run of \texttt{an\_lp\_energy\_ea.do} (switched off in
-\texttt{master.do}).
+\texttt{master.do}); rerun it to update them to the current specification described in the notes.
 
 \subsection{Consumer prices}
 
@@ -418,7 +559,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_og_EA_hicp}
   \includegraphics[width=0.7\textwidth]{lp_og_EA_hicp.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year HICP inflation to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sample (shock dates, $h=0$): \smp{lp_og_EA_hicp}. Sources: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year HICP inflation to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$): \smp{lp_og_EA_hicp}. Sources: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -428,7 +569,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_og_ctry_hicp}
   \includegraphics[width=1\textwidth]{lp_og_ctry_hicp.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year HICP inflation to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sources: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year HICP inflation to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -442,7 +583,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_og_EA_contr}
   \includegraphics[width=0.7\textwidth]{lp_og_EA_contr.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year negotiated wage growth to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sample (shock dates, $h=0$): \smp{lp_og_EA_contr}. Sources: ECB (indicator of negotiated wage rates, INW); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year negotiated wage growth to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$): \smp{lp_og_EA_contr}. Sources: ECB (indicator of negotiated wage rates, INW); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -452,7 +593,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_og_ctry_contr}
   \includegraphics[width=1\textwidth]{lp_og_ctry_contr.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year negotiated wage growth to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sources: ECB (indicator of negotiated wage rates, INW); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year negotiated wage growth to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: ECB (indicator of negotiated wage rates, INW); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -466,7 +607,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_og_EA_wageH}
   \includegraphics[width=0.7\textwidth]{lp_og_EA_wageH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year growth in gross wages per hour worked to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sample (shock dates, $h=0$): \smp{lp_og_EA_wageH}. Sources: Eurostat (quarterly national accounts); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year growth in gross wages per hour worked to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$): \smp{lp_og_EA_wageH}. Sources: Eurostat (quarterly national accounts); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -476,7 +617,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_og_ctry_wageH}
   \includegraphics[width=1\textwidth]{lp_og_ctry_wageH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year growth in gross wages per hour worked to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sources: Eurostat (quarterly national accounts); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year growth in gross wages per hour worked to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (quarterly national accounts); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -490,7 +631,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_og_EA_occH}
   \includegraphics[width=0.7\textwidth]{lp_og_EA_occH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of quarter-on-quarter growth in hours worked (total economy) to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sample (shock dates, $h=0$): \smp{lp_og_EA_occH}. Sources: Eurostat (quarterly national accounts); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of quarter-on-quarter growth in hours worked (total economy) to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$): \smp{lp_og_EA_occH}. Sources: Eurostat (quarterly national accounts); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -500,7 +641,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_og_ctry_occH}
   \includegraphics[width=1\textwidth]{lp_og_ctry_occH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of quarter-on-quarter growth in hours worked (total economy) to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. Sources: Eurostat (quarterly national accounts); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of quarter-on-quarter growth in hours worked (total economy) to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (quarterly national accounts); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -514,7 +655,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_og_EA_dur}
   \includegraphics[width=0.7\textwidth]{lp_og_EA_dur.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of the quarter-on-quarter change in the unemployment rate to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, 1-year Bund yield (the unemployment rate level is left out, as it is collinear with the lags of the outcome); COVID dummy 2020--2022. Sample (shock dates, $h=0$): \smp{lp_og_EA_dur}. Sources: Eurostat (\texttt{une\_rt\_m}); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of the quarter-on-quarter change in the unemployment rate to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, 1-year Bund yield (the unemployment rate level is left out, as it is collinear with the lags of the outcome); COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$): \smp{lp_og_EA_dur}. Sources: Eurostat (\texttt{une\_rt\_m}); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -524,7 +665,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_og_ctry_dur}
   \includegraphics[width=1\textwidth]{lp_og_ctry_dur.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of the quarter-on-quarter change in the unemployment rate to a 10 percentage point increase in the year-on-year growth of the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, 1-year Bund yield (the unemployment rate level is left out, as it is collinear with the lags of the outcome); COVID dummy 2020--2022. Sources: Eurostat (\texttt{une\_rt\_m}); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of the quarter-on-quarter change in the unemployment rate to a 10\% increase in the oil and natural gas prices; 90\% confidence bands. OLS local projections (the price change is not instrumented). Time series for the euro area and for each country, Newey--West standard errors; same vertical scale in all panels; the sample (shock dates, $h=0$) for oil and gas is shown under each panel name. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, 1-year Bund yield (the unemployment rate level is left out, as it is collinear with the lags of the outcome); COVID dummy 2020--2022 and its 2 lags. Sources: Eurostat (\texttt{une\_rt\_m}); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -537,7 +678,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_main_ELEEURMWH_hicp}
   \includegraphics[width=0.7\textwidth]{lp_main_ELEEURMWH_hicp.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year HICP inflation to a 10 percentage point increase in the year-on-year growth in the wholesale electricity price (EUR/MWh, national price). OLS panel estimate on DE, IT, NL, ES, FR (BE excluded: no electricity price), country fixed effects, weighted by average country employment, Driscoll--Kraay standard errors; no instrument is available for electricity. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. 90\% confidence band. Sample (shock dates, $h=0$): \smp{lp_main_ELEEURMWH_hicp}. Sources: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year HICP inflation to a 10\% increase in the wholesale electricity price (EUR/MWh, national price). OLS panel estimate on DE, IT, NL, ES, FR (BE excluded: no electricity price), country fixed effects, weighted by average country employment, Driscoll--Kraay standard errors; no instrument is available for electricity. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. 90\% confidence band. Sample (shock dates, $h=0$): \smp{lp_main_ELEEURMWH_hicp}. Sources: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -547,7 +688,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_main_ELEEURMWH_contr}
   \includegraphics[width=0.7\textwidth]{lp_main_ELEEURMWH_contr.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year negotiated wage growth to a 10 percentage point increase in the year-on-year growth in the wholesale electricity price (EUR/MWh, national price). OLS panel estimate on DE, IT, NL, ES, FR (BE excluded: no electricity price), country fixed effects, weighted by average country employment, Driscoll--Kraay standard errors; no instrument is available for electricity. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. 90\% confidence band. Sample (shock dates, $h=0$): \smp{lp_main_ELEEURMWH_contr}. Sources: ECB (indicator of negotiated wage rates, INW); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year negotiated wage growth to a 10\% increase in the wholesale electricity price (EUR/MWh, national price). OLS panel estimate on DE, IT, NL, ES, FR (BE excluded: no electricity price), country fixed effects, weighted by average country employment, Driscoll--Kraay standard errors; no instrument is available for electricity. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. 90\% confidence band. Sample (shock dates, $h=0$): \smp{lp_main_ELEEURMWH_contr}. Sources: ECB (indicator of negotiated wage rates, INW); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -557,7 +698,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_main_ELEEURMWH_wageH}
   \includegraphics[width=0.7\textwidth]{lp_main_ELEEURMWH_wageH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of year-on-year growth in gross wages per hour worked to a 10 percentage point increase in the year-on-year growth in the wholesale electricity price (EUR/MWh, national price). OLS panel estimate on DE, IT, NL, ES, FR (BE excluded: no electricity price), country fixed effects, weighted by average country employment, Driscoll--Kraay standard errors; no instrument is available for electricity. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. 90\% confidence band. Sample (shock dates, $h=0$): \smp{lp_main_ELEEURMWH_wageH}. Sources: Eurostat (quarterly national accounts); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of year-on-year growth in gross wages per hour worked to a 10\% increase in the wholesale electricity price (EUR/MWh, national price). OLS panel estimate on DE, IT, NL, ES, FR (BE excluded: no electricity price), country fixed effects, weighted by average country employment, Driscoll--Kraay standard errors; no instrument is available for electricity. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. 90\% confidence band. Sample (shock dates, $h=0$): \smp{lp_main_ELEEURMWH_wageH}. Sources: Eurostat (quarterly national accounts); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -567,7 +708,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_main_ELEEURMWH_occH}
   \includegraphics[width=0.7\textwidth]{lp_main_ELEEURMWH_occH.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of quarter-on-quarter growth in hours worked (total economy) to a 10 percentage point increase in the year-on-year growth in the wholesale electricity price (EUR/MWh, national price). OLS panel estimate on DE, IT, NL, ES, FR (BE excluded: no electricity price), country fixed effects, weighted by average country employment, Driscoll--Kraay standard errors; no instrument is available for electricity. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022. 90\% confidence band. Sample (shock dates, $h=0$): \smp{lp_main_ELEEURMWH_occH}. Sources: Eurostat (quarterly national accounts); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of quarter-on-quarter growth in hours worked (total economy) to a 10\% increase in the wholesale electricity price (EUR/MWh, national price). OLS panel estimate on DE, IT, NL, ES, FR (BE excluded: no electricity price), country fixed effects, weighted by average country employment, Driscoll--Kraay standard errors; no instrument is available for electricity. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. 90\% confidence band. Sample (shock dates, $h=0$): \smp{lp_main_ELEEURMWH_occH}. Sources: Eurostat (quarterly national accounts); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
@@ -577,7 +718,7 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \label{fig:lp_main_ELEEURMWH_dur}
   \includegraphics[width=0.7\textwidth]{lp_main_ELEEURMWH_dur.png}
   \begin{minipage}{0.95\textwidth}\footnotesize
-  \emph{Notes}: Response (percentage points) of the quarter-on-quarter change in the unemployment rate to a 10 percentage point increase in the year-on-year growth in the wholesale electricity price (EUR/MWh, national price). OLS panel estimate on DE, IT, NL, ES, FR (BE excluded: no electricity price), country fixed effects, weighted by average country employment, Driscoll--Kraay standard errors; no instrument is available for electricity. Controls (both stages): 4 lags of the outcome and of the price change, log industrial production, 1-year Bund yield (the unemployment rate level is left out, as it is collinear with the lags of the outcome); COVID dummy 2020--2022. 90\% confidence band. Sample (shock dates, $h=0$): \smp{lp_main_ELEEURMWH_dur}. Sources: Eurostat (\texttt{une\_rt\_m}); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \emph{Notes}: Response (percentage points) of the quarter-on-quarter change in the unemployment rate to a 10\% increase in the wholesale electricity price (EUR/MWh, national price). OLS panel estimate on DE, IT, NL, ES, FR (BE excluded: no electricity price), country fixed effects, weighted by average country employment, Driscoll--Kraay standard errors; no instrument is available for electricity. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, 1-year Bund yield (the unemployment rate level is left out, as it is collinear with the lags of the outcome); COVID dummy 2020--2022 and its 2 lags. 90\% confidence band. Sample (shock dates, $h=0$): \smp{lp_main_ELEEURMWH_dur}. Sources: Eurostat (\texttt{une\_rt\_m}); Eurostat and Bundesbank for the controls. Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 

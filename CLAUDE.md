@@ -44,7 +44,8 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   (e.g. `wageHTDE`, `ELEEURMWHIT`) using `reshape long ..., j(geo) string`.
 - Monthly data are made quarterly with `collapse (mean) ..., by(timeq)`.
 - Growth rates are year-on-year % changes, computed in place:
-  `gen _v = 100*v/l4.v-100`, `drop v`, `rename _v v`.
+  `gen _v = 100*v/l4.v-100`, `drop v`, `rename _v v`. Exception: energy prices (the LP
+  shocks) are quarter-on-quarter log changes, `100*ln(v/l.v)`.
 - Intermediate files are `tempfile`s. Only final datasets are saved to `${data}`.
 - Merges are `merge 1:1 timeq geo ..., nogen`. Check the match table in the log.
 
@@ -57,9 +58,9 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
 - Put checks in the code (`assert`, `isid`) instead of assuming data properties.
 - Minimal code: no wrappers or programs unless they are used more than once.
 - LP conventions (`an_lp_energy_ea.do`): horizon `0/$hmax`; the shock is scaled to
-  +10 pp; `$lp_lags` lags of the outcome and the shock; panel = country FE +
+  a 10% price increase; `$lp_lags` lags of the outcome and the shock; panel = country FE +
   Driscoll–Kraay (`xtscc`, lag h+1), weighted by fixed country weights `[aw=wP]` (country mean of employment `occP`); country time series = `newey`, lag h+1. Controls: `$lp_lags` lags of
-  `$lp_controls` plus the COVID dummy `dcovid` (2020q1–2022q4). Robustness variants are
+  `$lp_controls` plus the COVID dummy `dcovid` (2020q1–2022q4) and its `$lp_lags` lags. Robustness variants are
   stored in `variant` (base/pre). Results
   go to a `postfile` dataset. The estimation sample is marked explicitly
   (`smp` + `markout`), its period is posted as `tmin`/`tmax` and shown in the panel labels of the appendix
@@ -67,8 +68,10 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   with the state dummy and carry the state in the output name.
 - LP-IV conventions (`an_lpiv_energy_ea.do`, run instead of the OLS file): time series only (no
   panel); oil instrumented with Mori–Peersman, gas with Alessandri–Gazzani (`$lp_ivshocks`,
-  `$lp_ivinstr`); baseline instruments = the 3 monthly shocks of the quarter (`z1 z2 z3`,
-  U-MIDAS), variants `qsum` (quarterly average) and `pre`; `ivreg2 ..., robust kernel(bartlett)
+  `$lp_ivinstr`); baseline instrument = quarterly average of the monthly shocks (`z`); variants `umid`
+  (the 3 monthly shocks of the quarter, `z1 z2 z3`, U-MIDAS), `pre`, `rf` (reduced form of y on
+  `z`, `newey`, 1-s.d. shock, graphs `lp_rf_*` in an appendix) and `slp` (smooth LP-IV of
+  Barnichon–Brownlees, Mata `lp_slp()`, penalty order `$lp_slp_r`, cross-validated); `ivreg2 ..., robust kernel(bartlett)
   bw(h+2)` (= Newey–West lag h+1); lags of y, s and controls in both stages; first-stage
   effective F of Montiel Olea–Pflueger (`weakivtest`) only in the log, weak if below the critical
   value for a `$lp_ivtau`% maximum bias;

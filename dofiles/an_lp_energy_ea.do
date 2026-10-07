@@ -11,12 +11,13 @@ log using ${log}/log_an_lp_energy_ea.txt, t replace
 * Per ogni shock s, outcome y e orizzonte h = 0,...,$hmax:
 *   y(i,t+h) = a(i,h) + b(h)*s(i,t)
 *              + sum_{l=1..p} [c(l,h)*y(i,t-l) + d(l,h)*s(i,t-l) + f(l,h)'x(i,t-l)]
-*              + k(h)*covid(t) + e(i,t+h)
-* - s: variazione % tendenziale, divisa per 10, quindi b(h) è l'effetto di un aumento
-*   di 10 pp della variazione tendenziale del prezzo; y: variazione % tendenziale
+*              + sum_{l=0..p} k(l,h)*covid(t-l) + e(i,t+h)
+* - s: variazione congiunturale logaritmica del prezzo (100*dln P), divisa per 10, quindi b(h)
+*   è l'effetto di un aumento del 10% del prezzo; y: variazione % tendenziale
 *   (contr, hicp, wageH), var. % congiunturale (occH) o differenza congiunturale (dur)
 * - x: controlli macro in $lp_controls (come in Corsello e Foschi, 2026); per dur senza
-*   ur (collineare con i ritardi di dur); covid: dummy 2020q1-2022q4 (se $covid_dum == 1)
+*   ur (collineare con i ritardi di dur); covid: dummy 2020q1-2022q4 e i suoi $lp_lags ritardi
+*   (se $covid_dum == 1)
 * - Panel: effetti fissi paese sui paesi in $lp_panel, ponderato con pesi fissi
 *   (media degli occupati del paese sul periodo, wP, aweight), errori standard Driscoll-Kraay
 *   (xtscc >= 1.4, necessario per aweight con fe) con lag h+1
@@ -56,7 +57,7 @@ end
 use ${data}/dataset_ea.dta, clear
 xtset geocode timeq
 
-* Shock scalati a 10 pp
+* Shock scalati a un aumento del 10%
 foreach s of global lp_shocks {
 	replace `s' = `s'/10
 }
@@ -68,8 +69,11 @@ foreach v in $lp_shocks $lp_outcomes $lp_controls {
 	}
 }
 
-* Dummy Covid
+* Dummy Covid e suoi ritardi
 gen byte dcovid = inrange(timeq, tq(2020q1), tq(2022q4))
+forv l = 1/$lp_lags {
+	gen byte L`l'_dcovid = L`l'.dcovid
+}
 
 * Paesi del panel
 gen byte inpanel = 0
@@ -82,7 +86,12 @@ xtset geocode timeq
 
 * Dummy Covid (in tutte le specificazioni tranne pre)
 local cv ""
-if $covid_dum == 1 local cv "dcovid"
+if $covid_dum == 1 {
+	local cv "dcovid"
+	forv l = 1/$lp_lags {
+		local cv "`cv' L`l'_dcovid"
+	}
+}
 
 tempname pf
 postfile `pf' str5 spec str5 geo str4 variant str20 shock str8 outcome byte h double(b se) int(N tmin tmax) using ${out}/lp_energy_ea.dta, replace

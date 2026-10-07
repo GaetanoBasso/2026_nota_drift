@@ -34,14 +34,15 @@ global countries "DE IT NL ES FR BE EA"
 * hmax      : orizzonte massimo in trimestri rispetto all'ultimo disponibile
 * oos_start : primo forecast origin della valutazione ricorsiva
 * minobs    : numero minimo di osservazioni per stimare un modello
-* covid_dum : 1 = include tra i controlli delle LP una dummy per 2020q1-2022q4
+* covid_dum : 1 = include tra i controlli delle LP una dummy per 2020q1-2022q4 e i suoi $lp_lags ritardi
 global hmax      = 12
 global oos_start = tq(1995q1)
 global covid_dum = 1
 
 * --- Parametri delle Local Projections (an_lp_energy_ea.do) ------------------
 * lp_lags     : numero di ritardi di outcome e shock inclusi come controlli
-* lp_shocks   : prezzi energetici (var. % tendenziali); lo shock è scalato a 10 pp
+* lp_shocks   : prezzi energetici (var. congiunturali logaritmiche, 100*dln P); lo shock è
+*               scalato a un aumento del 10% (10 punti log)
 * lp_outcomes : variabili di risposta (var. % tendenziali; occH: var. % congiunturale delle ore
 *               lavorate; dur: differenza congiunturale del tasso di disoccupazione)
 * lp_controls : controlli macro come in Corsello e Foschi (2026), inclusi con $lp_lags ritardi:
@@ -51,13 +52,15 @@ global covid_dum = 1
 * lp_ivshocks : prezzi strumentati nelle LP-IV su serie storiche (an_lpiv_energy_ea.do)
 * lp_ivinstr  : strumenti, nello stesso ordine di lp_ivshocks: shock di offerta di petrolio
 *               di Mori e Peersman (oilMP), shock di offerta di gas di Alessandri e Gazzani (gasAG);
-*               nella specificazione di base si usano i 3 shock mensili del trimestre come
-*               strumenti separati (oilMP1-oilMP3, gasAG1-gasAG3), nella variante qsum la
-*               loro media trimestrale
+*               nella specificazione di base si usa la media trimestrale dei 3 shock mensili
+*               (oilMP, gasAG), nella variante umid i 3 shock mensili del trimestre come
+*               strumenti separati (oilMP1-oilMP3, gasAG1-gasAG3)
 * lp_ivtau    : distorsione massima della 2SLS (in %: 5, 10, 20 o 30) per il valore critico del
 *               F efficace di Montiel Olea e Pflueger; sotto il valore critico gli strumenti sono
 *               segnalati come deboli nel log
-global lp_lags     = 4
+* lp_slp_r    : ordine delle differenze penalizzate nelle LP smussate (Barnichon e Brownlees,
+*               2019); 3 = la risposta è contratta verso un polinomio di 2° grado
+global lp_lags     = 2
 global lp_shocks   "OilSpotUSDBarrel TTFSpotEURMWH ELEEURMWH"
 global lp_outcomes "contr hicp wageH occH dur"
 global lp_controls "lip ur bund1y"
@@ -65,6 +68,7 @@ global lp_panel    "DE IT NL ES FR BE"
 global lp_ivshocks "OilSpotUSDBarrel TTFSpotEURMWH"
 global lp_ivinstr  "oilMP gasAG"
 global lp_ivtau    = 10
+global lp_slp_r    = 3
 
 *******************************************************************************
 * 1) CREAZIONE DATASET
@@ -83,5 +87,5 @@ do ${do}/cr_dataset_ea.do
 do ${do}/an_lp_energy_ea.do
 */
 
-* Local Projections con variabili strumentali (serie storiche): petrolio strumentato con Mori-Peersman, gas con Alessandri-Gazzani
+* Local Projections con variabili strumentali (serie storiche): petrolio strumentato con Mori-Peersman, gas con Alessandri-Gazzani; forma ridotta e LP smussate
 do ${do}/an_lpiv_energy_ea.do
