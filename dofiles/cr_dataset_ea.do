@@ -260,8 +260,9 @@ gen timeq=qofd(dofm(timem))
 collapse (mean) Oil* TTF* ELE*, by(timeq)
 format timeq %tq
 tsset timeq
+* Prezzi energetici: variazione congiunturale logaritmica (100*dln P), senza effetti base delle var. tendenziali
 foreach v of varlist Oil* TTF* ELE* {
-	gen _`v' = 100*`v'/l4.`v'-100 if _n>4
+	gen _`v' = 100*ln(`v'/l.`v') if _n>1
 	drop `v'
 	rename _`v' `v'
 }

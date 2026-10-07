@@ -10,24 +10,22 @@ log using ${log}/log_an_lpiv_energy_ea.txt, t replace
 * shock ai prezzi di petrolio e gas, su serie storiche (EA e singoli paesi)
 *
 * Stessa specificazione delle LP OLS su serie storiche (an_lp_energy_ea.do), ma la
-* variazione tendenziale del prezzo s(t) è strumentata con shock esterni mensili, comuni ai paesi:
+* variazione congiunturale del prezzo s(t) è strumentata con shock esterni mensili, comuni ai paesi:
 *   petrolio (OilSpotUSDBarrel): shock di offerta di petrolio (news) di Mori e Peersman (oilMP)
 *   gas (TTFSpotEURMWH)        : shock di offerta di gas di Alessandri e Gazzani, 2025 (gasAG)
 * (coppie prezzo-strumento in $lp_ivshocks / $lp_ivinstr; nessuno strumento per l'elettricità)
 *
 * Frequenza mista: gli strumenti sono mensili, le LP trimestrali. Nella specificazione di base
-* i 3 shock mensili del trimestre t (z1, z2, z3: 1°, 2° e 3° mese) sono strumenti separati
-* (U-MIDAS, Foroni, Marcellino e Schumacher, 2015): il 1° stadio stima quanto pesa ciascun
-* mese sul prezzo medio del trimestre (uno shock a inizio trimestre incide su tutti e 3 i
-* mesi della media, uno a fine trimestre su uno solo), condizionando su tutti i controlli
-* trimestrali, inclusi i ritardi di y
-*   1° stadio: s(t)   = c(h) + g1(h)*z1(t) + g2(h)*z2(t) + g3(h)*z3(t) + controlli + u(t)
+* lo strumento è la media trimestrale dei 3 shock mensili (z); nella variante umid i 3 shock
+* mensili del trimestre t (z1, z2, z3: 1°, 2° e 3° mese) sono strumenti separati (U-MIDAS,
+* Foroni, Marcellino e Schumacher, 2015)
+*   1° stadio: s(t)   = c(h) + g(h)*z(t) + controlli + u(t)
 *   2° stadio: y(t+h) = a(h) + b(h)*s_hat(t) + controlli + e(t+h)
-* - s: variazione % tendenziale, divisa per 10, quindi b(h) è l'effetto di un aumento
-*   di 10 pp della variazione tendenziale del prezzo (il segno degli strumenti è irrilevante)
+* - s: variazione congiunturale logaritmica del prezzo (100*dln P), divisa per 10, quindi b(h)
+*   è l'effetto di un aumento del 10% del prezzo (il segno degli strumenti è irrilevante)
 * - controlli (in entrambi gli stadi): gli stessi delle LP OLS: $lp_lags ritardi di y, s e
 *   $lp_controls (per dur senza ur, collineare con i ritardi di dur); dummy Covid 2020q1-2022q4
-*   (se $covid_dum == 1)
+*   e i suoi $lp_lags ritardi (se $covid_dum == 1)
 * - errori standard Newey-West: ivreg2, robust kernel(bartlett) bw(h+2), cioè h+1 ritardi
 *   come newey lag(h+1)
 * - Forza del 1° stadio: F efficace di Montiel Olea e Pflueger (2013) (weakivtest, Pflueger e
@@ -35,9 +33,19 @@ log using ${log}/log_an_lpiv_energy_ea.txt, t replace
 *   riportato solo nel log (minimo, massimo e valore per ogni orizzonte, con il valore critico);
 *   strumenti segnalati come deboli se F efficace < valore critico per una distorsione massima
 *   della 2SLS del $lp_ivtau% (livello 5%)
-* - Varianti (variabile variant): base = strumenti mensili separati; qsum = un solo strumento,
-*   media trimestrale dei 3 shock mensili (pesi uguali); pre = come base, solo dati pre-Covid
-*   (t e t+h fino al 2019q4), senza dummy Covid
+* - Varianti (variabile variant):
+*   base = strumento trimestrale (media dei 3 shock mensili)
+*   umid = 3 shock mensili come strumenti separati
+*   pre  = come base, solo dati pre-Covid (t e t+h fino al 2019q4), senza dummy Covid
+*   rf   = forma ridotta: OLS di y(t+h) sullo strumento trimestrale e sugli stessi controlli
+*          (newey lag(h+1)), risposta a uno shock di 1 deviazione standard dello strumento
+*   slp  = LP-IV smussate (Barnichon e Brownlees, 2019), strumento trimestrale: la risposta
+*          b(h) = B(h)'theta è una spline cubica (nodi a ogni orizzonte), stimata su tutti gli
+*          orizzonti insieme con una penalità lambda sulle differenze di ordine $lp_slp_r di
+*          theta; controlli specifici per orizzonte e non penalizzati (eliminati per
+*          Frisch-Waugh nel campione di ogni orizzonte); lambda scelto per validazione
+*          incrociata su 5 blocchi temporali contigui; errori standard Newey-West (h+1 ritardi)
+*          sui punteggi aggregati per trimestre dello shock
 * - Campione: le date dello shock t richiedono strumenti, prezzo e controlli; l'outcome
 *   y(t+h) può andare oltre la fine degli strumenti (nel log: date dello shock e ultimo
 *   trimestre dell'outcome usato)
@@ -47,8 +55,10 @@ log using ${log}/log_an_lpiv_energy_ea.txt, t replace
 *   lp_iv_og_ctry_* : EA e paesi, petrolio e gas, stesso asse y stretto (_sq: versione quadrata)
 *   lp_iv_main_*    : singolo prezzo, EA
 *   lp_iv_app_*     : singolo prezzo, paesi, stesso asse y stretto
-*   lp_iv_rob_*     : base, pre-Covid e strumento trimestrale (qsum) per l'EA
-*   il periodo campionario di lp_iv_main_* e lp_iv_og_EA_* è scritto in graphs/smp_lp_iv_*.tex
+*   lp_iv_rob_*     : base, strumenti mensili (umid), pre-Covid e LP smussate per l'EA
+*   lp_rf_og_EA_*, lp_rf_og_ctry_* : come lp_iv_og_*, forma ridotta (appendice)
+*   il periodo campionario di lp_iv_main_*, lp_iv_og_EA_* e lp_rf_og_EA_* è scritto in
+*   graphs/smp_lp_*.tex
 *******************************************************************************
 
 foreach p in ivreg2 ranktest weakivtest avar {
@@ -73,10 +83,81 @@ program lp_yaxis, rclass
 	return local opt "yscale(range(`ymin' `ymax')) ylabel(`y0'(`st')`y1')"
 end
 
+* LP-IV smussate (Barnichon e Brownlees, 2019). S: una riga per orizzonte e trimestre dello
+* shock, colonne y, s, z (già depurati dai controlli nel campione di ogni orizzonte), timeq, h.
+* Restituisce per h = 0,...,H: risposta, errore standard e lambda scelto (relativo)
+cap mata: mata drop lp_slp()
+mata:
+real matrix lp_slp(real matrix S, real scalar H, real scalar r)
+{
+	real colvector y, x, z, t, hh, xh, sel, ut, ts, cs, mse, w, e, b, se
+	real matrix B, D, P, X, Xh, A, th, g, Om, Gl, V
+	real scalar n, K, h, j, sc, i, f, a1, a2, lam, best, m, l
+
+	y = S[., 1]; x = S[., 2]; z = S[., 3]; t = S[., 4]; hh = S[., 5]
+	n = rows(y)
+	// 1° stadio in ogni orizzonte: proiezione di s su z (dati già depurati dai controlli)
+	xh = J(n, 1, .)
+	for (h = 0; h <= H; h++) {
+		sel = selectindex(hh :== h)
+		if (rows(sel)) xh[sel] = z[sel] * (cross(z[sel], x[sel]) / cross(z[sel], z[sel]))
+	}
+	// Base spline cubica con nodi a ogni orizzonte: valori agli orizzonti interi 1/6, 4/6, 1/6
+	K = H + 3
+	B = J(H + 1, K, 0)
+	for (h = 0; h <= H; h++) B[|h + 1, h + 1 \ h + 1, h + 3|] = (1, 4, 1) / 6
+	// Penalità sulle differenze di ordine r dei coefficienti della spline
+	D = I(K)
+	for (j = 1; j <= r; j++) D = D[|2, 1 \ rows(D), K|] - D[|1, 1 \ rows(D) - 1, K|]
+	P = cross(D, D)
+	X  = B[hh :+ 1, .] :* x
+	Xh = B[hh :+ 1, .] :* xh
+	// lambda = c * tr(Xh'X)/tr(P), c scelto per validazione incrociata su 5 blocchi contigui
+	// di trimestri dello shock (errore di previsione di y dato lo strumento)
+	sc = trace(cross(Xh, X)) / trace(P)
+	cs = 10 :^ ((-8::8) / 2)
+	ut = uniqrows(t)
+	m = rows(ut)
+	mse = J(rows(cs), 1, 0)
+	for (i = 1; i <= rows(cs); i++) {
+		for (f = 1; f <= 5; f++) {
+			a1 = ut[floor((f - 1) * m / 5) + 1]
+			a2 = ut[floor(f * m / 5)]
+			ts = (t :>= a1) :& (t :<= a2)
+			th = lusolve(cross(Xh, 1 :- ts, X) + cs[i] * sc * P, cross(Xh, 1 :- ts, y))
+			e = select(y - Xh * th, ts)
+			mse[i] = mse[i] + cross(e, e)
+		}
+	}
+	w = order(mse, 1)
+	best = cs[w[1]]
+	lam = best * sc
+	A = cross(Xh, X) + lam * P
+	th = lusolve(A, cross(Xh, y))
+	// Errori standard: punteggi aggregati per trimestre dello shock, Newey-West con H+1 ritardi
+	e = y - X * th
+	g = J(m, K, 0)
+	for (j = 1; j <= m; j++) {
+		sel = selectindex(t :== ut[j])
+		g[j, .] = colsum(Xh[sel, .] :* e[sel])
+	}
+	Om = cross(g, g)
+	for (l = 1; l <= min((H + 1, m - 1)); l++) {
+		Gl = cross(g[|l + 1, 1 \ m, K|], g[|1, 1 \ m - l, K|])
+		Om = Om + (1 - l / (H + 2)) * (Gl + Gl')
+	}
+	A = luinv(A)
+	V = A * Om * A'
+	b = B * th
+	se = sqrt(diagonal(B * V * B'))
+	return((b, se, J(H + 1, 1, best)))
+}
+end
+
 use ${data}/dataset_ea.dta, clear
 xtset geocode timeq
 
-* Shock scalati a 10 pp
+* Shock scalati a un aumento del 10%
 foreach s of global lp_ivshocks {
 	replace `s' = `s'/10
 }
@@ -88,16 +169,27 @@ foreach v in $lp_ivshocks $lp_outcomes $lp_controls {
 	}
 }
 
-* Dummy Covid
+* Dummy Covid e suoi ritardi
 gen byte dcovid = inrange(timeq, tq(2020q1), tq(2022q4))
+forv l = 1/$lp_lags {
+	gen byte L`l'_dcovid = L`l'.dcovid
+}
 
-* Dummy Covid (in tutte le specificazioni tranne pre)
+* Dummy Covid e ritardi (in tutte le specificazioni tranne pre)
 local cv ""
-if $covid_dum == 1 local cv "dcovid"
+if $covid_dum == 1 {
+	local cv "dcovid"
+	forv l = 1/$lp_lags {
+		local cv "`cv' L`l'_dcovid"
+	}
+}
 
-* Strumenti disponibili (mensili per posizione nel trimestre e media trimestrale)
+* Strumenti disponibili (mensili per posizione nel trimestre e media trimestrale);
+* deviazione standard dello strumento trimestrale per scalare la forma ridotta
 foreach z of global lp_ivinstr {
 	su `z'1 `z'2 `z'3 `z' if geo == "EA"
+	qui su `z' if geo == "EA"
+	local sd_`z' = r(sd)
 }
 
 tempname pf
@@ -128,10 +220,10 @@ foreach c of global countries {
 					local ctrl "`ctrl' L`l'_`v'"
 				}
 			}
-			foreach vr in base qsum pre {
-				* Strumenti: shock mensili separati (base, pre) o media trimestrale (qsum)
-				local zi "`z'1 `z'2 `z'3"
-				if "`vr'" == "qsum" local zi "`z'"
+			foreach vr in base umid pre rf slp {
+				* Strumenti: media trimestrale (base, pre, rf, slp) o shock mensili separati (umid)
+				local zi "`z'"
+				if "`vr'" == "umid" local zi "`z'1 `z'2 `z'3"
 				local xr "`cv'"
 				if "`vr'" == "pre"  local xr ""
 				local fmin = .
@@ -142,6 +234,7 @@ foreach c of global countries {
 				local s0 = .
 				local s1 = .
 				local ylast = .
+				if "`vr'" == "slp" mata: S = J(0, 5, .)
 				forv h = 0/$hmax {
 					local xc ""
 					if "`vr'" == "pre" local xc "& timeq + `h' <= tq(2019q4)"
@@ -152,6 +245,34 @@ foreach c of global countries {
 					qui su timeq if smp
 					local t0 = r(min)
 					local t1 = r(max)
+					local N = r(N)
+					* LP smussate: dati dell'orizzonte h depurati dai controlli, stima dopo il ciclo
+					if "`vr'" == "slp" {
+						if `N' == 0 continue
+						foreach v in lhs `s' `zi' {
+							qui reg `v' `ctrl' `xr' if smp
+							cap drop r_`v'
+							qui predict double r_`v' if smp, resid
+						}
+						cap drop hcur
+						qui gen hcur = `h'
+						mata: S = S \ st_data(., "r_lhs r_`s' r_`zi' timeq hcur", "smp")
+						drop r_lhs r_`s' r_`zi' hcur
+						local N`h' = `N'
+						local t0`h' = `t0'
+						local t1`h' = `t1'
+						continue
+					}
+					* Forma ridotta: risposta a uno shock di 1 deviazione standard dello strumento
+					if "`vr'" == "rf" {
+						cap newey lhs `zi' `ctrl' `xr' if smp, lag(`=`h'+1')
+						if _rc {
+							di as txt "Salto: `c' `vr' `s' -> `y', h=`h' (rc=" _rc ")"
+							continue
+						}
+						post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (_b[`zi']*`sd_`z'') (_se[`zi']*`sd_`z'') (e(N)) (`t0') (`t1')
+						continue
+					}
 					cap ivreg2 lhs `ctrl' `xr' (`s' = `zi') if smp, robust kernel(bartlett) bw(`=`h'+2') small
 					if _rc {
 						di as txt "Salto: `c' `vr' `s' -> `y', h=`h' (rc=" _rc ")"
@@ -183,6 +304,16 @@ foreach c of global countries {
 					local ylast = max(`ylast', `t1' + `h')
 					post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (`b') (`se') (`N') (`t0') (`t1')
 				}
+				if "`vr'" == "slp" {
+					mata: st_matrix("R", lp_slp(S, $hmax, $lp_slp_r))
+					di as txt "LP smussate `c' `s' -> `y': lambda relativo scelto per validazione incrociata = " %9.4g el(R, 1, 3)
+					forv h = 0/$hmax {
+						if "`N`h''" == "" continue
+						post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (el(R, `h'+1, 1)) (el(R, `h'+1, 2)) (`N`h'') (`t0`h'') (`t1`h'')
+						local N`h' ""
+					}
+				}
+				if inlist("`vr'", "rf", "slp") continue
 				di as txt "1° stadio `c' `vr' `s' (strumenti `zi') -> `y': F efficace di Montiel Olea-Pflueger min " %6.1f `fmin' ", max " %6.1f `fmax'
 				di as txt "  F efficace per h = 0,...,$hmax:`flist'"
 				di as txt "  valore critico (tau = $lp_ivtau%):`clist'"
@@ -207,11 +338,13 @@ save ${out}/lp_energy_iv_ea.dta, replace
 export excel using ${out}/lp_energy_iv_ea.xlsx, firstrow(var) replace
 
 local lab_base "Baseline"
+local lab_umid "Monthly instruments"
 local lab_pre  "Pre-Covid"
-local lab_qsum "Quarterly-average instrument"
+local lab_slp  "Smooth LP"
 local sty_base "lcolor(navy) lwidth(medthick)"
+local sty_umid "lcolor(maroon) lwidth(medthick) lpattern(shortdash)"
 local sty_pre  "lcolor(forest_green) lwidth(medthick) lpattern(dash)"
-local sty_qsum "lcolor(maroon) lwidth(medthick) lpattern(shortdash)"
+local sty_slp  "lcolor(orange) lwidth(medthick) lpattern(longdash_dot)"
 
 tempname fh
 foreach s of global lp_ivshocks {
@@ -272,12 +405,12 @@ foreach s of global lp_ivshocks {
 			graph export ${gph}/lp_iv_app_`s'_`y'.png, replace
 		}
 
-		* --- Robustezza: pre-Covid e strumento trimestrale per l'EA --- *
+		* --- Robustezza: strumenti mensili, pre-Covid e LP smussate per l'EA --- *
 		local rc `"if geo == "`mg'" & shock == "`s'" & outcome == "`y'""'
 		local pl `"(rarea lo90 hi90 h `rc' & variant == "base", color(gs13))"'
 		local lg ""
 		local k = 1
-		foreach vr in base pre qsum {
+		foreach vr in base umid pre slp {
 			qui count `rc' & variant == "`vr'"
 			if r(N) == 0 continue
 			local ++k
@@ -291,75 +424,85 @@ foreach s of global lp_ivshocks {
 	}
 }
 
-* --- Petrolio (blu) e gas (rosso) nello stesso grafico, bande al 90% --- *
+* --- Petrolio (blu) e gas (rosso) nello stesso grafico, bande al 90%: LP-IV (base, prefisso
+* lp_iv_) e forma ridotta (rf, prefisso lp_rf_) --- *
 local o : word 1 of $lp_ivshocks
 local g : word 2 of $lp_ivshocks
 local others : subinstr global countries "EA" "", word
-foreach y of global lp_outcomes {
-	qui count if variant == "base" & inlist(shock, "`o'", "`g'") & outcome == "`y'"
-	if r(N) == 0 continue
-	qui su lo90 if variant == "base" & inlist(shock, "`o'", "`g'") & outcome == "`y'"
-	local a = r(min)
-	qui su hi90 if variant == "base" & inlist(shock, "`o'", "`g'") & outcome == "`y'"
-	lp_yaxis `a' `r(max)'
-	local yax `"`r(opt)'"'
-	local gl ""
-	local lco ""
-	foreach c in EA `others' {
-		local co `"if geo == "`c'" & variant == "base" & shock == "`o'" & outcome == "`y'""'
-		local cg `"if geo == "`c'" & variant == "base" & shock == "`g'" & outcome == "`y'""'
-		* Serve la stima per entrambi gli shock
-		qui count `co'
-		local no = r(N)
-		qui count `cg'
-		if `no' == 0 | r(N) == 0 continue
-		* Condizioni per il riquadro della legenda (primo paese disponibile, solo h = 0)
-		if "`lco'" == "" {
-			local lco `"`co' & h == 0"'
-			local lcg `"`cg' & h == 0"'
+local pfx_base "lp_iv"
+local pfx_rf   "lp_rf"
+local lo_base  "Oil price"
+local lg_base  "Gas price"
+local lo_rf    "Oil supply news shock"
+local lg_rf    "Gas supply shock"
+foreach vr in base rf {
+	local px "`pfx_`vr''"
+	foreach y of global lp_outcomes {
+		qui count if variant == "`vr'" & inlist(shock, "`o'", "`g'") & outcome == "`y'"
+		if r(N) == 0 continue
+		qui su lo90 if variant == "`vr'" & inlist(shock, "`o'", "`g'") & outcome == "`y'"
+		local a = r(min)
+		qui su hi90 if variant == "`vr'" & inlist(shock, "`o'", "`g'") & outcome == "`y'"
+		lp_yaxis `a' `r(max)'
+		local yax `"`r(opt)'"'
+		local gl ""
+		local lco ""
+		foreach c in EA `others' {
+			local co `"if geo == "`c'" & variant == "`vr'" & shock == "`o'" & outcome == "`y'""'
+			local cg `"if geo == "`c'" & variant == "`vr'" & shock == "`g'" & outcome == "`y'""'
+			* Serve la stima per entrambi gli shock
+			qui count `co'
+			local no = r(N)
+			qui count `cg'
+			if `no' == 0 | r(N) == 0 continue
+			* Condizioni per il riquadro della legenda (primo paese disponibile, solo h = 0)
+			if "`lco'" == "" {
+				local lco `"`co' & h == 0"'
+				local lcg `"`cg' & h == 0"'
+			}
+			* Campioni: formato lungo per i file smp_*.tex, breve (es. 01q1) per i grafici
+			qui su tmin `co' & h == 0
+			local po0 : di %tq r(min)
+			local qo0 : di %tqYY!qq r(min)
+			qui su tmax `co' & h == 0
+			local po1 : di %tq r(max)
+			local qo1 : di %tqYY!qq r(max)
+			qui su tmin `cg' & h == 0
+			local pg0 : di %tq r(min)
+			local qg0 : di %tqYY!qq r(min)
+			qui su tmax `cg' & h == 0
+			local pg1 : di %tq r(max)
+			local qg1 : di %tqYY!qq r(max)
+			local pl `"(rarea lo90 hi90 h `co', color(navy%25) lwidth(none)) (rarea lo90 hi90 h `cg', color(cranberry%25) lwidth(none)) (line b h `co', lcolor(navy) lwidth(medthick)) (line b h `cg', lcolor(cranberry) lp(longdash) lwidth(medthick))"'
+			* Grafico EA a sé stante, con legenda
+			if "`c'" == "EA" {
+				file open `fh' using "${gph}/smp_`px'_og_EA_`y'.tex", write replace
+				file write `fh' "oil `po0'--`po1'; gas `pg0'--`pg1'"
+				file close `fh'
+				twoway `pl', yline(0, lcolor(black)) legend(order(3 "`lo_`vr''" 4 "`lg_`vr''") rows(1) position(6)) ///
+					xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
+					graphregion(color(white)) name(gog, replace)
+				graph export ${gph}/`px'_og_EA_`y'.png, replace
+			}
+			twoway `pl', yline(0, lcolor(black)) legend(off) ///
+				subtitle("`c'" "Oil `qo0'–`qo1'; gas `qg0'–`qg1'", size(small)) ///
+				xtitle("Quarters", size(small)) ytitle("pp") xlabel(0(2)$hmax) `yax' ///
+				graphregion(color(white) margin(vsmall)) name(g_`c', replace) nodraw
+			local gl "`gl' g_`c'"
 		}
-		* Campioni: formato lungo per i file smp_*.tex, breve (es. 01q1) per i grafici
-		qui su tmin `co' & h == 0
-		local po0 : di %tq r(min)
-		local qo0 : di %tqYY!qq r(min)
-		qui su tmax `co' & h == 0
-		local po1 : di %tq r(max)
-		local qo1 : di %tqYY!qq r(max)
-		qui su tmin `cg' & h == 0
-		local pg0 : di %tq r(min)
-		local qg0 : di %tqYY!qq r(min)
-		qui su tmax `cg' & h == 0
-		local pg1 : di %tq r(max)
-		local qg1 : di %tqYY!qq r(max)
-		local pl `"(rarea lo90 hi90 h `co', color(navy%25) lwidth(none)) (rarea lo90 hi90 h `cg', color(cranberry%25) lwidth(none)) (line b h `co', lcolor(navy) lwidth(medthick)) (line b h `cg', lcolor(cranberry) lp(longdash) lwidth(medthick))"'
-		* Grafico EA a sé stante, con legenda
-		if "`c'" == "EA" {
-			file open `fh' using "${gph}/smp_lp_iv_og_EA_`y'.tex", write replace
-			file write `fh' "oil `po0'--`po1'; gas `pg0'--`pg1'"
-			file close `fh'
-			twoway `pl', yline(0, lcolor(black)) legend(order(3 "Oil price" 4 "Gas price") rows(1) position(6)) ///
-				xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
-				graphregion(color(white)) name(gog, replace)
-			graph export ${gph}/lp_iv_og_EA_`y'.png, replace
-		}
-		twoway `pl', yline(0, lcolor(black)) legend(off) ///
-			subtitle("`c'" "Oil `qo0'–`qo1'; gas `qg0'–`qg1'", size(small)) ///
-			xtitle("Quarters", size(small)) ytitle("pp") xlabel(0(2)$hmax) `yax' ///
-			graphregion(color(white) margin(vsmall)) name(g_`c', replace) nodraw
-		local gl "`gl' g_`c'"
+		if "`gl'" == "" continue
+		* Riquadro con la sola legenda: un solo punto per serie, quindi le linee non si vedono
+		twoway (line b h `lco', lcolor(navy) lwidth(medthick)) (line b h `lcg', lcolor(cranberry) lp(longdash) lwidth(medthick)), ///
+			legend(order(1 "`lo_`vr''" 2 "`lg_`vr''") cols(1) ring(0) position(0) size(large) region(lstyle(none))) ///
+			xscale(off) yscale(off) xlabel(none) ylabel(none) xtitle("") ytitle("") ///
+			plotregion(style(none)) graphregion(color(white)) name(g_leg, replace) nodraw
+		local gl "`gl' g_leg"
+		graph combine `gl', imargin(tiny) graphregion(color(white) margin(vsmall)) name(comb, replace)
+		graph export ${gph}/`px'_og_ctry_`y'.png, replace
+		* Versione quadrata (nota e slide)
+		graph combine `gl', imargin(tiny) cols(3) xsize(6) ysize(6) graphregion(color(white) margin(vsmall)) name(combsq, replace)
+		graph export ${gph}/`px'_og_ctry_`y'_sq.png, replace
 	}
-	if "`gl'" == "" continue
-	* Riquadro con la sola legenda: un solo punto per serie, quindi le linee non si vedono
-	twoway (line b h `lco', lcolor(navy) lwidth(medthick)) (line b h `lcg', lcolor(cranberry) lp(longdash) lwidth(medthick)), ///
-		legend(order(1 "Oil price" 2 "Gas price") cols(1) ring(0) position(0) size(large) region(lstyle(none))) ///
-		xscale(off) yscale(off) xlabel(none) ylabel(none) xtitle("") ytitle("") ///
-		plotregion(style(none)) graphregion(color(white)) name(g_leg, replace) nodraw
-	local gl "`gl' g_leg"
-	graph combine `gl', imargin(tiny) graphregion(color(white) margin(vsmall)) name(comb, replace)
-	graph export ${gph}/lp_iv_og_ctry_`y'.png, replace
-	* Versione quadrata (nota e slide)
-	graph combine `gl', imargin(tiny) cols(3) xsize(6) ysize(6) graphregion(color(white) margin(vsmall)) name(combsq, replace)
-	graph export ${gph}/lp_iv_og_ctry_`y'_sq.png, replace
 }
 
 log close

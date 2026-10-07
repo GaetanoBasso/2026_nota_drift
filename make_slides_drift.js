@@ -72,10 +72,10 @@ pres.defineSlideMaster({
   slideNumber: { x: 12.4, y: 7.0, w: 0.5, h: 0.3, fontFace: FONT, fontSize: 10, color: MUTED },
 });
 
-const RESP = "Response (percentage points) of year-on-year wage growth to a 10 percentage point " +
-  "increase in the year-on-year growth of the oil and natural gas prices; 90% confidence bands. " +
+const RESP = "Response (percentage points) of year-on-year wage growth to a 10% " +
+  "increase in the oil and natural gas prices; 90% confidence bands. " +
   "2SLS local projections: the oil price is instrumented with the Mori\u2013Peersman oil supply news shocks, " +
-  "the gas price with the Alessandri\u2013Gazzani gas supply shocks (three monthly shocks per quarter as instruments).";
+  "the gas price with the Alessandri\u2013Gazzani gas supply shocks (quarterly average of the monthly shocks).";
 
 pres.addSection({ title: "Results" });
 
