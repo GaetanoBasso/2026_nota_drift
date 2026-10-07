@@ -72,16 +72,19 @@ worked (Eurostat national accounts); HICP inflation, hours worked and the unempl
 rate are reported in the working document.
 
 The shocks are monthly, the wage data quarterly: the instrument is the quarterly average
-of the monthly shocks. Following Corsello and Foschi (2026), both stages control for two
+of the monthly shocks. To limit the erratic movements from one horizon to the next
+typical of local projections in short samples, the responses are smoothed across
+horizons as in Barnichon and Brownlees (2019), with confidence bands computed by
+undersmoothing. Following Corsello and Foschi (2026), both stages control for two
 lags of the outcome, of the price change, of log industrial production, of the
 unemployment rate and of the 1-year Bund yield, and include a dummy for 2020--2022 and
 its lags (Newey--West standard errors). The
 strength of the instruments is checked with the effective $F$ statistic of Montiel Olea
 and Pflueger (2013): \tbc{first-stage strength for oil and gas, euro area and countries}.
-As robustness checks, the estimates are repeated with the three monthly shocks of each
-quarter as separate instruments (Foroni, Marcellino and Schumacher, 2015), on pre-2020
-data only and with smooth local projections (Barnichon and Brownlees, 2019);
-reduced-form and OLS estimates are in the working document.
+As robustness checks, the estimates are repeated without smoothing, with the three
+monthly shocks of each quarter as separate instruments (Foroni, Marcellino and
+Schumacher, 2015) and on pre-2020 data only; reduced-form and OLS estimates are in the
+working document.
 Euro-area sample for negotiated wages (shock dates): \smp{lp_iv_og_EA_contr}.
 
 \section*{Discussion and policy implications}
@@ -91,8 +94,8 @@ actual hourly wages, compared with the pass-through to consumer prices}.
 
 \textbf{Heterogeneity.} \tbc{oil versus gas and across countries (Figures 1 and 2)}.
 
-\textbf{Robustness.} \tbc{monthly instruments, pre-COVID sample, smooth local
-projections, reduced form and comparison with OLS}.
+\textbf{Robustness.} \tbc{unsmoothed local projections, monthly instruments, pre-COVID
+sample, reduced form and comparison with OLS}.
 
 \textbf{Implications.} \tbc{what the results imply for the risk of second-round effects
 from the current energy price shock}.
@@ -115,8 +118,9 @@ Stock and Watson (2018), \emph{Economic Journal} 128(610).\par}
   \begin{minipage}{\textwidth}\scriptsize
   \emph{Notes}: response (percentage points) of year-on-year growth in negotiated wages to a 10\%
   increase in the oil and natural gas prices;
-  90\% confidence bands. IV local projections (oil: Mori--Peersman shocks; gas:
-  Alessandri--Gazzani shocks; quarterly average of the monthly shocks as instrument). Time
+  90\% confidence bands (undersmoothing). Smooth IV local projections (Barnichon and
+  Brownlees, 2019; oil: Mori--Peersman shocks; gas: Alessandri--Gazzani shocks; quarterly
+  average of the monthly shocks as instrument). Time
   series for the euro area and for each country; same vertical
   scale in all panels; the sample (shock dates) for oil and gas is shown under each panel
   name.

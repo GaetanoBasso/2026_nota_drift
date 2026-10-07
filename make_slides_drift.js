@@ -74,7 +74,7 @@ pres.defineSlideMaster({
 
 const RESP = "Response (percentage points) of year-on-year wage growth to a 10% " +
   "increase in the oil and natural gas prices; 90% confidence bands. " +
-  "2SLS local projections: the oil price is instrumented with the Mori\u2013Peersman oil supply news shocks, " +
+  "Smooth 2SLS local projections (Barnichon\u2013Brownlees; bands by undersmoothing): the oil price is instrumented with the Mori\u2013Peersman oil supply news shocks, " +
   "the gas price with the Alessandri\u2013Gazzani gas supply shocks (quarterly average of the monthly shocks).";
 
 pres.addSection({ title: "Results" });
