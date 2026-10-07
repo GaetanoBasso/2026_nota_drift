@@ -48,11 +48,23 @@ global covid_dum = 1
 *               log produzione industriale, tasso di disoccupazione, rendimento Bund 1 anno
 * lp_panel    : paesi del panel (EA esclusa: è l'aggregato degli altri);
 *               le stime panel sono ponderate per gli occupati medi del paese (occP)
+* lp_ivshocks : prezzi strumentati nelle LP-IV su serie storiche (an_lpiv_energy_ea.do)
+* lp_ivinstr  : strumenti, nello stesso ordine di lp_ivshocks: shock di offerta di petrolio
+*               di Mori e Peersman (oilMP), shock di offerta di gas di Alessandri e Gazzani (gasAG);
+*               nella specificazione di base si usano i 3 shock mensili del trimestre come
+*               strumenti separati (oilMP1-oilMP3, gasAG1-gasAG3), nella variante qsum la
+*               loro media trimestrale
+* lp_ivtau    : distorsione massima della 2SLS (in %: 5, 10, 20 o 30) per il valore critico del
+*               F efficace di Montiel Olea e Pflueger; sotto il valore critico gli strumenti sono
+*               segnalati come deboli nel log
 global lp_lags     = 4
 global lp_shocks   "OilSpotUSDBarrel TTFSpotEURMWH ELEEURMWH"
 global lp_outcomes "contr hicp wageH occH dur"
 global lp_controls "lip ur bund1y"
 global lp_panel    "DE IT NL ES FR BE"
+global lp_ivshocks "OilSpotUSDBarrel TTFSpotEURMWH"
+global lp_ivinstr  "oilMP gasAG"
+global lp_ivtau    = 10
 
 *******************************************************************************
 * 1) CREAZIONE DATASET
@@ -65,5 +77,11 @@ do ${do}/cr_dataset_ea.do
 * 2) ANALISI
 *******************************************************************************
 
-* Local Projections (Jordà, 2005): shock dei prezzi energetici su retribuzioni e prezzi; robustezza
+* Local Projections (Jordà, 2005) OLS: shock dei prezzi energetici su retribuzioni e prezzi; robustezza
+* (disattivate: per rieseguirle togliere i delimitatori di commento qui sotto)
+/*
 do ${do}/an_lp_energy_ea.do
+*/
+
+* Local Projections con variabili strumentali (serie storiche): petrolio strumentato con Mori-Peersman, gas con Alessandri-Gazzani
+do ${do}/an_lpiv_energy_ea.do

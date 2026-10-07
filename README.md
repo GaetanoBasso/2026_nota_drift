@@ -21,7 +21,8 @@ which gives the note its name.
 dofiles/
   master.do              paths, parameters, runs the whole project
   cr_dataset_ea.do       builds the quarterly country panel  -> data/dataset_ea.dta
-  an_lp_energy_ea.do     Local Projections of energy shocks -> output/, graphs/
+  an_lp_energy_ea.do     OLS Local Projections of energy shocks -> output/, graphs/ (switched off in master.do)
+  an_lpiv_energy_ea.do   IV Local Projections, oil and gas, time series -> output/, graphs/lp_iv_*
 logfiles/                one text log per dofile (log_<dofile name>.txt)
 main_graphs.tex          LaTeX file collecting the graphs (compile in ${home}, next to graphs/)
 nota_drift.tex           2-page policy note (English): results (placeholders), methodology, discussion
@@ -69,6 +70,8 @@ Requirements:
 | `ur` | Unemployment rate (seasonally adjusted, % of labour force), quarterly average | Eurostat `une_rt_m`, `getTimeSeries` |
 | `dur` | Quarter-on-quarter change of `ur` (pp) | computed from `ur` |
 | `bund1y` | 1-year Bund yield (Svensson term structure, residual maturity 1 year), quarterly average, common to all countries | Deutsche Bundesbank, series `BBSIS.M.I.ZST.ZI.EUR.S1311.B.A604.R01XX.R.A.A._Z._Z.A` |
+| `gasAG` | Gas supply shock of Alessandri and Gazzani (2025, *Journal of Monetary Economics* 151, 103749), quarterly average of the monthly series; `gasAG1`–`gasAG3`: shock in the 1st, 2nd and 3rd month of the quarter; common to all countries; instrument for the gas price in the IV LPs | `GasSupplyShocks.xlsx`, sheet `2025update` (authors' Dropbox), downloaded by `cr_dataset_ea.do` |
+| `oilMP` | Oil supply news shock of Mori and Peersman, column "Updated sample 2025m12", quarterly average of the monthly series; `oilMP1`–`oilMP3`: shock in the 1st, 2nd and 3rd month of the quarter; common to all countries; instrument for the oil price in the IV LPs | authors' Google spreadsheet (exported as csv), downloaded by `cr_dataset_ea.do` |
 | `OilSpotUSDBarrel` | Oil spot price, USD per barrel | `rawdata/Data_OIL_ELE_GAS.xlsx` (monthly) |
 | `TTFSpotEURMWH` | Dutch TTF natural gas spot price, EUR/MWh | same file |
 | `ELEEURMWH` | Wholesale electricity price, EUR/MWh, country-specific (not available for EA; for BE only if the file has a column `ELE_BelgiumEURMWH`) | same file |
@@ -83,7 +86,9 @@ Steps:
 3. HICP: monthly indices are averaged over complete quarters, turned into
    year-on-year % changes and saved to `${data}/eurostat_hicp_ea_q.dta`.
 4. Core HICP, industrial production and unemployment (monthly, Eurostat) are averaged
-   over complete quarters; the 1-year Bund yield (monthly, Bundesbank) likewise.
+   over complete quarters; the 1-year Bund yield (monthly, Bundesbank) likewise. The
+   Alessandri–Gazzani gas supply shock and the Mori–Peersman oil supply news shock are
+   downloaded directly from the authors' files (Stata `copy`) and averaged by quarter.
 5. Energy prices: the monthly data are averaged to quarterly, turned into year-on-year
    % changes, and reshaped by country. Oil and gas are common to all countries.
    Electricity is country-specific. EA gets an empty electricity column so that oil and
@@ -157,7 +162,39 @@ by `node make_slides_drift.js` from the repository root: missing graphs become p
 boxes and the EA sample periods are read from `graphs/smp_lp_og_EA_*.tex`, so the deck has
 to be rebuilt after each Stata run.
 
-Caveat: the "shocks" are observed energy price changes, conditioned on their own lags
+## IV Local Projections (`an_lpiv_energy_ea.do`)
+
+Run by `master.do` instead of the OLS file (the OLS call is in a block comment). Same
+time-series specification, controls and horizons as the OLS LPs, for EA and each country
+(no panel), but the year-on-year change of the oil price is instrumented with the
+Mori–Peersman oil supply news shock and that of the gas price with the Alessandri–Gazzani
+gas supply shock (`$lp_ivshocks`, `$lp_ivinstr`); electricity has no instrument. 2SLS with
+`ivreg2`, Newey–West standard errors with h+1 lags.
+
+- **Mixed frequency.** The instruments are monthly, the LPs quarterly. Baseline: the three
+  monthly shocks of quarter t enter as three separate instruments (unrestricted MIDAS,
+  Foroni, Marcellino and Schumacher, 2015), so the first stage estimates how much each
+  month moves the quarterly average price (a shock early in the quarter affects all three
+  months of the average, a late one only one), conditional on all quarterly controls
+  including the lags of the outcome. Variant `qsum`: one instrument, the quarterly average
+  of the monthly shocks (equal weights). Variant `pre`: baseline on pre-Covid data only.
+- **Sample.** Shock dates t need the instruments, the price and the controls; the outcome
+  at t+h can extend beyond the end of the instruments. The log reports, for each series,
+  the shock dates and the last outcome quarter used.
+- **Controls.** Both stages include the lags of the outcome, of the price change and of
+  the macro controls, as in the OLS LPs.
+- **First stage.** Effective F of Montiel Olea and Pflueger (2013), computed with
+  `weakivtest` (Pflueger and Wang, 2015; SSC, needs `avar`) after each `ivreg2`, robust to
+  heteroskedasticity and autocorrelation. Reported only in the log (minimum, maximum and
+  value at each horizon, with the critical value); a warning is printed when it is below
+  the critical value for a maximum 2SLS bias of `$lp_ivtau`% (default 10%).
+- **Outputs.** `${out}/lp_energy_iv_ea.dta` / `.xlsx`; graphs with prefix `lp_iv_`
+  (`og_EA`, `og_ctry` and `_sq`, `main`, `app`, `rob` with baseline, pre-Covid and
+  quarterly-average instrument). The `.tex` files and the slides use the IV graphs; the
+  OLS graphs of the last OLS run are shown in an appendix of `main_graphs.tex` for
+  comparison (including electricity, which has no instrument).
+
+Caveat (OLS): the "shocks" are observed energy price changes, conditioned on their own lags
 and on lags of the outcome. They are not identified structural shocks, so the
 responses should be read as conditional reduced-form pass-through.
 
@@ -175,6 +212,16 @@ responses should be read as conditional reduced-form pass-through.
 - Corsello, F. and Foschi, A. (2026), "The different effects of oil and gas supply
   shocks on euro-area inflation", Banca d'Italia, *Questioni di Economia e Finanza
   (Occasional Papers)*, No. 1024.
+- Foroni, C., Marcellino, M. and Schumacher, C. (2015), "Unrestricted mixed data sampling
+  (MIDAS): MIDAS regressions with unrestricted lag polynomials", *Journal of the Royal
+  Statistical Society: Series A*, 178(1), 57–82. <https://doi.org/10.1111/rssa.12043>
+- Stock, J. H. and Watson, M. W. (2018), "Identification and Estimation of Dynamic Causal
+  Effects in Macroeconomics Using External Instruments", *Economic Journal*, 128(610),
+  917–948. <https://doi.org/10.1111/ecoj.12593>
+- Montiel Olea, J. L. and Pflueger, C. (2013), "A Robust Test for Weak Instruments",
+  *Journal of Business and Economic Statistics*, 31(3), 358–369.
+- Pflueger, C. and Wang, S. (2015), "A Robust Test for Weak Instruments in Stata",
+  *Stata Journal*, 15(1), 216–225. <https://doi.org/10.1177/1536867X1501500113>
 - Newey, W. K. and West, K. D. (1987), "A Simple, Positive Semi-Definite,
   Heteroskedasticity and Autocorrelation Consistent Covariance Matrix",
   *Econometrica*, 55(3), 703–708. <https://doi.org/10.2307/1913610>

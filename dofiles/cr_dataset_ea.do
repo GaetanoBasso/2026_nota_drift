@@ -179,6 +179,73 @@ isid timeq
 tempfile bund
 save `bund'
 
+* Shock di offerta di gas (Alessandri e Gazzani, 2025, Journal of Monetary Economics 151, 103749),
+* foglio "2025update" del file GasSupplyShocks.xlsx (Dropbox, dl=1 per il download diretto);
+* serie mensile, comune a tutti i paesi: prima colonna data, seconda colonna shock
+tempfile agf
+local agf "`agf'.xlsx"
+copy "https://www.dropbox.com/scl/fi/60tlgoqhahodhfpgxr096/GasSupplyShocks.xlsx?rlkey=lsxpghuwbyd7sn8mia59a2uaf&dl=1" "`agf'", replace
+import excel using "`agf'", sheet("2025update") firstrow clear
+describe
+qui ds
+tokenize `r(varlist)'
+rename `1' date
+rename `2' gasAG
+cap confirm numeric variable date
+if !_rc gen timem = mofd(date)
+else gen timem = monthly(date, "YM")
+keep if !missing(gasAG)
+assert !missing(timem)
+* Shock dei 3 mesi del trimestre come variabili separate (gasAG1-gasAG3, strumenti a frequenza
+* mista nelle LP-IV) e media trimestrale (gasAG); trimestri incompleti: gasAG mancante
+gen timeq = qofd(dofm(timem))
+gen byte mq = mod(month(dofm(timem)) - 1, 3) + 1
+keep timeq mq gasAG
+isid timeq mq
+reshape wide gasAG, i(timeq) j(mq)
+gen gasAG = (gasAG1 + gasAG2 + gasAG3)/3
+format timeq %tq
+isid timeq
+tempfile gasag
+save `gasag'
+
+* Shock di offerta di petrolio (Mori e Peersman), colonna "Updated sample 2025m12" del foglio Google
+* (esportato in csv); serie mensile, comune a tutti i paesi: prima colonna data
+tempfile mpf
+local mpf "`mpf'.csv"
+copy "https://docs.google.com/spreadsheets/d/10tkAw-C5LOBr6MHTQITpTcXIryXb12Ul/export?format=csv&gid=207083778" "`mpf'", replace
+import delimited using "`mpf'", varnames(1) clear
+describe
+local mp ""
+foreach v of varlist _all {
+	local lab : variable label `v'
+	if strtrim("`lab'") == "Updated sample 2025m12" | lower("`v'") == "updatedsample2025m12" local mp "`v'"
+}
+assert "`mp'" != ""
+qui ds
+tokenize `r(varlist)'
+rename `1' date
+rename `mp' oilMP
+cap confirm numeric variable oilMP
+if _rc destring oilMP, replace force
+cap confirm numeric variable date
+if !_rc gen timem = mofd(date)
+else gen timem = monthly(date, "YM")
+keep if !missing(oilMP)
+assert !missing(timem)
+* Shock dei 3 mesi del trimestre come variabili separate (oilMP1-oilMP3, strumenti a frequenza
+* mista nelle LP-IV) e media trimestrale (oilMP); trimestri incompleti: oilMP mancante
+gen timeq = qofd(dofm(timem))
+gen byte mq = mod(month(dofm(timem)) - 1, 3) + 1
+keep timeq mq oilMP
+isid timeq mq
+reshape wide oilMP, i(timeq) j(mq)
+gen oilMP = (oilMP1 + oilMP2 + oilMP3)/3
+format timeq %tq
+isid timeq
+tempfile oilmp
+save `oilmp'
+
 * Dati shock prezzi energetici
 import excel ${home}/rawdata/Data_OIL_ELE_GAS.xlsx, clear first
 destring _all, replace
@@ -220,6 +287,8 @@ foreach v in hicpx ip ur {
 	merge 1:1 timeq geo using ``v'_ea', nogen
 }
 merge m:1 timeq using `bund', nogen keep(master match)
+merge m:1 timeq using `gasag', nogen keep(master match)
+merge m:1 timeq using `oilmp', nogen keep(master match)
 * Anno e trimestre anche per le righe aggiunte dai merge
 replace year = year(dofq(timeq))
 replace quarter = quarter(dofq(timeq))

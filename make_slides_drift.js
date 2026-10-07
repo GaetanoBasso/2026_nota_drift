@@ -24,7 +24,7 @@ function graph(slide, file, x, y, w, h) {
   if (fs.existsSync(f)) {
     slide.addImage({ path: f, x, y, w, h, altText: file, objectName: file });
   } else {
-    slide.addText(`Graph to be inserted: graphs/${file}\n(produced by an_lp_energy_ea.do)`, {
+    slide.addText(`Graph to be inserted: graphs/${file}\n(produced by the Stata run of master.do)`, {
       x, y, w, h, isTextBox: true, align: "center", valign: "middle",
       fontFace: FONT, fontSize: 14, color: MUTED,
       fill: { color: FILL }, line: { color: "D0D4DA", width: 0.75 },
@@ -38,6 +38,15 @@ function label(slide, text, x, y, w) {
     x, y, w, h: 0.4, isTextBox: true, margin: 0, align: "center",
     fontFace: FONT, fontSize: 16, bold: true, color: INK,
   });
+}
+
+// Commento sui risultati (segnaposto finché i risultati IV non sono stati letti)
+function takeaway(slide, text) {
+  slide.addText([
+    { text: "Takeaway: ", options: { bold: true, color: INK } },
+    { text, options: { color: "C00000" } },
+  ], { x: 0.5, y: 1.0, w: 12.33, h: 0.4, isTextBox: true, margin: 0, valign: "middle",
+    fontFace: FONT, fontSize: 14 });
 }
 
 function footnote(slide, text, y) {
@@ -56,7 +65,7 @@ pres.defineSlideMaster({
   title: "TITLE_ONLY",
   background: { color: "FFFFFF" },
   objects: [
-    { placeholder: { options: { name: "title", type: "title", x: 0.5, y: 0.35, w: 12.33, h: 0.8,
+    { placeholder: { options: { name: "title", type: "title", x: 0.5, y: 0.3, w: 12.33, h: 0.7,
         fontFace: FONT, fontSize: 28, bold: true, color: INK, align: "left", valign: "middle", margin: 0 },
       text: "" } },
   ],
@@ -64,29 +73,33 @@ pres.defineSlideMaster({
 });
 
 const RESP = "Response (percentage points) of year-on-year wage growth to a 10 percentage point " +
-  "increase in the year-on-year growth of the oil and natural gas prices; 90% confidence bands.";
+  "increase in the year-on-year growth of the oil and natural gas prices; 90% confidence bands. " +
+  "2SLS local projections: the oil price is instrumented with the Mori\u2013Peersman oil supply news shocks, " +
+  "the gas price with the Alessandri\u2013Gazzani gas supply shocks (three monthly shocks per quarter as instruments).";
 
 pres.addSection({ title: "Results" });
 
 // Slide 1: euro area, negotiated wages and hourly wages (Stata default 5.5 x 4 format)
 let s = pres.addSlide({ masterName: "TITLE_ONLY", sectionTitle: "Results" });
-s.addText("Euro area: wage response to oil and gas price shocks", { placeholder: "title" });
-label(s, "Negotiated wages", 0.5, 1.3, 6.0);
-label(s, "Gross wages per hour worked", 6.83, 1.3, 6.0);
-graph(s, "lp_og_EA_contr.png", 0.5, 1.8, 6.0, 4.36);
-graph(s, "lp_og_EA_wageH.png", 6.83, 1.8, 6.0, 4.36);
-footnote(s, `${RESP} Local projections on euro-area time series. Sample (shock dates): ` +
-  `negotiated wages, ${sample("lp_og_EA_contr")}; hourly wages, ${sample("lp_og_EA_wageH")}.`, 6.4);
+s.addText("Euro area: wage response to oil and gas supply shocks (IV)", { placeholder: "title" });
+takeaway(s, "[TO BE COMPLETED: response of euro-area negotiated and hourly wages to oil and gas price increases driven by supply shocks]");
+label(s, "Negotiated wages", 0.5, 1.5, 6.0);
+label(s, "Gross wages per hour worked", 6.83, 1.5, 6.0);
+graph(s, "lp_iv_og_EA_contr.png", 0.5, 1.95, 6.0, 4.36);
+graph(s, "lp_iv_og_EA_wageH.png", 6.83, 1.95, 6.0, 4.36);
+footnote(s, `${RESP} Euro-area time series, Newey\u2013West standard errors. Sample (shock dates): ` +
+  `negotiated wages, ${sample("lp_iv_og_EA_contr")}; hourly wages, ${sample("lp_iv_og_EA_wageH")}.`, 6.45);
 
 // Slide 2: euro area and countries (square versions)
 s = pres.addSlide({ masterName: "TITLE_ONLY", sectionTitle: "Results" });
-s.addText("Countries: wage response to oil and gas price shocks", { placeholder: "title" });
-label(s, "Negotiated wages", 0.5, 1.3, 6.0);
-label(s, "Gross wages per hour worked", 6.83, 1.3, 6.0);
-graph(s, "lp_og_ctry_contr_sq.png", 1.225, 1.8, 4.55, 4.55);
-graph(s, "lp_og_ctry_wageH_sq.png", 7.555, 1.8, 4.55, 4.55);
-footnote(s, `${RESP} Local projections on time series for the euro area and each country; ` +
-  "same vertical scale within each graph; the sample period (shock dates) of each panel is shown under its name.", 6.5);
+s.addText("Countries: wage response to oil and gas supply shocks (IV)", { placeholder: "title" });
+takeaway(s, "[TO BE COMPLETED: cross-country differences in the IV responses and oil versus gas]");
+label(s, "Negotiated wages", 0.5, 1.5, 6.0);
+label(s, "Gross wages per hour worked", 6.83, 1.5, 6.0);
+graph(s, "lp_iv_og_ctry_contr_sq.png", 1.3, 1.95, 4.4, 4.4);
+graph(s, "lp_iv_og_ctry_wageH_sq.png", 7.63, 1.95, 4.4, 4.4);
+footnote(s, `${RESP} Time series for the euro area and each country, Newey\u2013West standard errors; ` +
+  "same vertical scale within each graph; the sample period (shock dates) of each panel is shown under its name.", 6.45);
 
 pres.writeFile({ fileName: path.join(__dirname, "slides_drift.pptx") })
   .then((f) => console.log(`written ${f}`));

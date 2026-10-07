@@ -65,9 +65,18 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   (`smp` + `markout`), its period is posted as `tmin`/`tmax` and shown in the panel labels of the appendix
   figures or, for the main figures, written to `graphs/smp_*.tex` for the TeX notes. State-dependent variants (if added) interact all regressors
   with the state dummy and carry the state in the output name.
+- LP-IV conventions (`an_lpiv_energy_ea.do`, run instead of the OLS file): time series only (no
+  panel); oil instrumented with Mori–Peersman, gas with Alessandri–Gazzani (`$lp_ivshocks`,
+  `$lp_ivinstr`); baseline instruments = the 3 monthly shocks of the quarter (`z1 z2 z3`,
+  U-MIDAS), variants `qsum` (quarterly average) and `pre`; `ivreg2 ..., robust kernel(bartlett)
+  bw(h+2)` (= Newey–West lag h+1); lags of y, s and controls in both stages; first-stage
+  effective F of Montiel Olea–Pflueger (`weakivtest`) only in the log, weak if below the critical
+  value for a `$lp_ivtau`% maximum bias;
+  outputs prefixed `lp_iv_`.
 - Graphs: no titles or notes in Stata (they go in the `.tex` files); 90% bands only;
-  multi-panel graphs use `graph combine ..., ycommon`; main text of `main_graphs.tex` =
-  oil (blue) and gas (red) together (`lp_og_*`); single energy price graphs, hours and
+  multi-panel graphs share an explicit, tight y range (`lp_yaxis`: data range incl. 0, no `ycommon`)
+  with small margins (`imargin(tiny)`, `margin(vsmall)`); main text of `main_graphs.tex` =
+  IV oil (blue) and gas (red) together (`lp_iv_og_*`), OLS graphs in an appendix; single energy price graphs, hours and
   unemployment go to the appendix. Square versions (`_sq`) only where a layout needs them.
 
 ## Karpathy guidelines
