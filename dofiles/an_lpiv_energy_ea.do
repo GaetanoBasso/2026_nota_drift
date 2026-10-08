@@ -456,7 +456,7 @@ foreach s of global lp_ivshocks {
 			twoway (rarea lo90 hi90 h `cond', color(gs13)) ///
 				(line b h `cond', `sty_base'), ///
 				yline(0, lcolor(black)) legend(off) subtitle("`g' (`p0'-`p1')") ///
-				xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) `yax' ///
+				xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) `yax_`g'' ///
 				graphregion(color(white) margin(vsmall)) name(g_`g', replace) nodraw
 			local gl "`gl' g_`g'"
 		}
@@ -500,11 +500,10 @@ foreach vr in base rf {
 	foreach y of global lp_outcomes {
 		qui count if variant == "`vr'" & inlist(shock, "`o'", "`g'") & outcome == "`y'"
 		if r(N) == 0 continue
-		qui su lo90 if variant == "`vr'" & inlist(shock, "`o'", "`g'") & outcome == "`y'"
-		local a = r(min)
-		qui su hi90 if variant == "`vr'" & inlist(shock, "`o'", "`g'") & outcome == "`y'"
-		lp_yaxis `a' `r(max)'
-		local yax `"`r(opt)'"'
+		lp_ypanels if variant == "`vr'" & inlist(shock, "`o'", "`g'") & outcome == "`y'", units(EA `others')
+		foreach c in EA `others' {
+			local yax_`c' "`r(`c')'"
+		}
 		local gl ""
 		local lco ""
 		foreach c in EA `others' {
@@ -546,7 +545,7 @@ foreach vr in base rf {
 			}
 			twoway `pl', yline(0, lcolor(black)) legend(off) ///
 				subtitle("`c'" "Oil `qo0'–`qo1'; gas `qg0'–`qg1'", size(small)) ///
-				xtitle("Quarters", size(small)) ytitle("pp") xlabel(0(2)$hmax) `yax' ///
+				xtitle("Quarters", size(small)) ytitle("pp") xlabel(0(2)$hmax) `yax_c' ///
 				graphregion(color(white) margin(vsmall)) name(g_`c', replace) nodraw
 			local gl "`gl' g_`c'"
 		}
