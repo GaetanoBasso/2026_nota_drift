@@ -71,24 +71,76 @@ foreach p in ivreg2 ranktest weakivtest avar {
 }
 which ivreg2
 
-* Asse y comune e stretto per i grafici combinati: range dai dati (incluso lo 0) ed etichette
-* interne al range, così da lasciare il minimo spazio bianco sopra e sotto.
-* Passo delle etichette = massimo valore assoluto del range / 5, arrotondato per eccesso a
-* 1, 2 o 5 x 10^k: es. passo .1 per [-.5,0] e [-.5,.5], .2 per [-1,0] e [-1,1], .5 per [-2,0]
-* e [-2,2]; almeno 2 etichette (incluso lo 0)
+* Asse y stretto: range dai dati (incluso lo 0) ed etichette interne al range, così da lasciare
+* il minimo spazio bianco sopra e sotto. Passo delle etichette (se non dato come 3° argomento)
+* = massimo valore assoluto del range / 5, arrotondato per eccesso a 1, 2 o 5 x 10^k: es. .1 per
+* [-.5,.5], .2 per [-1,1], .5 per [-2,2]. Con un passo dato, se il range non arriva a un passo
+* dallo 0 viene allargato fino a un passo (almeno un'etichetta oltre allo 0)
 cap program drop lp_yaxis
 program lp_yaxis, rclass
-	args ymin ymax
+	args ymin ymax st
 	local ymin = min(`ymin', 0)
 	local ymax = max(`ymax', 0)
-	local d = max(-`ymin', `ymax')/5
-	local m = 10^floor(log10(`d') + 1e-9)
-	local r = `d'/`m'
-	local st = cond(`r' <= 1 + 1e-9, 1, cond(`r' <= 2 + 1e-9, 2, cond(`r' <= 5 + 1e-9, 5, 10)))*`m'
+	if "`st'" == "" {
+		local d = max(-(`ymin'), `ymax')/5
+		local m = 10^floor(log10(`d') + 1e-9)
+		local r = `d'/`m'
+		local st = cond(`r' <= 1 + 1e-9, 1, cond(`r' <= 2 + 1e-9, 2, cond(`r' <= 5 + 1e-9, 5, 10)))*`m'
+	}
+	if max(-(`ymin'), `ymax') < `st' {
+		if -(`ymin') > `ymax' local ymin = -`st'
+		else local ymax = `st'
+	}
 	* Prima e ultima etichetta interne al range (tolleranza per gli errori di arrotondamento)
 	local y0 = round(ceil(`ymin'/`st' - 1e-9)*`st', 1e-10)
 	local y1 = round(floor(`ymax'/`st' + 1e-9)*`st', 1e-10)
 	return local opt "yscale(range(`ymin' `ymax')) ylabel(`y0'(`st')`y1', labsize(small))"
+	return scalar st = `st'
+end
+
+* Assi y dei grafici a più pannelli (un pannello per unità geo in units, stime in if): asse
+* comune se l'ampiezza delle bande (max hi90 - min lo90 del pannello) supera quella del
+* pannello più stretto al massimo di $lp_ytol punti; altrimenti un asse per pannello, con il
+* passo delle etichette dell'asse comune. Restituisce r(<unità>) = opzioni dell'asse y
+cap program drop lp_ypanels
+program lp_ypanels, rclass
+	syntax if, units(string)
+	marksample touse, novarlist
+	local ok ""
+	local wmin = .
+	local wmax = .
+	local ymin = .
+	local ymax = .
+	foreach u of local units {
+		qui su lo90 if `touse' & geo == "`u'"
+		if r(N) == 0 continue
+		local lo_`u' = r(min)
+		qui su hi90 if `touse' & geo == "`u'"
+		local hi_`u' = r(max)
+		local ok "`ok' `u'"
+		local wmin = min(`wmin', (`hi_`u'') - (`lo_`u''))
+		local wmax = max(`wmax', (`hi_`u'') - (`lo_`u''))
+		local ymin = min(`ymin', `lo_`u'')
+		local ymax = max(`ymax', `hi_`u'')
+	}
+	if "`ok'" == "" exit
+	* Asse comune e suo passo delle etichette
+	lp_yaxis `ymin' `ymax'
+	local st = r(st)
+	local copt "`r(opt)'"
+	local common = ((`wmax') - (`wmin') <= $lp_ytol + 1e-9)
+	foreach u of local ok {
+		local o_`u' "`copt'"
+		if !`common' {
+			lp_yaxis `lo_`u'' `hi_`u'' `st'
+			local o_`u' "`r(opt)'"
+		}
+	}
+	di as txt "  asse y " cond(`common', "comune", "per pannello, passo `st'") ///
+		": differenza tra le ampiezze delle bande " %5.2f (`wmax') - (`wmin')
+	foreach u of local ok {
+		return local `u' "`o_`u''"
+	}
 end
 
 * LP-IV smussate (Barnichon e Brownlees, 2019). S: una riga per orizzonte e trimestre dello
