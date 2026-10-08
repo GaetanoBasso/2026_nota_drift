@@ -27,9 +27,9 @@
 
 \begin{document}
 
-{\small POLICY NOTE \quad|\quad \tbc{authors, directorate} \quad|\quad \today}\par
+{\small POLICY NOTE \quad|\quad Gaetano Basso, SEC-FL \quad|\quad \today}\par
 \vspace{0.4em}
-{\LARGE\bfseries Do energy price shocks feed into euro-area wages?}\par
+{\LARGE\bfseries Do energy price shocks feed into euro area wages?}\par
 \vspace{0.8em}
 
 \section*{Summary thoughts}
@@ -38,102 +38,48 @@
 \item No effects of supply shocks on relevant variables; country heterogeneity resembles what we know of national collective bargaining systems
 \item No signs of second round effects: we reach this conclusion by looking the transmission of energy supply shocks to inflation. Consistent with Corsello and Foschi on impact, absorbed (more for oil than gas) in the first two years, and --importantly-- no effects up to three years
 \item Previous literature indicates that the passthrough is high in high-inflation environment (Corsello and Foschi) or tight labour market conditions (Beqiraj, Bik and Di Bartolomeo, 2026). While we do not find direct evidence for this, OLS inform us about overall energy price transmission including high-demand periods. There is a transmission to negotiated wages --especially in ...-- but yet no transmission to actual wages nor to HICP down the line
+\item Techinicalities: negotiated wages are excluding one-off, but for FR, ES and BE; baseline specification is a smoothed (actually, undersmoothed) IV-LPs \'{a} la Barnichon and Brownlees (2019) at quarterly frequency 
 \item Robust to: pre-COVID, unsmoothing, monthly instruments, reduced-form (oil IV is weak in some specifications)
-\item 
 \end{itemize}
 
-\textbf{Bottom line.} \tbc{one-sentence policy message on the pass-through of oil and gas
-price shocks to negotiated and actual wages in the euro area}.
+%\textbf{Bottom line.} \tbc{one-sentence policy message on the pass-through of oil and gas price shocks to negotiated and actual wages in the euro area}.
 
-\section*{Main findings}
+%\section*{Main findings}
 
-\begin{itemize}
-\item \textbf{Negotiated wages.} \tbc{size, timing and persistence of the IV response of
-  euro-area negotiated wages to a 10\% increase in oil and gas prices driven by supply
-  shocks}.
-\item \textbf{Actual hourly wages.} \tbc{IV response of gross wages per hour (national
-  accounts) and comparison with negotiated wages, i.e.\ wage drift}.
-\item \textbf{Oil versus gas.} \tbc{differences in the size and timing of the responses}.
-\item \textbf{Countries.} \tbc{heterogeneity across Germany, France, Italy, Spain, the
-  Netherlands and Belgium}.
+%\begin{itemize}
+%\item \textbf{Negotiated wages.} \tbc{size, timing and persistence of the IV response of euro-area negotiated wages to a 10\% increase in oil and gas prices driven by supply shocks}.
+%\item \textbf{Actual hourly wages.} \tbc{IV response of gross wages per hour (national accounts) and comparison with negotiated wages, i.e.\ wage drift}.
+%\item \textbf{Oil versus gas.} \tbc{differences in the size and timing of the responses}.
+%\item \textbf{Countries.} \tbc{heterogeneity across Germany, France, Italy, Spain, the Netherlands and Belgium}.
 \end{itemize}
 
-\section*{Why it matters}
+%\section*{Why it matters}
+%Whether energy-driven inflation spills over into wages is central to how persistent it turns out to be. For consumer prices, Corsello and Foschi (2026) find that oil supply shocks have short-lived effects, whereas gas supply shocks have stronger and more persistent ones, and that indirect effects are muted when inflation is low but become pronounced in high-inflation regimes. This note asks the same question for wages, distinguishing negotiated wages, set in collective agreements, from actual wages per hour worked.
 
-Whether energy-driven inflation spills over into wages is central to how persistent it
-turns out to be. For consumer prices, Corsello and Foschi (2026) find that oil supply
-shocks have short-lived effects, whereas gas supply shocks have stronger and more
-persistent ones, and that indirect effects are muted when inflation is low but become
-pronounced in high-inflation regimes. This note asks the same question for wages,
-distinguishing negotiated wages, set in collective agreements, from actual wages per
-hour worked.
+%\section*{How we estimate it}
+%We estimate local projections (Jordà, 2005) on quarterly data for the euro area and for Germany, France, Italy, Spain, the Netherlands and Belgium, up to 12 quarters after the shock. The quarter-on-quarter change in the spot price of oil (in US dollars) or of natural gas (TTF) is instrumented with external supply shocks, as in Corsello and Foschi (2026): the oil supply news shocks of Mori and Peersman for oil and the gas supply shocks of Alessandri and Gazzani (2025) for gas (Stock and Watson, 2018). Responses are scaled to a 10\% increase in the price. The outcomes areyear-on-year growth in negotiated wages (ECB indicator) and in gross wages per hour worked (Eurostat national accounts); HICP inflation, hours worked and the unemployment rate are reported in the working document.
 
-\section*{How we estimate it}
+%The shocks are monthly, the wage data quarterly: the instrument is the quarterly average of the monthly shocks. To limit the erratic movements from one horizon to the next typical of local projections in short samples, the responses are smoothed across horizons as in Barnichon and Brownlees (2019), with confidence bands computed by undersmoothing. Following Corsello and Foschi (2026), both stages control for two lags of the outcome, of the price change, of log industrial production, of the unemployment rate and of the 1-year Bund yield, and include a dummy for 2020--2022 and its lags (Newey--West standard errors). The strength of the instruments is checked with the effective $F$ statistic of Montiel Olea and Pflueger (2013): \tbc{first-stage strength for oil and gas, euro area and countries}. As robustness checks, the estimates are repeated without smoothing, with the three monthly shocks of each quarter as separate instruments (Foroni, Marcellino and Schumacher, 2015) and on pre-2020 data only; reduced-form and OLS estimates are in the working document. 
+%Euro-area sample for negotiated wages (shock dates): \smp{lp_iv_og_EA_contr}.
 
-We estimate local projections (Jordà, 2005) on quarterly data for the euro area and for
-Germany, France, Italy, Spain, the Netherlands and Belgium, up to 12 quarters after the
-shock. The quarter-on-quarter change in the spot price of oil (in US dollars) or of natural
-gas (TTF) is instrumented with external supply shocks, as in Corsello and Foschi (2026): the
-oil supply news shocks of Mori and Peersman for oil and the gas supply shocks of
-Alessandri and Gazzani (2025) for gas (Stock and Watson, 2018). Responses are scaled to a
-10\% increase in the price. The outcomes are
-year-on-year growth in negotiated wages (ECB indicator) and in gross wages per hour
-worked (Eurostat national accounts); HICP inflation, hours worked and the unemployment
-rate are reported in the working document.
+%\section*{Discussion and policy implications}
+%\tbc{reading of the main IV results: size and timing of the response of negotiated and actual hourly wages, compared with the pass-through to consumer prices}.
 
-The shocks are monthly, the wage data quarterly: the instrument is the quarterly average
-of the monthly shocks. To limit the erratic movements from one horizon to the next
-typical of local projections in short samples, the responses are smoothed across
-horizons as in Barnichon and Brownlees (2019), with confidence bands computed by
-undersmoothing. Following Corsello and Foschi (2026), both stages control for two
-lags of the outcome, of the price change, of log industrial production, of the
-unemployment rate and of the 1-year Bund yield, and include a dummy for 2020--2022 and
-its lags (Newey--West standard errors). The
-strength of the instruments is checked with the effective $F$ statistic of Montiel Olea
-and Pflueger (2013): \tbc{first-stage strength for oil and gas, euro area and countries}.
-As robustness checks, the estimates are repeated without smoothing, with the three
-monthly shocks of each quarter as separate instruments (Foroni, Marcellino and
-Schumacher, 2015) and on pre-2020 data only; reduced-form and OLS estimates are in the
-working document.
-Euro-area sample for negotiated wages (shock dates): \smp{lp_iv_og_EA_contr}.
+%\textbf{Heterogeneity.} \tbc{oil versus gas and across countries (Figures 1 and 2)}.
 
-\section*{Discussion and policy implications}
+%\textbf{Robustness.} \tbc{unsmoothed local projections, monthly instruments, pre-COVID sample, reduced form and comparison with OLS}.
 
-\tbc{reading of the main IV results: size and timing of the response of negotiated and
-actual hourly wages, compared with the pass-through to consumer prices}.
+%\textbf{Implications.} \tbc{what the results imply for the risk of second-round effects from the current energy price shock}.
 
-\textbf{Heterogeneity.} \tbc{oil versus gas and across countries (Figures 1 and 2)}.
-
-\textbf{Robustness.} \tbc{unsmoothed local projections, monthly instruments, pre-COVID
-sample, reduced form and comparison with OLS}.
-
-\textbf{Implications.} \tbc{what the results imply for the risk of second-round effects
-from the current energy price shock}.
-
-{\footnotesize
-\textbf{References.} Alessandri and Gazzani (2025), \emph{Journal of Monetary Economics}
-151, 103749; Barnichon and Brownlees (2019), \emph{Review of Economics and Statistics}
-101(3); Corsello and Foschi (2026), Banca d'Italia, Questioni di Economia e Finanza
-1024; Foroni, Marcellino and Schumacher (2015), \emph{Journal of the Royal Statistical
-Society A} 178(1); Jordà (2005), \emph{American Economic Review} 95(1); Montiel Olea and
-Pflueger (2013), \emph{Journal of Business and Economic Statistics} 31(3); Mori and
-Peersman, ``Estimating the macroeconomic effects of oil supply news'', working paper;
-Stock and Watson (2018), \emph{Economic Journal} 128(610).\par}
+\newpage 
 
 \begin{figure}[!htbp]
   \centering
   \caption{Response of negotiated wages to oil and gas price shocks}
   \label{fig:contr}
-  \includegraphics[width=0.72\textwidth]{lp_iv_og_ctry_contr.png}
+  \includegraphics[width=1.02\textwidth]{lp_iv_og_ctry_contr.png}
   \begin{minipage}{\textwidth}\scriptsize
-  \emph{Notes}: response (percentage points) of year-on-year growth in negotiated wages to a 10\%
-  increase in the oil and natural gas prices;
-  90\% confidence bands (undersmoothing). Smooth IV local projections (Barnichon and
-  Brownlees, 2019; oil: Mori--Peersman shocks; gas: Alessandri--Gazzani shocks; quarterly
-  average of the monthly shocks as instrument). Time
-  series for the euro area and for each country; same vertical
-  scale in all panels; the sample (shock dates) for oil and gas is shown under each panel
-  name.
+  \emph{Notes}: response (percentage points) of year-on-year growth in negotiated wages to a 10\% increase in the oil and natural gas prices; 90\% confidence bands (undersmoothing). Smooth IV local projections (Barnichon and Brownlees, 2019; oil: Mori--Peersman shocks; gas: Alessandri--Gazzani shocks; quarterly  average of the monthly shocks as instrument). Time series for the euro area and for each country; same vertical scale in all panels; the sample (shock dates) for oil and gas is shown under each panel name.
   \end{minipage}
 
 \end{figure}
@@ -142,10 +88,13 @@ Stock and Watson (2018), \emph{Economic Journal} 128(610).\par}
   \centering
   \caption{Response of gross wages per hour worked to oil and gas price shocks}
   \label{fig:wageH}
-  \includegraphics[width=0.72\textwidth]{lp_iv_og_ctry_wageH.png}
+  \includegraphics[width=1.02\textwidth]{lp_iv_og_ctry_wageH.png}
   \begin{minipage}{\textwidth}\scriptsize
   \emph{Notes}: see Figure 1.
   \end{minipage}
 \end{figure}
+
+{\footnotesize
+\textbf{References.} Alessandri and Gazzani (2025), \emph{Journal of Monetary Economics} 151, 103749; Barnichon and Brownlees (2019), \emph{Review of Economics and Statistics} 101(3); Corsello and Foschi (2026), Banca d'Italia, Questioni di Economia e Finanza, 1024; Foroni, Marcellino and Schumacher (2015), \emph{Journal of the Royal Statistical Society A} 178(1); Jordà (2005), \emph{American Economic Review} 95(1); Montiel Olea and Pflueger (2013), \emph{Journal of Business and Economic Statistics} 31(3); Mori and Peersman, ``Estimating the macroeconomic effects of oil supply news'', working paper; Stock and Watson (2018), \emph{Economic Journal} 128(610).\par}
 
 \end{document}

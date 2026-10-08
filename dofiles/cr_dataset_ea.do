@@ -60,14 +60,27 @@ drop date
 gen int timeq = yq(year, quarter)
 format timeq %tq
 rename value contr
-keep if withwithoutoneoff=="INWR"
+preserve 
+	keep if (geo=="EA"|geo=="DE"|geo=="NL") 
+	keep if (withwithoutoneoff=="INWX")
+	tempfile geo1
+	save `geo1'
+restore
+preserve
+	keep if (geo=="IT"|geo=="FR"|geo=="ES"|geo=="BE")
+	keep if (withwithoutoneoff=="INWR")
+	tempfile geo2
+	save `geo2'
+restore
+use `geo1', clear
+append using `geo2'
 keep if sector=="000000"
 keep if measure=="GY"
 drop if provider!="FR2"&geo=="FR"
 drop if provider!="DE2"&geo=="DE"
 keep timeq year quarter geo contr
 isid geo timeq
-save ${data}/ecb_inwr_q.dta, replace
+save ${data}/ecb_inwx_q.dta, replace
 tempfile contr_ea
 save `contr_ea'
 

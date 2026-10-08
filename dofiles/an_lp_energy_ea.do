@@ -39,20 +39,25 @@ if _rc ssc install xtscc
 which xtscc
 
 * Asse y comune e stretto per i grafici combinati: range dai dati (incluso lo 0) ed etichette
-* interne al range, così da lasciare il minimo spazio bianco sopra e sotto
+* interne al range, così da lasciare il minimo spazio bianco sopra e sotto.
+* Passo delle etichette = massimo valore assoluto del range / 5, arrotondato per eccesso a
+* 1, 2 o 5 x 10^k: es. passo .1 per [-.5,0] e [-.5,.5], .2 per [-1,0] e [-1,1], .5 per [-2,0]
+* e [-2,2]; almeno 2 etichette (incluso lo 0)
 cap program drop lp_yaxis
 program lp_yaxis, rclass
 	args ymin ymax
 	local ymin = min(`ymin', 0)
 	local ymax = max(`ymax', 0)
-	local d = (`ymax' - `ymin')/4
-	local m = 10^floor(log10(`d'))
+	local d = max(-`ymin', `ymax')/5
+	local m = 10^floor(log10(`d') + 1e-9)
 	local r = `d'/`m'
-	local st = cond(`r' <= 1, 1, cond(`r' <= 2, 2, cond(`r' <= 5, 5, 10)))*`m'
-	local y0 = ceil(`ymin'/`st')*`st'
-	local y1 = floor(`ymax'/`st')*`st'
-	return local opt "yscale(range(`ymin' `ymax')) ylabel(`y0'(`st')`y1')"
+	local st = cond(`r' <= 1 + 1e-9, 1, cond(`r' <= 2 + 1e-9, 2, cond(`r' <= 5 + 1e-9, 5, 10)))*`m'
+	* Prima e ultima etichetta interne al range (tolleranza per gli errori di arrotondamento)
+	local y0 = round(ceil(`ymin'/`st' - 1e-9)*`st', 1e-10)
+	local y1 = round(floor(`ymax'/`st' + 1e-9)*`st', 1e-10)
+	return local opt "yscale(range(`ymin' `ymax')) ylabel(`y0'(`st')`y1', labsize(small))"
 end
+
 
 use ${data}/dataset_ea.dta, clear
 xtset geocode timeq
