@@ -63,6 +63,9 @@ global covid_dum = 1
 *               un polinomio di 2° grado
 * lp_slp_us   : undersmoothing per le bande delle LP smussate: errori standard e centro delle
 *               bande calcolati con lambda/lp_slp_us (lambda scelto per validazione incrociata)
+* lp_ytol    : grafici a più pannelli: asse y comune se le ampiezze delle bande al 90%
+*               (max hi90 - min lo90 del pannello) differiscono al massimo di lp_ytol punti
+*               percentuali; altrimenti un asse per pannello, con lo stesso passo delle etichette
 global lp_lags     = 2
 global lp_shocks   "OilSpotUSDBarrel TTFSpotEURMWH ELEEURMWH"
 global lp_outcomes "contr hicp wageH occH dur"
@@ -73,6 +76,7 @@ global lp_ivinstr  "oilMP gasAG"
 global lp_ivtau    = 10
 global lp_slp_r    = 3
 global lp_slp_us   = 10
+global lp_ytol     = 1.6
 
 *******************************************************************************
 * 1) CREAZIONE DATASET
