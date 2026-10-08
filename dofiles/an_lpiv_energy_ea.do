@@ -437,15 +437,12 @@ foreach s of global lp_ivshocks {
 			graphregion(color(white)) name(gmain, replace)
 		graph export ${gph}/lp_iv_main_`s'_`y'.png, replace
 
-		* --- Appendice: paesi, stesso asse y (stretto) --- *
+		* --- Appendice: paesi, asse y comune se le bande hanno ampiezze simili ($lp_ytol) --- *
 		local gl ""
-		qui count if geo != "`mg'" & `sel'
-		if r(N) > 0 {
-			qui su lo90 if geo != "`mg'" & `sel'
-			local a = r(min)
-			qui su hi90 if geo != "`mg'" & `sel'
-			lp_yaxis `a' `r(max)'
-			local yax `"`r(opt)'"'
+		local units : subinstr global countries "`mg'" "", word
+		lp_ypanels if `sel', units(`units')
+		foreach g of local units {
+			local yax_`g' "`r(`g')'"
 		}
 		foreach g of global countries {
 			if "`g'" == "`mg'" continue
