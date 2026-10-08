@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lpiv_energy_ea.txt
   log type:  text
- opened on:   8 Oct 2026, 09:36:25
+ opened on:   8 Oct 2026, 12:48:48
 
 . 
 . *******************************************************************************
@@ -78,20 +78,24 @@
 
 . 
 . * Asse y comune e stretto per i grafici combinati: range dai dati (incluso lo 0) ed etichette
-. * interne al range, così da lasciare il minimo spazio bianco sopra e sotto
+. * interne al range, così da lasciare il minimo spazio bianco sopra e sotto.
+. * Passo delle etichette = massimo valore assoluto del range / 5, arrotondato per eccesso a
+. * 1, 2 o 5 x 10^k: es. passo .1 per [-.5,0] e [-.5,.5], .2 per [-1,0] e [-1,1], .5 per [-2,0]
+. * e [-2,2]; almeno 2 etichette (incluso lo 0)
 . cap program drop lp_yaxis
 
 . program lp_yaxis, rclass
   1.         args ymin ymax
   2.         local ymin = min(`ymin', 0)
   3.         local ymax = max(`ymax', 0)
-  4.         local d = (`ymax' - `ymin')/4
-  5.         local m = 10^floor(log10(`d'))
+  4.         local d = max(-`ymin', `ymax')/5
+  5.         local m = 10^floor(log10(`d') + 1e-9)
   6.         local r = `d'/`m'
-  7.         local st = cond(`r' <= 1, 1, cond(`r' <= 2, 2, cond(`r' <= 5, 5, 10)))*`m'
-  8.         local y0 = ceil(`ymin'/`st')*`st'
-  9.         local y1 = floor(`ymax'/`st')*`st'
- 10.         return local opt "yscale(range(`ymin' `ymax')) ylabel(`y0'(`st')`y1')"
+  7.         local st = cond(`r' <= 1 + 1e-9, 1, cond(`r' <= 2 + 1e-9, 2, cond(`r' <= 5 + 1e-9, 5, 10)))*`m'
+  8.         * Prima e ultima etichetta interne al range (tolleranza per gli errori di arrotondamento)
+.         local y0 = round(ceil(`ymin'/`st' - 1e-9)*`st', 1e-10)
+  9.         local y1 = round(floor(`ymax'/`st' + 1e-9)*`st', 1e-10)
+ 10.         return local opt "yscale(range(`ymin' `ymax')) ylabel(`y0'(`st')`y1', labsize(small))"
  11. end
 
 . 
@@ -404,19 +408,19 @@ Panel variable: geocode (unbalanced)
 
 Time variable: timeq, 1991q1 to 2026q3
         Delta: 1 quarter
-1° stadio DE unsm OilSpotUSDBarrel (strumenti oilMP) -> contr: F efficace di Montiel Olea-Pflueger min   36.3, max   39.3
-  F efficace per h = 0,...,12:  37.6  38.0  37.9  37.5  37.5  37.8  37.2  37.0  36.7  38.5  37.5  39.3  36.3
+1° stadio DE unsm OilSpotUSDBarrel (strumenti oilMP) -> contr: F efficace di Montiel Olea-Pflueger min   41.4, max   44.0
+  F efficace per h = 0,...,12:  43.9  43.6  42.8  42.3  42.6  42.7  42.5  42.1  41.9  43.0  42.5  44.0  41.4
   valore critico (tau = 10%):  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1
   campione: shock 1995q4-2025q4 (h = 0); outcome fino a 2026q2
-1° stadio DE umid OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3) -> contr: F efficace di Montiel Olea-Pflueger min   17.6, max   22.2
-  F efficace per h = 0,...,12:  17.6  18.3  18.1  17.7  18.2  18.5  18.9  20.1  20.3  21.2  21.1  22.2  21.4
-  valore critico (tau = 10%):  14.2  13.9  14.2  14.1  14.6  14.1  14.1  14.0  14.0  13.6  13.1  12.9  12.9
+1° stadio DE umid OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3) -> contr: F efficace di Montiel Olea-Pflueger min   17.9, max   21.6
+  F efficace per h = 0,...,12:  18.5  18.8  18.4  17.9  18.4  18.4  18.8  19.3  19.4  20.3  20.4  21.6  21.1
+  valore critico (tau = 10%):  13.1  13.0  13.2  12.8  12.6  12.6  12.1  11.9  12.0  13.2  11.9  12.1  12.2
   campione: shock 1995q4-2025q4 (h = 0); outcome fino a 2026q2
-1° stadio DE pre OilSpotUSDBarrel (strumenti oilMP) -> contr: F efficace di Montiel Olea-Pflueger min   43.3, max   98.7
-  F efficace per h = 0,...,12:  44.3  43.3  50.0  54.9  54.5  52.6  54.3  55.1  57.0  73.2  75.1  81.9  98.7
+1° stadio DE pre OilSpotUSDBarrel (strumenti oilMP) -> contr: F efficace di Montiel Olea-Pflueger min   49.8, max  108.5
+  F efficace per h = 0,...,12:  52.0  49.8  54.8  59.6  59.0  57.9  59.5  59.6  61.9  80.7  83.2  91.0 108.5
   valore critico (tau = 10%):  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1
   campione: shock 1995q4-2019q4 (h = 0); outcome fino a 2019q4
-LP smussate DE OilSpotUSDBarrel -> contr: lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate DE OilSpotUSDBarrel -> contr: lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
 1° stadio DE unsm OilSpotUSDBarrel (strumenti oilMP) -> hicp: F efficace di Montiel Olea-Pflueger min   26.2, max   30.9
   F efficace per h = 0,...,12:  30.1  29.8  30.0  29.8  29.5  29.4  29.1  30.0  30.3  30.9  26.3  26.2  27.4
   valore critico (tau = 10%):  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1
@@ -469,22 +473,22 @@ LP smussate DE OilSpotUSDBarrel -> occH: lambda relativo scelto per validazione 
   valore critico (tau = 10%):  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1
   campione: shock 1995q4-2019q4 (h = 0); outcome fino a 2019q4
 LP smussate DE OilSpotUSDBarrel -> dur: lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-1° stadio DE unsm TTFSpotEURMWH (strumenti gasAG) -> contr: F efficace di Montiel Olea-Pflueger min    3.9, max    8.4
-  F efficace per h = 0,...,12:   3.9   4.2   5.2   5.9   7.0   6.8   7.4   6.2   6.3   6.4   6.4   7.5   8.4
+1° stadio DE unsm TTFSpotEURMWH (strumenti gasAG) -> contr: F efficace di Montiel Olea-Pflueger min    2.6, max    8.1
+  F efficace per h = 0,...,12:   2.6   3.0   4.1   4.6   5.4   5.9   6.6   6.3   6.1   5.9   6.2   6.4   8.1
   valore critico (tau = 10%):  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1
   campione: shock 2006q4-2025q4 (h = 0); outcome fino a 2026q2
   ATTENZIONE: strumenti deboli (F efficace < valore critico) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
-1° stadio DE umid TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3) -> contr: F efficace di Montiel Olea-Pflueger min    3.8, max    9.1
-  F efficace per h = 0,...,12:   3.8   4.5   5.0   5.3   5.3   5.5   6.6   6.4   6.4   5.9   5.7   5.9   9.1
-  valore critico (tau = 10%):  18.4  18.0  17.6  17.3  16.8  17.6  16.5  17.4  18.3  18.4  18.6  19.0  18.0
+1° stadio DE umid TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3) -> contr: F efficace di Montiel Olea-Pflueger min    3.3, max    7.8
+  F efficace per h = 0,...,12:   3.3   3.9   4.4   4.6   5.4   6.0   6.3   6.3   5.8   5.2   5.1   4.9   7.8
+  valore critico (tau = 10%):  17.8  17.3  16.8  16.8  17.4  18.6  18.1  18.8  19.1  19.4  19.5  18.7  17.5
   campione: shock 2006q4-2025q4 (h = 0); outcome fino a 2026q2
   ATTENZIONE: strumenti deboli (F efficace < valore critico) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
-1° stadio DE pre TTFSpotEURMWH (strumenti gasAG) -> contr: F efficace di Montiel Olea-Pflueger min    1.4, max    5.0
-  F efficace per h = 0,...,12:   5.0   5.0   5.0   3.3   3.1   1.4   3.1   2.8   2.8   2.7   2.9   3.2   2.9
+1° stadio DE pre TTFSpotEURMWH (strumenti gasAG) -> contr: F efficace di Montiel Olea-Pflueger min    0.4, max    2.9
+  F efficace per h = 0,...,12:   2.9   2.2   2.4   1.1   0.9   0.6   1.2   1.0   0.9   0.4   0.6   0.5   0.5
   valore critico (tau = 10%):  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1
   campione: shock 2006q4-2019q4 (h = 0); outcome fino a 2019q4
   ATTENZIONE: strumenti deboli (F efficace < valore critico) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
-LP smussate DE TTFSpotEURMWH -> contr: lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
+LP smussate DE TTFSpotEURMWH -> contr: lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
 1° stadio DE unsm TTFSpotEURMWH (strumenti gasAG) -> hicp: F efficace di Montiel Olea-Pflueger min    3.5, max   16.5
   F efficace per h = 0,...,12:   3.5   4.6   6.2   7.1   8.2   8.5   9.1   9.6  10.6  11.7  16.1  16.5  13.6
   valore critico (tau = 10%):  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1
@@ -708,18 +712,18 @@ LP smussate IT TTFSpotEURMWH -> dur: lambda relativo scelto per validazione incr
 
 Time variable: timeq, 1983q1 to 2026q3
         Delta: 1 quarter
-1° stadio NL unsm OilSpotUSDBarrel (strumenti oilMP) -> contr: F efficace di Montiel Olea-Pflueger min   19.5, max   23.0
-  F efficace per h = 0,...,12:  23.0  21.2  20.2  19.7  19.5  20.0  20.5  20.5  20.6  20.6  21.2  20.5  20.9
+1° stadio NL unsm OilSpotUSDBarrel (strumenti oilMP) -> contr: F efficace di Montiel Olea-Pflueger min   18.6, max   22.3
+  F efficace per h = 0,...,12:  22.3  20.8  19.8  19.1  18.6  19.1  19.2  19.2  19.3  19.2  19.4  18.9  19.1
   valore critico (tau = 10%):  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1
   campione: shock 2001q3-2025q4 (h = 0); outcome fino a 2026q3
   ATTENZIONE: strumenti deboli (F efficace < valore critico) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
-1° stadio NL umid OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3) -> contr: F efficace di Montiel Olea-Pflueger min   10.6, max   11.9
-  F efficace per h = 0,...,12:  11.1  11.3  10.9  10.6  10.9  11.1  11.2  11.4  11.6  11.7  11.9  11.3  10.9
-  valore critico (tau = 10%):  15.1  14.6  15.0  14.4  14.2  13.9  13.5  13.2  12.8  13.6  13.4  13.7  13.4
+1° stadio NL umid OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3) -> contr: F efficace di Montiel Olea-Pflueger min   10.4, max   11.7
+  F efficace per h = 0,...,12:  11.0  11.1  10.8  10.4  10.7  11.0  11.0  11.2  11.4  11.6  11.7  11.4  11.3
+  valore critico (tau = 10%):  14.9  14.6  15.0  14.4  14.0  13.7  13.3  13.0  12.6  13.7  13.6  13.7  13.2
   campione: shock 2001q3-2025q4 (h = 0); outcome fino a 2026q3
   ATTENZIONE: strumenti deboli (F efficace < valore critico) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
-1° stadio NL pre OilSpotUSDBarrel (strumenti oilMP) -> contr: F efficace di Montiel Olea-Pflueger min   27.6, max   62.4
-  F efficace per h = 0,...,12:  32.5  27.6  33.6  33.2  33.6  31.6  33.4  34.1  38.3  45.8  51.7  51.0  62.4
+1° stadio NL pre OilSpotUSDBarrel (strumenti oilMP) -> contr: F efficace di Montiel Olea-Pflueger min   26.4, max   60.2
+  F efficace per h = 0,...,12:  30.7  26.4  32.4  32.1  32.3  30.6  32.4  33.2  37.3  44.5  49.9  50.0  60.2
   valore critico (tau = 10%):  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1
   campione: shock 2001q3-2019q4 (h = 0); outcome fino a 2019q4
 LP smussate NL OilSpotUSDBarrel -> contr: lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
@@ -785,18 +789,18 @@ LP smussate NL OilSpotUSDBarrel -> occH: lambda relativo scelto per validazione 
   campione: shock 2000q3-2019q4 (h = 0); outcome fino a 2019q4
   ATTENZIONE: strumenti deboli (F efficace < valore critico) per h = 1
 LP smussate NL OilSpotUSDBarrel -> dur: lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-1° stadio NL unsm TTFSpotEURMWH (strumenti gasAG) -> contr: F efficace di Montiel Olea-Pflueger min    3.9, max   12.4
-  F efficace per h = 0,...,12:   3.9   4.8   6.7   8.3   9.8  10.5  11.6  12.4  10.1   9.9   9.3   9.8   9.6
+1° stadio NL unsm TTFSpotEURMWH (strumenti gasAG) -> contr: F efficace di Montiel Olea-Pflueger min    4.0, max   12.8
+  F efficace per h = 0,...,12:   4.0   5.0   7.0   8.7  10.1  10.7  12.1  12.8  10.4  10.2  10.0  10.6  10.2
   valore critico (tau = 10%):  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1
   campione: shock 2006q4-2025q4 (h = 0); outcome fino a 2026q3
   ATTENZIONE: strumenti deboli (F efficace < valore critico) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
-1° stadio NL umid TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3) -> contr: F efficace di Montiel Olea-Pflueger min    4.7, max    8.5
-  F efficace per h = 0,...,12:   4.7   5.8   6.9   7.5   7.5   8.5   7.8   7.9   7.4   7.3   7.2   7.2   6.7
-  valore critico (tau = 10%):  17.6  16.2  15.7  16.0  16.8  16.9  17.2  18.4  18.7  19.3  19.3  19.3  18.0
+1° stadio NL umid TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3) -> contr: F efficace di Montiel Olea-Pflueger min    4.7, max    8.4
+  F efficace per h = 0,...,12:   4.7   5.8   6.9   7.5   7.6   8.4   7.4   7.7   7.2   7.0   7.5   7.7   7.1
+  valore critico (tau = 10%):  17.7  16.1  15.4  15.6  16.4  16.7  17.1  18.2  18.6  19.5  19.4  19.4  17.5
   campione: shock 2006q4-2025q4 (h = 0); outcome fino a 2026q3
   ATTENZIONE: strumenti deboli (F efficace < valore critico) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
-1° stadio NL pre TTFSpotEURMWH (strumenti gasAG) -> contr: F efficace di Montiel Olea-Pflueger min    0.0, max    2.4
-  F efficace per h = 0,...,12:   2.4   1.7   1.1   0.5   0.5   0.0   0.1   0.2   0.3   0.4   0.6   0.6   0.6
+1° stadio NL pre TTFSpotEURMWH (strumenti gasAG) -> contr: F efficace di Montiel Olea-Pflueger min    0.0, max    2.2
+  F efficace per h = 0,...,12:   2.2   1.6   1.0   0.5   0.4   0.0   0.1   0.1   0.2   0.3   0.4   0.4   0.4
   valore critico (tau = 10%):  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1
   campione: shock 2006q4-2019q4 (h = 0); outcome fino a 2019q4
   ATTENZIONE: strumenti deboli (F efficace < valore critico) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
@@ -1337,21 +1341,20 @@ LP smussate BE TTFSpotEURMWH -> dur: lambda relativo scelto per validazione incr
 
 Time variable: timeq, 1991q1 to 2026q3
         Delta: 1 quarter
-1° stadio EA unsm OilSpotUSDBarrel (strumenti oilMP) -> contr: F efficace di Montiel Olea-Pflueger min   22.0, max   29.3
-  F efficace per h = 0,...,12:  29.3  26.8  26.0  26.2  26.2  27.5  27.2  27.0  27.4  28.4  27.0  28.0  22.0
+1° stadio EA unsm OilSpotUSDBarrel (strumenti oilMP) -> contr: F efficace di Montiel Olea-Pflueger min   25.8, max   30.7
+  F efficace per h = 0,...,12:  29.7  27.1  26.4  25.8  26.8  27.1  28.1  27.5  27.6  29.7  29.4  30.7  27.8
   valore critico (tau = 10%):  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1
   campione: shock 2000q3-2025q4 (h = 0); outcome fino a 2026q2
-  ATTENZIONE: strumenti deboli (F efficace < valore critico) per h = 12
-1° stadio EA umid OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3) -> contr: F efficace di Montiel Olea-Pflueger min   10.1, max   12.6
-  F efficace per h = 0,...,12:  12.5  12.4  11.8  11.5  11.7  11.9  12.0  12.2  12.6  12.4  12.1  12.1  10.1
-  valore critico (tau = 10%):  14.2  13.9  13.8  13.5  13.2  13.2  13.0  13.2  12.5  12.8  13.4  13.0  14.8
+1° stadio EA umid OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3) -> contr: F efficace di Montiel Olea-Pflueger min   11.0, max   12.7
+  F efficace per h = 0,...,12:  12.1  12.2  11.7  11.6  12.2  12.3  12.4  12.5  12.6  12.7  12.3  12.5  11.0
+  valore critico (tau = 10%):  14.5  14.1  13.8  13.6  13.2  13.2  13.1  13.0  12.9  13.1  12.9  12.9  13.9
   campione: shock 2000q3-2025q4 (h = 0); outcome fino a 2026q2
-  ATTENZIONE: strumenti deboli (F efficace < valore critico) per h = 0 1 2 3 4 5 6 7 9 10 11 12
-1° stadio EA pre OilSpotUSDBarrel (strumenti oilMP) -> contr: F efficace di Montiel Olea-Pflueger min   25.6, max   60.6
-  F efficace per h = 0,...,12:  27.5  25.6  34.2  34.5  35.8  34.0  35.5  35.2  39.1  44.7  51.7  50.8  60.6
+  ATTENZIONE: strumenti deboli (F efficace < valore critico) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
+1° stadio EA pre OilSpotUSDBarrel (strumenti oilMP) -> contr: F efficace di Montiel Olea-Pflueger min   33.2, max   71.8
+  F efficace per h = 0,...,12:  35.1  33.2  39.8  39.1  40.9  40.2  42.4  41.2  46.2  53.9  64.4  61.4  71.8
   valore critico (tau = 10%):  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1
   campione: shock 2000q3-2019q4 (h = 0); outcome fino a 2019q4
-LP smussate EA OilSpotUSDBarrel -> contr: lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate EA OilSpotUSDBarrel -> contr: lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
 1° stadio EA unsm OilSpotUSDBarrel (strumenti oilMP) -> hicp: F efficace di Montiel Olea-Pflueger min   19.7, max   27.2
   F efficace per h = 0,...,12:  27.2  24.9  24.3  24.4  24.0  24.3  24.3  23.9  24.1  24.4  20.8  19.7  21.3
   valore critico (tau = 10%):  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1
@@ -1409,22 +1412,22 @@ LP smussate EA OilSpotUSDBarrel -> occH: lambda relativo scelto per validazione 
   valore critico (tau = 10%):  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1
   campione: shock 2000q4-2019q4 (h = 0); outcome fino a 2019q4
 LP smussate EA OilSpotUSDBarrel -> dur: lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-1° stadio EA unsm TTFSpotEURMWH (strumenti gasAG) -> contr: F efficace di Montiel Olea-Pflueger min    4.2, max   10.4
-  F efficace per h = 0,...,12:   4.2   4.9   6.8   8.5   9.7  10.1  10.4   8.6   8.5   7.8   8.7   9.6  10.1
+1° stadio EA unsm TTFSpotEURMWH (strumenti gasAG) -> contr: F efficace di Montiel Olea-Pflueger min    4.2, max   10.2
+  F efficace per h = 0,...,12:   4.2   5.0   6.8   8.6   9.7   9.7  10.2   7.8   8.4   6.9   7.2   7.6   8.2
   valore critico (tau = 10%):  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1
   campione: shock 2006q4-2025q4 (h = 0); outcome fino a 2026q2
   ATTENZIONE: strumenti deboli (F efficace < valore critico) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
-1° stadio EA umid TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3) -> contr: F efficace di Montiel Olea-Pflueger min    5.1, max    8.8
-  F efficace per h = 0,...,12:   6.4   7.3   8.1   8.4   8.8   8.4   8.4   7.2   6.6   5.8   5.2   5.1   5.5
-  valore critico (tau = 10%):  17.4  16.8  17.2  17.9  18.1  19.0  19.1  19.6  20.1  20.3  20.6  19.7  21.1
+1° stadio EA umid TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3) -> contr: F efficace di Montiel Olea-Pflueger min    5.7, max    9.3
+  F efficace per h = 0,...,12:   5.7   6.5   7.1   7.2   8.8   9.3   8.9   8.3   8.3   7.3   6.7   6.3   7.4
+  valore critico (tau = 10%):  16.8  16.2  16.6  17.4  17.6  18.4  19.1  19.5  19.6  19.9  20.3  19.7  20.3
   campione: shock 2006q4-2025q4 (h = 0); outcome fino a 2026q2
   ATTENZIONE: strumenti deboli (F efficace < valore critico) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
-1° stadio EA pre TTFSpotEURMWH (strumenti gasAG) -> contr: F efficace di Montiel Olea-Pflueger min    1.9, max   10.8
-  F efficace per h = 0,...,12:   4.5   4.0   4.6   3.0   3.8   1.9   9.4   9.4  10.8   9.6   9.3   9.8   9.3
+1° stadio EA pre TTFSpotEURMWH (strumenti gasAG) -> contr: F efficace di Montiel Olea-Pflueger min    1.1, max    7.0
+  F efficace per h = 0,...,12:   4.4   3.2   3.8   2.1   2.7   1.1   5.3   4.9   6.2   6.7   6.3   7.0   6.2
   valore critico (tau = 10%):  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1
   campione: shock 2006q4-2019q4 (h = 0); outcome fino a 2019q4
   ATTENZIONE: strumenti deboli (F efficace < valore critico) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
-LP smussate EA TTFSpotEURMWH -> contr: lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
+LP smussate EA TTFSpotEURMWH -> contr: lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
 1° stadio EA unsm TTFSpotEURMWH (strumenti gasAG) -> hicp: F efficace di Montiel Olea-Pflueger min    4.8, max   17.4
   F efficace per h = 0,...,12:   4.8   6.2   8.4   9.1  10.1   9.5   9.8   9.3   9.7  10.2  17.3  17.4  13.3
   valore critico (tau = 10%):  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1  23.1
@@ -1765,5 +1768,5 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_dur
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lpiv_energy_ea.txt
   log type:  text
- closed on:   8 Oct 2026, 10:16:24
+ closed on:   8 Oct 2026, 13:28:53
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
