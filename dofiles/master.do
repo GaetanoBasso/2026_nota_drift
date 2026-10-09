@@ -91,9 +91,7 @@ do ${do}/cr_dataset_ea.do
 
 * Local Projections (Jordà, 2005) OLS: shock dei prezzi energetici su retribuzioni e prezzi; robustezza
 * (disattivate: per rieseguirle togliere i delimitatori di commento qui sotto)
-/*
 do ${do}/an_lp_energy_ea.do
-*/
 
 * Local Projections con variabili strumentali (serie storiche): petrolio strumentato con Mori-Peersman, gas con Alessandri-Gazzani; LP smussate (base), non smussate, forma ridotta
 do ${do}/an_lpiv_energy_ea.do
