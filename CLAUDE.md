@@ -78,7 +78,9 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   value for a `$lp_ivtau`% maximum bias;
   outputs prefixed `lp_iv_`.
 - Graphs: no titles or notes in Stata (they go in the `.tex` files); 90% bands only;
-  multi-panel graphs share an explicit, tight y range (`lp_yaxis`: data range incl. 0, no `ycommon`)
+  multi-panel graphs (`lp_ypanels`) share an explicit, tight y range (`lp_yaxis`: data range incl. 0,
+  no `ycommon`) if the band widths differ by at most `$lp_ytol` pp across panels, otherwise each panel
+  has its own tight range with the same label step
   with small margins (`imargin(tiny)`, `margin(vsmall)`); main text of `main_graphs.tex` =
   IV oil (blue) and gas (red) together (`lp_iv_og_*`), OLS graphs in an appendix; single energy price graphs, hours and
   unemployment go to the appendix. Square versions (`_sq`) only where a layout needs them.

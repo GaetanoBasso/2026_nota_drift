@@ -99,7 +99,8 @@ label(s, "Gross wages per hour worked", 6.83, 1.5, 6.0);
 graph(s, "lp_iv_og_ctry_contr_sq.png", 1.3, 1.95, 4.4, 4.4);
 graph(s, "lp_iv_og_ctry_wageH_sq.png", 7.63, 1.95, 4.4, 4.4);
 footnote(s, `${RESP} Time series for the euro area and each country, Newey\u2013West standard errors; ` +
-  "same vertical scale within each graph; the sample period (shock dates) of each panel is shown under its name.", 6.45);
+  "same vertical scale in all panels unless the widths of the confidence bands differ by more than 1.6 pp " +
+  "(then each panel has its own scale, with the same spacing between labels); the sample period (shock dates) of each panel is shown under its name.", 6.45);
 
 pres.writeFile({ fileName: path.join(__dirname, "slides_drift.pptx") })
   .then((f) => console.log(`written ${f}`));

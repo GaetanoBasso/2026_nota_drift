@@ -148,14 +148,22 @@ Outputs:
 - Graphs (no titles: titles and notes are in the `.tex` files; 90% bands only):
   - `lp_og_EA_<outcome>.png`: EA, oil (blue) and gas (red) in the same graph, with a
     legend — main text of `main_graphs.tex` for `contr hicp wageH`, appendix for `occH dur`;
-  - `lp_og_ctry_<outcome>.png`: EA and the six countries, oil and gas, common y axis,
-    legend in a cell of its own (`_sq`: square version, used in the note and the slides);
+  - `lp_og_ctry_<outcome>.png`: EA and the six countries, oil and gas, y axes as in the
+    rule below, legend in a cell of its own (`_sq`: square version, used in the note and the slides);
   - `lp_main_<shock>_<outcome>.png`: appendix, one energy price, EA for oil and gas,
     panel for electricity;
   - `lp_app_<shock>_<outcome>.png`: appendix, one energy price, the panel (oil, gas)
-    and the countries, with a common y axis;
+    and the countries, y axes as in the rule below;
   - `lp_rob_<shock>_<outcome>.png`: appendix, baseline vs pre-Covid sample for the
     unit of `lp_main_*`.
+- **Y axes of multi-panel graphs** (`lp_ypanels`, same rule in the IV file): one common
+  axis if the widths of the 90% bands (max upper end minus min lower end, per panel)
+  differ across panels by at most `$lp_ytol` (default 1.6) percentage points; otherwise
+  each panel gets its own tight axis, all with the same label step (the step of the common
+  axis). Label step (`lp_yaxis`): largest absolute value of the range divided by 5,
+  rounded up to 1, 2 or 5 × 10^k (e.g. .1 for [-.5,.5], .2 for [-1,1], .5 for [-2,2]); a
+  panel whose range does not reach one step away from 0 is extended to one step. The log
+  reports, for each graph, whether the axis is common or per panel.
 
 Graph labels, the `.tex` files and the slides are in English (dofile comments stay in
 Italian). `nota_drift.tex` (2-page policy note) and `slides_drift.pptx` (2 slides) use the
