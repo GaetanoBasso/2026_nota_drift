@@ -66,7 +66,7 @@ global covid_dum = 1
 * lp_ytol     : grafici a più pannelli: asse y comune se le ampiezze delle bande al 90%
 *               (max hi90 - min lo90 del pannello) differiscono al massimo di lp_ytol punti
 *               percentuali; altrimenti un asse per pannello, con lo stesso passo delle etichette
-global lp_lags     = 2
+global lp_lags     = 4
 global lp_shocks   "OilSpotUSDBarrel TTFSpotEURMWH ELEEURMWH"
 global lp_outcomes "contr hicp wageH occH dur"
 global lp_controls "lip ur bund1y"
