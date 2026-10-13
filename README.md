@@ -151,7 +151,7 @@ Outputs:
   - `lp_og_ctry_<outcome>.png`: EA and the six countries, oil and gas, y axes as in the
     rule below, legend in a cell of its own (`_sq`: square version, used in the note and the slides);
   - `lp_ctry_slides_<outcome>.png`: the six countries without EA and the panel, oil and gas,
-    square (2 columns × 3 rows) with one common legend below in a single row (`grc1leg2`,
+    2 rows × 3 columns (rectangular) with one plain common legend below in a single row (`grc1leg2`,
     SSC) for an appendix slide; y axes as in the rule below, evaluated on the six countries only;
   - `lp_main_<shock>_<outcome>.png`: appendix, one energy price, EA for oil and gas
     (fixed y axis with labels -.4(.1).4, so that graphs can be placed side by side on the
