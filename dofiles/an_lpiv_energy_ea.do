@@ -553,6 +553,7 @@ foreach vr in base rf {
 				file close `fh'
 				twoway `pl', yline(0, lcolor(black)) legend(order(3 "`lo_`vr''" 4 "`lg_`vr''") rows(1) position(6)) ///
 					xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
+					yscale(range(-.5 .5)) ylabel(-.5(.1).5,) ///
 					graphregion(color(white)) name(gog, replace)
 				graph export ${gph}/`px'_og_EA_`y'.png, replace
 			}

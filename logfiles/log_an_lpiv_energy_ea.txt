@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lpiv_energy_ea.txt
   log type:  text
- opened on:  13 Oct 2026, 14:52:24
+ opened on:  13 Oct 2026, 22:12:59
 
 . 
 . *******************************************************************************
@@ -1796,6 +1796,7 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_rob_TTFSpot
  46.                                 file close `fh'
  47.                                 twoway `pl', yline(0, lcolor(black)) legend(order(3 "`lo_`vr''" 4 "`lg_`vr''") rows(1) position(6)) ///
 >                                         xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
+>                                         yscale(range(-.5 .5)) ylabel(-.5(.1).5,) ///
 >                                         graphregion(color(white)) name(gog, replace)
  48.                                 graph export ${gph}/`px'_og_EA_`y'.png, replace
  49.                         }
@@ -1836,35 +1837,30 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_rob_TTFSpot
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_contr.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_contr.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_contr_sq.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides_contr.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides_contr.png saved as PNG format
   asse y comune: differenza tra le ampiezze delle bande  0.76
   asse y comune: differenza tra le ampiezze delle bande  0.76
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_hicp.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_hicp.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_hicp_sq.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides_hicp.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides_hicp.png saved as PNG format
   asse y comune: differenza tra le ampiezze delle bande  1.39
   asse y comune: differenza tra le ampiezze delle bande  1.39
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_wageH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_wageH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_wageH_sq.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides_wageH.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides_wageH.png saved as PNG format
   asse y comune: differenza tra le ampiezze delle bande  0.96
   asse y comune: differenza tra le ampiezze delle bande  0.96
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_occH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_occH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_occH_sq.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides_occH.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides_occH.png saved as PNG format
   asse y comune: differenza tra le ampiezze delle bande  0.28
   asse y comune: differenza tra le ampiezze delle bande  0.28
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_dur.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_dur.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_dur_sq.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides_dur.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides_dur.png saved as PNG format
   asse y comune: differenza tra le ampiezze delle bande  0.62
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_EA_contr.png saved as PNG format
@@ -1892,5 +1888,5 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_dur
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lpiv_energy_ea.txt
   log type:  text
- closed on:  13 Oct 2026, 15:36:02
+ closed on:  13 Oct 2026, 22:54:53
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
