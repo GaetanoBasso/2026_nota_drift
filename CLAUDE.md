@@ -85,7 +85,7 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   IV oil (blue) and gas (red) together (`lp_iv_og_*`), OLS graphs in an appendix; single energy price graphs, hours and
   unemployment go to the appendix. Square versions (`_sq`) only where a layout needs them. EA main graphs
   (`lp_main_*`, `lp_iv_main_*`) have a fixed y axis, `ylabel(-.4(.1).4)`; `*_ctry_slides_*` = countries
-  without EA and panel, oil and gas, wide format for slides.
+  without EA and panel, oil and gas, square with one common legend below (`grc1leg2`), for slides.
 
 ## Karpathy guidelines
 
