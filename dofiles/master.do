@@ -66,7 +66,7 @@ global covid_dum = 1
 * lp_ytol     : grafici a più pannelli: asse y comune se le ampiezze delle bande al 90%
 *               (max hi90 - min lo90 del pannello) differiscono al massimo di lp_ytol punti
 *               percentuali; altrimenti un asse per pannello, con lo stesso passo delle etichette
-global lp_lags     = 4
+global lp_lags     = 2
 global lp_shocks   "OilSpotUSDBarrel TTFSpotEURMWH ELEEURMWH"
 global lp_outcomes "contr hicp wageH occH dur"
 global lp_controls "lip ur bund1y"
@@ -83,15 +83,15 @@ global lp_ytol     = 1.6
 *******************************************************************************
 
 * Dataset panel trimestrale: CN Eurostat, retribuzioni contrattuali BCE, HICP, controlli macro, prezzi energetici
-do ${do}/cr_dataset_ea.do
+*do ${do}/cr_dataset_ea.do
 
 *******************************************************************************
 * 2) ANALISI
 *******************************************************************************
 
-* Local Projections (Jordà, 2005) OLS: shock dei prezzi energetici su retribuzioni e prezzi; robustezza
-* (disattivate: per rieseguirle togliere i delimitatori di commento qui sotto)
-do ${do}/an_lp_energy_ea.do
-
 * Local Projections con variabili strumentali (serie storiche): petrolio strumentato con Mori-Peersman, gas con Alessandri-Gazzani; LP smussate (base), non smussate, forma ridotta
 do ${do}/an_lpiv_energy_ea.do
+
+* Local Projections (Jordà, 2005) OLS: shock dei prezzi energetici su retribuzioni e prezzi; robustezza
+do ${do}/an_lp_energy_ea.do
+
