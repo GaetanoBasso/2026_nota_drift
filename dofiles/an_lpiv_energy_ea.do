@@ -56,7 +56,7 @@ log using ${log}/log_an_lpiv_energy_ea.txt, t replace
 *   lp_iv_ (solo petrolio e gas):
 *   lp_iv_og_EA_*   : EA, petrolio (blu) e gas (rosso) nello stesso grafico
 *   lp_iv_og_ctry_* : EA e paesi, petrolio e gas, stesso asse y stretto (_sq: versione quadrata)
-*   lp_iv_ctry_slides_* : solo paesi (senza EA), petrolio e gas, formato largo per le slide
+*   lp_iv_ctry_slides_* : solo paesi (senza EA), petrolio e gas, 2 righe x 3 colonne con legenda sotto (slide)
 *   lp_iv_main_*    : singolo prezzo, EA, asse y fisso -.4(.1).4 (grafici affiancabili)
 *   lp_iv_app_*     : singolo prezzo, paesi, stesso asse y stretto
 *   lp_iv_rob_*     : base (smussate), non smussate (unsm), strumenti mensili (umid) e
@@ -66,7 +66,7 @@ log using ${log}/log_an_lpiv_energy_ea.txt, t replace
 *   graphs/smp_lp_*.tex
 *******************************************************************************
 
-foreach p in ivreg2 ranktest weakivtest avar {
+foreach p in ivreg2 ranktest weakivtest avar grc1leg2 {
 	cap which `p'
 	if _rc ssc install `p'
 }
@@ -563,7 +563,7 @@ foreach vr in base rf {
 				graphregion(color(white) margin(vsmall)) name(g_`c', replace) nodraw
 			local gl "`gl' g_`c'"
 			if "`vr'" == "base" & "`c'" != "EA" {
-				twoway `pl', yline(0, lcolor(black)) legend(off) ///
+				twoway `pl', yline(0, lcolor(black)) legend(order(3 "`lo_`vr''" 4 "`lg_`vr''") rows(1) region(lstyle(none))) ///
 					subtitle("`c'" "Oil `qo0'–`qo1'; gas `qg0'–`qg1'", size(small)) ///
 					xtitle("Quarters", size(small)) ytitle("pp") xlabel(0(2)$hmax) `ysl_`c'' ///
 					graphregion(color(white) margin(vsmall)) name(s_`c', replace) nodraw
@@ -582,9 +582,9 @@ foreach vr in base rf {
 		* Versione quadrata (nota e slide)
 		graph combine `gl', imargin(tiny) cols(3) xsize(6) ysize(6) graphregion(color(white) margin(vsmall)) name(combsq, replace)
 		graph export ${gph}/`px'_og_ctry_`y'_sq.png, replace
-		* Slide di appendice: solo paesi (senza EA), 4 colonne e legenda nell'ultimo riquadro
+		* Slide di appendice: solo paesi (senza EA), 2 righe x 3 colonne, legenda comune semplice sotto su una riga (grc1leg2)
 		if "`gs'" != "" {
-			graph combine `gs' g_leg, imargin(tiny) cols(4) xsize(10) ysize(4.6) graphregion(color(white) margin(vsmall)) name(combsl, replace)
+			grc1leg2 `gs', legendfrom(`: word 1 of `gs'') position(6) ring(1) cols(3) imargin(tiny) xsize(9) ysize(5) graphregion(color(white) margin(vsmall)) name(combsl, replace)
 			graph export ${gph}/`px'_ctry_slides_`y'.png, replace
 		}
 	}

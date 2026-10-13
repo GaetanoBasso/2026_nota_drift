@@ -28,7 +28,7 @@ log using ${log}/log_an_lp_energy_ea.txt, t replace
 * - Grafici senza titoli (titoli e note nel file TeX), bande al 90%:
 *   lp_og_EA_*      : EA, petrolio (blu) e gas (rosso) nello stesso grafico
 *   lp_og_ctry_*    : EA e paesi, petrolio e gas, stesso asse y stretto (_sq: versione quadrata)
-*   lp_ctry_slides_* : solo paesi (senza EA e panel), petrolio e gas, formato largo per le slide
+*   lp_ctry_slides_* : solo paesi (senza EA e panel), petrolio e gas, 2 righe x 3 colonne con legenda sotto (slide)
 *   lp_main_*       : singolo prezzo, EA per petrolio e gas, panel per l'elettricità
 *   lp_app_*        : singolo prezzo, panel e paesi restanti, stesso asse y stretto
 *   lp_rob_*        : base e pre-Covid per l'unità di lp_main_*
@@ -37,6 +37,9 @@ log using ${log}/log_an_lp_energy_ea.txt, t replace
 
 cap which xtscc
 if _rc ssc install xtscc
+* grc1leg2 (SSC): grafici combinati con una sola legenda
+cap which grc1leg2
+if _rc ssc install grc1leg2
 which xtscc
 
 * Asse y stretto: range dai dati (incluso lo 0) ed etichette interne al range, così da lasciare
@@ -398,7 +401,7 @@ foreach y of global lp_outcomes {
 			graphregion(color(white) margin(vsmall)) name(g_`c', replace) nodraw
 		local gl "`gl' g_`c'"
 		if "`c'" != "EA" {
-			twoway `pl', yline(0, lcolor(black)) legend(off) ///
+			twoway `pl', yline(0, lcolor(black)) legend(order(3 "Oil price" 4 "Gas price") rows(1) region(lstyle(none))) ///
 				subtitle("`c'" "Oil `qo0'–`qo1'; gas `qg0'–`qg1'", size(small)) ///
 				xtitle("Quarters", size(small)) ytitle("pp") xlabel(0(2)$hmax) `ysl_`c'' ///
 				graphregion(color(white) margin(vsmall)) name(s_`c', replace) nodraw
@@ -416,9 +419,9 @@ foreach y of global lp_outcomes {
 	* Versione quadrata (nota e slide)
 	graph combine `gl', imargin(tiny) cols(3) xsize(6) ysize(6) graphregion(color(white) margin(vsmall)) name(combsq, replace)
 	graph export ${gph}/lp_og_ctry_`y'_sq.png, replace
-	* Slide di appendice: solo paesi (senza EA e panel), 4 colonne e legenda nell'ultimo riquadro
+	* Slide di appendice: solo paesi (senza EA e panel), 2 righe x 3 colonne, legenda comune semplice sotto su una riga (grc1leg2)
 	if "`gs'" != "" {
-		graph combine `gs' g_leg, imargin(tiny) cols(4) xsize(10) ysize(4.6) graphregion(color(white) margin(vsmall)) name(combsl, replace)
+		grc1leg2 `gs', legendfrom(`: word 1 of `gs'') position(6) ring(1) cols(3) imargin(tiny) xsize(9) ysize(5) graphregion(color(white) margin(vsmall)) name(combsl, replace)
 		graph export ${gph}/lp_ctry_slides_`y'.png, replace
 	}
 }
