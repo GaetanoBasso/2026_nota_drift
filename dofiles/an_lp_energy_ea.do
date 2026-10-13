@@ -28,6 +28,7 @@ log using ${log}/log_an_lp_energy_ea.txt, t replace
 * - Grafici senza titoli (titoli e note nel file TeX), bande al 90%:
 *   lp_og_EA_*      : EA, petrolio (blu) e gas (rosso) nello stesso grafico
 *   lp_og_ctry_*    : EA e paesi, petrolio e gas, stesso asse y stretto (_sq: versione quadrata)
+*   lp_ctry_slides_* : solo paesi (senza EA e panel), petrolio e gas, formato largo per le slide
 *   lp_main_*       : singolo prezzo, EA per petrolio e gas, panel per l'elettricità
 *   lp_app_*        : singolo prezzo, panel e paesi restanti, stesso asse y stretto
 *   lp_rob_*        : base e pre-Covid per l'unità di lp_main_*
@@ -278,10 +279,13 @@ foreach s of global lp_shocks {
 		file open `fh' using "${gph}/smp_lp_main_`s'_`y'.tex", write replace
 		file write `fh' "`p0'--`p1'"
 		file close `fh'
+		* EA: asse y fisso -.4(.1).4, grafici affiancabili con la stessa scala
+		local ym ""
+		if "`mg'" == "EA" local ym "yscale(range(-.4 .4)) ylabel(-.4(.1).4)"
 		twoway (rarea lo90 hi90 h `cond', color(gs13)) ///
 			(line b h `cond', `sty_base'), ///
 			yline(0, lcolor(black)) legend(off) ///
-			xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
+			xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) `ym' ///
 			graphregion(color(white)) name(gmain, replace)
 		graph export ${gph}/lp_main_`s'_`y'.png, replace
 
@@ -343,7 +347,13 @@ foreach y of global lp_outcomes {
 	foreach c in EA `others' {
 		local yax_`c' "`r(`c')'"
 	}
+	* Slide di appendice: solo paesi, assi y valutati senza l'EA
+	lp_ypanels if spec == "ts" & variant == "base" & inlist(shock, "`o'", "`g'") & outcome == "`y'", units(`others')
+	foreach c of local others {
+		local ysl_`c' "`r(`c')'"
+	}
 	local gl ""
+	local gs ""
 	local lco ""
 	foreach c in EA `others' {
 		local co `"if geo == "`c'" & variant == "base" & shock == "`o'" & outcome == "`y'""'
@@ -387,6 +397,13 @@ foreach y of global lp_outcomes {
 			xtitle("Quarters", size(small)) ytitle("pp") xlabel(0(2)$hmax) `yax_`c'' ///
 			graphregion(color(white) margin(vsmall)) name(g_`c', replace) nodraw
 		local gl "`gl' g_`c'"
+		if "`c'" != "EA" {
+			twoway `pl', yline(0, lcolor(black)) legend(off) ///
+				subtitle("`c'" "Oil `qo0'–`qo1'; gas `qg0'–`qg1'", size(small)) ///
+				xtitle("Quarters", size(small)) ytitle("pp") xlabel(0(2)$hmax) `ysl_`c'' ///
+				graphregion(color(white) margin(vsmall)) name(s_`c', replace) nodraw
+			local gs "`gs' s_`c'"
+		}
 	}
 	* Riquadro con la sola legenda: un solo punto per serie, quindi le linee non si vedono
 	twoway (line b h `lco', lcolor(navy) lwidth(medthick)) (line b h `lcg', lcolor(cranberry) lp(longdash) lwidth(medthick)), ///
@@ -399,6 +416,11 @@ foreach y of global lp_outcomes {
 	* Versione quadrata (nota e slide)
 	graph combine `gl', imargin(tiny) cols(3) xsize(6) ysize(6) graphregion(color(white) margin(vsmall)) name(combsq, replace)
 	graph export ${gph}/lp_og_ctry_`y'_sq.png, replace
+	* Slide di appendice: solo paesi (senza EA e panel), 4 colonne e legenda nell'ultimo riquadro
+	if "`gs'" != "" {
+		graph combine `gs' g_leg, imargin(tiny) cols(4) xsize(10) ysize(4.6) graphregion(color(white) margin(vsmall)) name(combsl, replace)
+		graph export ${gph}/lp_ctry_slides_`y'.png, replace
+	}
 }
 
 log close

@@ -83,7 +83,9 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   has its own tight range with the same label step
   with small margins (`imargin(tiny)`, `margin(vsmall)`); main text of `main_graphs.tex` =
   IV oil (blue) and gas (red) together (`lp_iv_og_*`), OLS graphs in an appendix; single energy price graphs, hours and
-  unemployment go to the appendix. Square versions (`_sq`) only where a layout needs them.
+  unemployment go to the appendix. Square versions (`_sq`) only where a layout needs them. EA main graphs
+  (`lp_main_*`, `lp_iv_main_*`) have a fixed y axis, `ylabel(-.4(.1).4)`; `*_ctry_slides_*` = countries
+  without EA and panel, oil and gas, wide format for slides.
 
 ## Karpathy guidelines
 

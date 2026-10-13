@@ -150,8 +150,12 @@ Outputs:
     legend — main text of `main_graphs.tex` for `contr hicp wageH`, appendix for `occH dur`;
   - `lp_og_ctry_<outcome>.png`: EA and the six countries, oil and gas, y axes as in the
     rule below, legend in a cell of its own (`_sq`: square version, used in the note and the slides);
-  - `lp_main_<shock>_<outcome>.png`: appendix, one energy price, EA for oil and gas,
-    panel for electricity;
+  - `lp_ctry_slides_<outcome>.png`: the six countries without EA and the panel, oil and gas,
+    wide format (4 columns, legend in the last cell) for an appendix slide; y axes as in the
+    rule below, evaluated on the six countries only;
+  - `lp_main_<shock>_<outcome>.png`: appendix, one energy price, EA for oil and gas
+    (fixed y axis with labels -.4(.1).4, so that graphs can be placed side by side on the
+    same scale; the axis still extends if a band goes beyond ±.4), panel for electricity;
   - `lp_app_<shock>_<outcome>.png`: appendix, one energy price, the panel (oil, gas)
     and the countries, y axes as in the rule below;
   - `lp_rob_<shock>_<outcome>.png`: appendix, baseline vs pre-Covid sample for the
@@ -218,7 +222,7 @@ the robustness variant `unsm`.
   value at each horizon, with the critical value); a warning is printed when it is below
   the critical value for a maximum 2SLS bias of `$lp_ivtau`% (default 10%).
 - **Outputs.** `${out}/lp_energy_iv_ea.dta` / `.xlsx`; graphs with prefix `lp_iv_`
-  (`og_EA`, `og_ctry` and `_sq`, `main`, `app`: smooth LP baseline; `rob` with baseline,
+  (`og_EA`, `og_ctry` and `_sq`, `ctry_slides`, `main` with the fixed -.4(.1).4 y axis, `app`: smooth LP baseline; `rob` with baseline,
   unsmoothed, monthly instruments and pre-Covid) and `lp_rf_` (reduced form, `og_EA`, `og_ctry`). The `.tex` files and the slides use the IV graphs; the
   OLS graphs of the last OLS run are shown in an appendix of `main_graphs.tex` for
   comparison (including electricity, which has no instrument).
