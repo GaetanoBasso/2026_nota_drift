@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_cr_dataset_ea.txt
   log type:  text
- opened on:  12 Oct 2026, 12:08:23
+ opened on:  13 Oct 2026, 14:43:51
 
 . 
 . * Dati CNQ Eurostat
@@ -43,7 +43,7 @@ xij variables:
 . tempfile cnq_ea
 
 . save `cnq_ea'
-file /tmp/work/m029601/St1392021.000001 saved as .dta format
+file /tmp/work/m029601/St1193126.000001 saved as .dta format
 
 . 
 . /*
@@ -68,19 +68,19 @@ file /tmp/work/m029601/St1392021.000001 saved as .dta format
 . clear
 
 . getTimeSeries ECB_RESTR INW/....... "" "" 0 0
-Oct 12, 2026 12:08:24 PM it.bancaditalia.oss.sdmx.util.Configuration init
+Oct 13, 2026 2:43:52 PM it.bancaditalia.oss.sdmx.util.Configuration init
 INFO: Class configuration found: it.bancaditalia.oss.sdmx.util.SdmxConfiguration
-Oct 12, 2026 12:08:25 PM REPL.$JShell$12 SgetTimeSeries
+Oct 13, 2026 2:43:52 PM REPL.$JShell$12 SgetTimeSeries
 INFO: METADATA is disabled.
-Oct 12, 2026 12:08:50 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Oct 13, 2026 2:44:05 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://esb-ws-scde.eu.escb.eu/ws/SDW21/REST/service/dataflow/all/INW/latest
-Oct 12, 2026 12:08:50 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Oct 13, 2026 2:44:06 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://esb-ws-scde.eu.escb.eu/ws/SDW21/REST/service/datastructure/ECB/ECB_BCS1/1.0?references=descendants
-Oct 12, 2026 12:08:51 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Oct 13, 2026 2:44:06 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://esb-ws-scde.eu.escb.eu/ws/SDW21/REST/service/data/ECB,INW,1.0/.......
-Oct 12, 2026 12:08:53 PM REPL.$JShell$12 SgetTimeSeries
+Oct 13, 2026 2:44:11 PM REPL.$JShell$12 SgetTimeSeries
 INFO: The query returned 650 time series.
-Oct 12, 2026 12:08:53 PM REPL.$JShell$12 SgetTimeSeries
+Oct 13, 2026 2:44:11 PM REPL.$JShell$12 SgetTimeSeries
 INFO: The query returned 87499 observations.
 
 . rename *,l
@@ -143,7 +143,7 @@ tsname1  tsname2  tsname3  tsname4  tsname5  tsname6  tsname7  tsname8  tsname9
 .         tempfile geo1
 
 .         save `geo1'
-file /tmp/work/m029601/St1392021.000003 saved as .dta format
+file /tmp/work/m029601/St1193126.000003 saved as .dta format
 
 . restore
 
@@ -158,7 +158,7 @@ file /tmp/work/m029601/St1392021.000003 saved as .dta format
 .         tempfile geo2
 
 .         save `geo2'
-file /tmp/work/m029601/St1392021.000005 saved as .dta format
+file /tmp/work/m029601/St1193126.000005 saved as .dta format
 
 . restore
 
@@ -188,24 +188,24 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/data/ecb_inwx_q.dta save
 . tempfile contr_ea
 
 . save `contr_ea'
-file /tmp/work/m029601/St1392021.000006 saved as .dta format
+file /tmp/work/m029601/St1193126.000006 saved as .dta format
 
 . 
 . * Dati IPCA vari paesi
 . clear
 
 . getTimeSeries EUROSTAT PRC_HICP_MIDX/.I15.CP00.DE+FR+NL+IT+ES+BE+EA20 "" "" 0 0
-Oct 12, 2026 12:08:54 PM REPL.$JShell$12 SgetTimeSeries
+Oct 13, 2026 2:44:12 PM REPL.$JShell$12 SgetTimeSeries
 INFO: METADATA is disabled.
-Oct 12, 2026 12:08:54 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Oct 13, 2026 2:44:12 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/dataflow/all/PRC_HICP_MIDX/latest
-Oct 12, 2026 12:08:54 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Oct 13, 2026 2:44:12 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/datastructure/ESTAT/PRC_HICP_MIDX/108.0?references=descendants
-Oct 12, 2026 12:08:55 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Oct 13, 2026 2:44:13 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/ESTAT,PRC_HICP_MIDX,1.0/.I15.CP00.DE+FR+NL+IT+ES+BE+EA20
-Oct 12, 2026 12:08:56 PM REPL.$JShell$12 SgetTimeSeries
+Oct 13, 2026 2:44:13 PM REPL.$JShell$12 SgetTimeSeries
 INFO: The query returned 7 time series.
-Oct 12, 2026 12:08:56 PM REPL.$JShell$12 SgetTimeSeries
+Oct 13, 2026 2:44:13 PM REPL.$JShell$12 SgetTimeSeries
 INFO: The query returned 2473 observations.
 
 . rename *, low replace
@@ -306,7 +306,7 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/data/eurostat_hicp_ea_q.
 . tempfile hicp_ea
 
 . save `hicp_ea'
-file /tmp/work/m029601/St1392021.000007 saved as .dta format
+file /tmp/work/m029601/St1193126.000007 saved as .dta format
 
 . 
 . * Dati mensili Eurostat aggiuntivi: HICP core, produzione industriale, tasso di disoccupazione
@@ -338,34 +338,34 @@ file /tmp/work/m029601/St1392021.000007 saved as .dta format
  18.         tempfile `v'_ea
  19.         save ``v'_ea'
  20. }
-Oct 12, 2026 12:08:56 PM REPL.$JShell$12 SgetTimeSeries
+Oct 13, 2026 2:44:13 PM REPL.$JShell$12 SgetTimeSeries
 INFO: METADATA is disabled.
-Oct 12, 2026 12:08:56 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Oct 13, 2026 2:44:13 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/ESTAT,PRC_HICP_MIDX,1.0/M.I15.TOT_X_NRG_FOOD.DE+FR+NL+IT+ES+BE+EA20
-Oct 12, 2026 12:08:56 PM REPL.$JShell$12 SgetTimeSeries
+Oct 13, 2026 2:44:14 PM REPL.$JShell$12 SgetTimeSeries
 INFO: The query returned 7 time series.
-Oct 12, 2026 12:08:56 PM REPL.$JShell$12 SgetTimeSeries
+Oct 13, 2026 2:44:14 PM REPL.$JShell$12 SgetTimeSeries
 INFO: The query returned 2273 observations.
 (301 real changes made)
 (2,273 real changes made)
 (5 observations deleted)
-file /tmp/work/m029601/St1392021.000008 saved as .dta format
-Oct 12, 2026 12:08:56 PM REPL.$JShell$12 SgetTimeSeries
+file /tmp/work/m029601/St1193126.000008 saved as .dta format
+Oct 13, 2026 2:44:14 PM REPL.$JShell$12 SgetTimeSeries
 INFO: METADATA is disabled.
-Oct 12, 2026 12:08:56 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Oct 13, 2026 2:44:14 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/dataflow/all/STS_INPR_M/latest
-Oct 12, 2026 12:08:56 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Oct 13, 2026 2:44:14 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/datastructure/ESTAT/STS_INPR_M/174.0?references=descendants
-Oct 12, 2026 12:08:58 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Oct 13, 2026 2:44:15 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/ESTAT,STS_INPR_M,1.0/M.PRD.B-D.SCA.I21.DE+FR+NL+IT+ES+BE+EA20
-Oct 12, 2026 12:08:58 PM REPL.$JShell$12 SgetTimeSeries
+Oct 13, 2026 2:44:16 PM REPL.$JShell$12 SgetTimeSeries
 INFO: The query returned 7 time series.
-Oct 12, 2026 12:08:58 PM REPL.$JShell$12 SgetTimeSeries
+Oct 13, 2026 2:44:16 PM REPL.$JShell$12 SgetTimeSeries
 INFO: The query returned 2791 observations.
 (427 real changes made)
 (2,791 real changes made)
 (13 observations deleted)
-file /tmp/work/m029601/St1392021.000009 saved as .dta format
+file /tmp/work/m029601/St1193126.000009 saved as .dta format
 
 . 
 . local v ur
@@ -373,17 +373,17 @@ file /tmp/work/m029601/St1392021.000009 saved as .dta format
 . clear
 
 . getTimeSeries EUROSTAT UNE_RT_M/M.SA.TOTAL.PC_ACT.T. "" "" 0 0
-Oct 12, 2026 12:08:58 PM REPL.$JShell$12 SgetTimeSeries
+Oct 13, 2026 2:44:16 PM REPL.$JShell$12 SgetTimeSeries
 INFO: METADATA is disabled.
-Oct 12, 2026 12:08:58 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Oct 13, 2026 2:44:16 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/dataflow/all/UNE_RT_M/latest
-Oct 12, 2026 12:08:59 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Oct 13, 2026 2:44:16 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/datastructure/ESTAT/UNE_RT_M/155.0?references=descendants
-Oct 12, 2026 12:09:00 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
+Oct 13, 2026 2:44:17 PM it.bancaditalia.oss.sdmx.util.QueryRunner runQuery
 INFO: Contacting web service with query: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/ESTAT,UNE_RT_M,1.0/M.SA.TOTAL.PC_ACT.T.
-Oct 12, 2026 12:09:00 PM REPL.$JShell$12 SgetTimeSeries
+Oct 13, 2026 2:44:18 PM REPL.$JShell$12 SgetTimeSeries
 INFO: The query returned 38 time series.
-Oct 12, 2026 12:09:00 PM REPL.$JShell$12 SgetTimeSeries
+Oct 13, 2026 2:44:18 PM REPL.$JShell$12 SgetTimeSeries
 INFO: The query returned 14904 observations.
 
 . rename *, low replace
@@ -424,7 +424,7 @@ INFO: The query returned 14904 observations.
 . tempfile `v'_ea
 
 . save ``v'_ea'
-file /tmp/work/m029601/St1392021.00000a saved as .dta format
+file /tmp/work/m029601/St1193126.00000a saved as .dta format
 
 . 
 . * Rendimento del Bund a 1 anno (Bundesbank: struttura per scadenza dei titoli federali,
@@ -463,7 +463,7 @@ file /tmp/work/m029601/St1392021.00000a saved as .dta format
 . tempfile bund
 
 . save `bund'
-file /tmp/work/m029601/St1392021.00000b saved as .dta format
+file /tmp/work/m029601/St1193126.00000b saved as .dta format
 
 . 
 . * Shock di offerta di gas (Alessandri e Gazzani, 2025, Journal of Monetary Economics 151, 103749),
@@ -474,7 +474,7 @@ file /tmp/work/m029601/St1392021.00000b saved as .dta format
 . local agf "`agf'.xlsx"
 
 . copy "https://www.dropbox.com/scl/fi/60tlgoqhahodhfpgxr096/GasSupplyShocks.xlsx?rlkey=lsxpghuwbyd7sn8mia59a2uaf&dl=1" "`agf'", replace
-(file /tmp/work/m029601/St1392021.00000c.xlsx not found)
+(file /tmp/work/m029601/St1193126.00000c.xlsx not found)
 
 . import excel using "`agf'", sheet("2025update") firstrow clear
 (4 vars, 299 obs)
@@ -547,7 +547,7 @@ xij variables:
 . tempfile gasag
 
 . save `gasag'
-file /tmp/work/m029601/St1392021.00000d saved as .dta format
+file /tmp/work/m029601/St1193126.00000d saved as .dta format
 
 . 
 . * Shock di offerta di petrolio (Mori e Peersman), colonna "Updated sample 2025m12" del foglio Google
@@ -557,7 +557,7 @@ file /tmp/work/m029601/St1392021.00000d saved as .dta format
 . local mpf "`mpf'.csv"
 
 . copy "https://docs.google.com/spreadsheets/d/10tkAw-C5LOBr6MHTQITpTcXIryXb12Ul/export?format=csv&gid=207083778" "`mpf'", replace
-(file /tmp/work/m029601/St1392021.00000e.csv not found)
+(file /tmp/work/m029601/St1193126.00000e.csv not found)
 
 . import delimited using "`mpf'", varnames(1) clear
 (encoding automatically selected: ISO-8859-1)
@@ -656,7 +656,7 @@ xij variables:
 . tempfile oilmp
 
 . save `oilmp'
-file /tmp/work/m029601/St1392021.00000f saved as .dta format
+file /tmp/work/m029601/St1193126.00000f saved as .dta format
 
 . 
 . * Dati shock prezzi energetici
@@ -748,7 +748,7 @@ ELEEURMWHBE ELEEURMWHDE ... ELEEURMWHNL   ->   ELEEURMWH
 . tempfile prices
 
 . save `prices'
-file /tmp/work/m029601/St1392021.00000g saved as .dta format
+file /tmp/work/m029601/St1193126.00000g saved as .dta format
 
 . 
 . * Merge
@@ -932,5 +932,5 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/data/dataset_ea.dta save
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_cr_dataset_ea.txt
   log type:  text
- closed on:  12 Oct 2026, 12:09:04
+ closed on:  13 Oct 2026, 14:44:21
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

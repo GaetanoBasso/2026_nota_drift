@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lp_energy_ea.txt
   log type:  text
- opened on:  12 Oct 2026, 12:09:04
+ opened on:  13 Oct 2026, 14:44:21
 
 . 
 . *******************************************************************************
@@ -28,6 +28,7 @@
 . * - Grafici senza titoli (titoli e note nel file TeX), bande al 90%:
 . *   lp_og_EA_*      : EA, petrolio (blu) e gas (rosso) nello stesso grafico
 . *   lp_og_ctry_*    : EA e paesi, petrolio e gas, stesso asse y stretto (_sq: versione quadrata)
+. *   lp_ctry_slides_* : solo paesi (senza EA e panel), petrolio e gas, formato largo per le slide
 . *   lp_main_*       : singolo prezzo, EA per petrolio e gas, panel per l'elettricità
 . *   lp_app_*        : singolo prezzo, panel e paesi restanti, stesso asse y stretto
 . *   lp_rob_*        : base e pre-Covid per l'unità di lp_main_*
@@ -684,60 +685,63 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_ea.xlsx
  11.                 file open `fh' using "${gph}/smp_lp_main_`s'_`y'.tex", write replace
  12.                 file write `fh' "`p0'--`p1'"
  13.                 file close `fh'
- 14.                 twoway (rarea lo90 hi90 h `cond', color(gs13)) ///
+ 14.                 * EA: asse y fisso -.4(.1).4, grafici affiancabili con la stessa scala
+.                 local ym ""
+ 15.                 if "`mg'" == "EA" local ym "yscale(range(-.4 .4)) ylabel(-.4(.1).4)"
+ 16.                 twoway (rarea lo90 hi90 h `cond', color(gs13)) ///
 >                         (line b h `cond', `sty_base'), ///
 >                         yline(0, lcolor(black)) legend(off) ///
->                         xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
+>                         xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) `ym' ///
 >                         graphregion(color(white)) name(gmain, replace)
- 15.                 graph export ${gph}/lp_main_`s'_`y'.png, replace
- 16. 
+ 17.                 graph export ${gph}/lp_main_`s'_`y'.png, replace
+ 18. 
 .                 * --- Appendice: panel e paesi restanti, asse y comune se le bande hanno ampiezze simili ($lp_ytol) --- *
 .                 local units ""
- 17.                 foreach u in PANEL $countries {
- 18.                         if "`u'" != "`mg'" local units "`units' `u'"
- 19.                 }
- 20.                 lp_ypanels if `sel', units(`units')
- 21.                 foreach g of local units {
- 22.                         local yax_`g' "`r(`g')'"
- 23.                 }
- 24.                 local gl ""
- 25.                 foreach g in PANEL $countries {
- 26.                         if "`g'" == "`mg'" continue
- 27.                         qui count if geo == "`g'" & `sel'
- 28.                         if r(N) == 0 continue
- 29.                         local cond `"if geo == "`g'" & `sel'"'
- 30.                         qui su tmin `cond' & h == 0
- 31.                         local p0 : di %tq r(min)
- 32.                         qui su tmax `cond' & h == 0
- 33.                         local p1 : di %tq r(max)
- 34.                         twoway (rarea lo90 hi90 h `cond', color(gs13)) ///
+ 19.                 foreach u in PANEL $countries {
+ 20.                         if "`u'" != "`mg'" local units "`units' `u'"
+ 21.                 }
+ 22.                 lp_ypanels if `sel', units(`units')
+ 23.                 foreach g of local units {
+ 24.                         local yax_`g' "`r(`g')'"
+ 25.                 }
+ 26.                 local gl ""
+ 27.                 foreach g in PANEL $countries {
+ 28.                         if "`g'" == "`mg'" continue
+ 29.                         qui count if geo == "`g'" & `sel'
+ 30.                         if r(N) == 0 continue
+ 31.                         local cond `"if geo == "`g'" & `sel'"'
+ 32.                         qui su tmin `cond' & h == 0
+ 33.                         local p0 : di %tq r(min)
+ 34.                         qui su tmax `cond' & h == 0
+ 35.                         local p1 : di %tq r(max)
+ 36.                         twoway (rarea lo90 hi90 h `cond', color(gs13)) ///
 >                                 (line b h `cond', `sty_base'), ///
 >                                 yline(0, lcolor(black)) legend(off) subtitle("`g' (`p0'-`p1')") ///
 >                                 xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) `yax_`g'' ///
 >                                 graphregion(color(white) margin(vsmall)) name(g_`g', replace) nodraw
- 35.                         local gl "`gl' g_`g'"
- 36.                 }
- 37.                 graph combine `gl', imargin(tiny) graphregion(color(white) margin(vsmall)) name(comb, replace)
- 38.                 graph export ${gph}/lp_app_`s'_`y'.png, replace
- 39. 
+ 37.                         local gl "`gl' g_`g'"
+ 38.                 }
+ 39.                 graph combine `gl', imargin(tiny) graphregion(color(white) margin(vsmall)) name(comb, replace)
+ 40.                 graph export ${gph}/lp_app_`s'_`y'.png, replace
+ 41. 
 .                 * --- Robustezza: pre-Covid per l'unità del grafico principale --- *
 .                 local rc `"if geo == "`mg'" & shock == "`s'" & outcome == "`y'""'
- 40.                 local pl `"(rarea lo90 hi90 h `rc' & variant == "base", color(gs13))"'
- 41.                 local lg ""
- 42.                 local k = 1
- 43.                 foreach vr in base pre {
- 44.                         qui count `rc' & variant == "`vr'"
- 45.                         if r(N) == 0 continue
- 46.                         local ++k
- 47.                         local pl `"`pl' (line b h `rc' & variant == "`vr'", `sty_`vr'')"'
- 48.                         local lg `"`lg' `k' "`lab_`vr''""'
- 49.                 }
- 50.                 twoway `pl', yline(0, lcolor(black)) legend(order(`lg') rows(1) position(6)) ///
+ 42.                 local pl `"(rarea lo90 hi90 h `rc' & variant == "base", color(gs13))"'
+ 43.                 local lg ""
+ 44.                 local k = 1
+ 45.                 foreach vr in base pre {
+ 46.                         qui count `rc' & variant == "`vr'"
+ 47.                         if r(N) == 0 continue
+ 48.                         local ++k
+ 49.                         local pl `"`pl' (line b h `rc' & variant == "`vr'", `sty_`vr'')"'
+ 50.                         local lg `"`lg' `k' "`lab_`vr''""'
+ 51.                 }
+ 52.                 twoway `pl', yline(0, lcolor(black)) legend(order(`lg') rows(1) position(6)) ///
 >                         xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
 >                         graphregion(color(white)) name(grob, replace)
- 51.                 graph export ${gph}/lp_rob_`s'_`y'.png, replace
- 52.         }
- 53. }
+ 53.                 graph export ${gph}/lp_rob_`s'_`y'.png, replace
+ 54.         }
+ 55. }
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_main_OilSpotUSDBarrel_contr.png saved as PNG format
   asse y comune: differenza tra le ampiezze delle bande  0.45
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_app_OilSpotUSDBarrel_contr.png saved as PNG format
@@ -813,89 +817,122 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_ELEEURMWH_
   3.         foreach c in EA `others' {
   4.                 local yax_`c' "`r(`c')'"
   5.         }
-  6.         local gl ""
-  7.         local lco ""
-  8.         foreach c in EA `others' {
-  9.                 local co `"if geo == "`c'" & variant == "base" & shock == "`o'" & outcome == "`y'""'
- 10.                 local cg `"if geo == "`c'" & variant == "base" & shock == "`g'" & outcome == "`y'""'
- 11.                 * Serve la stima per entrambi gli shock
+  6.         * Slide di appendice: solo paesi, assi y valutati senza l'EA
+.         lp_ypanels if spec == "ts" & variant == "base" & inlist(shock, "`o'", "`g'") & outcome == "`y'", units(`others')
+  7.         foreach c of local others {
+  8.                 local ysl_`c' "`r(`c')'"
+  9.         }
+ 10.         local gl ""
+ 11.         local gs ""
+ 12.         local lco ""
+ 13.         foreach c in EA `others' {
+ 14.                 local co `"if geo == "`c'" & variant == "base" & shock == "`o'" & outcome == "`y'""'
+ 15.                 local cg `"if geo == "`c'" & variant == "base" & shock == "`g'" & outcome == "`y'""'
+ 16.                 * Serve la stima per entrambi gli shock
 .                 qui count `co'
- 12.                 local no = r(N)
- 13.                 qui count `cg'
- 14.                 if `no' == 0 | r(N) == 0 continue
- 15.                 * Condizioni per il riquadro della legenda (primo paese disponibile, solo h = 0)
+ 17.                 local no = r(N)
+ 18.                 qui count `cg'
+ 19.                 if `no' == 0 | r(N) == 0 continue
+ 20.                 * Condizioni per il riquadro della legenda (primo paese disponibile, solo h = 0)
 .                 if "`lco'" == "" {
- 16.                         local lco `"`co' & h == 0"'
- 17.                         local lcg `"`cg' & h == 0"'
- 18.                 }
- 19.                 * Campioni: formato lungo per i file smp_*.tex, breve (es. 01q1) per i grafici
+ 21.                         local lco `"`co' & h == 0"'
+ 22.                         local lcg `"`cg' & h == 0"'
+ 23.                 }
+ 24.                 * Campioni: formato lungo per i file smp_*.tex, breve (es. 01q1) per i grafici
 .                 qui su tmin `co' & h == 0
- 20.                 local po0 : di %tq r(min)
- 21.                 local qo0 : di %tqYY!qq r(min)
- 22.                 qui su tmax `co' & h == 0
- 23.                 local po1 : di %tq r(max)
- 24.                 local qo1 : di %tqYY!qq r(max)
- 25.                 qui su tmin `cg' & h == 0
- 26.                 local pg0 : di %tq r(min)
- 27.                 local qg0 : di %tqYY!qq r(min)
- 28.                 qui su tmax `cg' & h == 0
- 29.                 local pg1 : di %tq r(max)
- 30.                 local qg1 : di %tqYY!qq r(max)
- 31.                 local pl `"(rarea lo90 hi90 h `co', color(navy%25) lwidth(none)) (rarea lo90 hi90 h `cg', color(cranberry%25) lwidth(none)) (line b h `co', lcolor(navy) lwidth(
+ 25.                 local po0 : di %tq r(min)
+ 26.                 local qo0 : di %tqYY!qq r(min)
+ 27.                 qui su tmax `co' & h == 0
+ 28.                 local po1 : di %tq r(max)
+ 29.                 local qo1 : di %tqYY!qq r(max)
+ 30.                 qui su tmin `cg' & h == 0
+ 31.                 local pg0 : di %tq r(min)
+ 32.                 local qg0 : di %tqYY!qq r(min)
+ 33.                 qui su tmax `cg' & h == 0
+ 34.                 local pg1 : di %tq r(max)
+ 35.                 local qg1 : di %tqYY!qq r(max)
+ 36.                 local pl `"(rarea lo90 hi90 h `co', color(navy%25) lwidth(none)) (rarea lo90 hi90 h `cg', color(cranberry%25) lwidth(none)) (line b h `co', lcolor(navy) lwidth(
 > medthick)) (line b h `cg', lcolor(cranberry) lp(longdash) lwidth(medthick))"'
- 32.                 * Grafico EA a sé stante, con legenda
+ 37.                 * Grafico EA a sé stante, con legenda
 .                 if "`c'" == "EA" {
- 33.                         file open `fh' using "${gph}/smp_lp_og_EA_`y'.tex", write replace
- 34.                         file write `fh' "oil `po0'--`po1'; gas `pg0'--`pg1'"
- 35.                         file close `fh'
- 36.                         twoway `pl', yline(0, lcolor(black)) legend(order(3 "Oil price" 4 "Gas price") rows(1) position(6)) ///
+ 38.                         file open `fh' using "${gph}/smp_lp_og_EA_`y'.tex", write replace
+ 39.                         file write `fh' "oil `po0'--`po1'; gas `pg0'--`pg1'"
+ 40.                         file close `fh'
+ 41.                         twoway `pl', yline(0, lcolor(black)) legend(order(3 "Oil price" 4 "Gas price") rows(1) position(6)) ///
 >                                 xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
 >                                 graphregion(color(white)) name(gog, replace)
- 37.                         graph export ${gph}/lp_og_EA_`y'.png, replace
- 38.                 }
- 39.                 twoway `pl', yline(0, lcolor(black)) legend(off) ///
+ 42.                         graph export ${gph}/lp_og_EA_`y'.png, replace
+ 43.                 }
+ 44.                 twoway `pl', yline(0, lcolor(black)) legend(off) ///
 >                         subtitle("`c'" "Oil `qo0'–`qo1'; gas `qg0'–`qg1'", size(small)) ///
 >                         xtitle("Quarters", size(small)) ytitle("pp") xlabel(0(2)$hmax) `yax_`c'' ///
 >                         graphregion(color(white) margin(vsmall)) name(g_`c', replace) nodraw
- 40.                 local gl "`gl' g_`c'"
- 41.         }
- 42.         * Riquadro con la sola legenda: un solo punto per serie, quindi le linee non si vedono
+ 45.                 local gl "`gl' g_`c'"
+ 46.                 if "`c'" != "EA" {
+ 47.                         twoway `pl', yline(0, lcolor(black)) legend(off) ///
+>                                 subtitle("`c'" "Oil `qo0'–`qo1'; gas `qg0'–`qg1'", size(small)) ///
+>                                 xtitle("Quarters", size(small)) ytitle("pp") xlabel(0(2)$hmax) `ysl_`c'' ///
+>                                 graphregion(color(white) margin(vsmall)) name(s_`c', replace) nodraw
+ 48.                         local gs "`gs' s_`c'"
+ 49.                 }
+ 50.         }
+ 51.         * Riquadro con la sola legenda: un solo punto per serie, quindi le linee non si vedono
 .         twoway (line b h `lco', lcolor(navy) lwidth(medthick)) (line b h `lcg', lcolor(cranberry) lp(longdash) lwidth(medthick)), ///
 >                 legend(order(1 "Oil price" 2 "Gas price") cols(1) ring(0) position(0) size(large) region(lstyle(none))) ///
 >                 xscale(off) yscale(off) xlabel(none) ylabel(none) xtitle("") ytitle("") ///
 >                 plotregion(style(none)) graphregion(color(white)) name(g_leg, replace) nodraw
- 43.         local gl "`gl' g_leg"
- 44.         graph combine `gl', imargin(tiny) graphregion(color(white) margin(vsmall)) name(comb, replace)
- 45.         graph export ${gph}/lp_og_ctry_`y'.png, replace
- 46.         * Versione quadrata (nota e slide)
+ 52.         local gl "`gl' g_leg"
+ 53.         graph combine `gl', imargin(tiny) graphregion(color(white) margin(vsmall)) name(comb, replace)
+ 54.         graph export ${gph}/lp_og_ctry_`y'.png, replace
+ 55.         * Versione quadrata (nota e slide)
 .         graph combine `gl', imargin(tiny) cols(3) xsize(6) ysize(6) graphregion(color(white) margin(vsmall)) name(combsq, replace)
- 47.         graph export ${gph}/lp_og_ctry_`y'_sq.png, replace
- 48. }
+ 56.         graph export ${gph}/lp_og_ctry_`y'_sq.png, replace
+ 57.         * Slide di appendice: solo paesi (senza EA e panel), 4 colonne e legenda nell'ultimo riquadro
+.         if "`gs'" != "" {
+ 58.                 graph combine `gs' g_leg, imargin(tiny) cols(4) xsize(10) ysize(4.6) graphregion(color(white) margin(vsmall)) name(combsl, replace)
+ 59.                 graph export ${gph}/lp_ctry_slides_`y'.png, replace
+ 60.         }
+ 61. }
   asse y comune: differenza tra le ampiezze delle bande  0.52
+  asse y comune: differenza tra le ampiezze delle bande  0.46
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_contr.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_contr.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_contr_sq.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_contr.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_contr.png saved as PNG format
+  asse y comune: differenza tra le ampiezze delle bande  0.70
   asse y comune: differenza tra le ampiezze delle bande  0.70
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_hicp.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_hicp.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_hicp_sq.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_hicp.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_hicp.png saved as PNG format
+  asse y comune: differenza tra le ampiezze delle bande  0.45
   asse y comune: differenza tra le ampiezze delle bande  0.45
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_wageH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_wageH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_wageH_sq.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_wageH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_wageH.png saved as PNG format
+  asse y comune: differenza tra le ampiezze delle bande  1.48
   asse y comune: differenza tra le ampiezze delle bande  1.48
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_occH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_occH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_occH_sq.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_occH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_occH.png saved as PNG format
+  asse y comune: differenza tra le ampiezze delle bande  0.23
   asse y comune: differenza tra le ampiezze delle bande  0.23
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_dur.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_dur.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_dur_sq.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_dur.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_dur.png saved as PNG format
 
 . 
 . log close
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lp_energy_ea.txt
   log type:  text
- closed on:  12 Oct 2026, 12:16:44
+ closed on:  13 Oct 2026, 14:52:23
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
