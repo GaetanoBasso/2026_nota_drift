@@ -8,10 +8,13 @@ cap log close
 *******************************************************************************
 * 0) SETUP E PARAMETRI
 *******************************************************************************
-foreach p in ivreg2 ranktest weakivtest avar {
+foreach p in ivreg2 ranktest weakivtest avar xtscc {
 	cap which `p'
 	if _rc ssc install `p'
 }
+* grc1leg (V. Wiggins, non su SSC): grafici combinati con una sola legenda
+cap which grc1leg
+if _rc net install grc1leg, from("http://www.stata.com/users/vwiggins/")
 
 * --- Cartelle ---
 if `"`c(os)'"' == "Windows" 		global   stem   `"//osiride-fs/group/main/892fl"'

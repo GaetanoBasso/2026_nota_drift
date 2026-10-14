@@ -49,7 +49,9 @@ Requirements:
 
 - `getTimeSeries`, used to download the ECB and Eurostat series. It is not an official Stata or SSC
   command, so it has to be available in the environment where the code runs.
-- `xtscc` (Hoechle, 2007), from SSC. `an_lp_energy_ea.do` installs it if it is missing.
+- `xtscc` (Hoechle, 2007), `ivreg2`, `ranktest`, `weakivtest` and `avar`, from SSC, and `grc1leg`
+  (V. Wiggins, from `http://www.stata.com/users/vwiggins/`, not on SSC): `master.do` installs
+  them if they are missing.
 - Internet access from Stata to the Bundesbank SDMX API (1-year Bund yield, downloaded
   with `import delimited`).
 - Read access to the shared folders `${source_na}` and `${source_contr}`, and to
@@ -151,8 +153,8 @@ Outputs:
   - `lp_og_ctry_<outcome>.png`: EA and the six countries, oil and gas, y axes as in the
     rule below, legend in a cell of its own (`_sq`: square version, used in the note and the slides);
   - `lp_ctry_slides_<outcome>.png`: the six countries without EA and the panel, oil and gas,
-    2 rows × 3 columns (rectangular) with one plain common legend below in a single row (`grc1leg2`,
-    SSC) for an appendix slide; y axes as in the rule below, evaluated on the six countries only;
+    2 rows × 3 columns (rectangular) with one plain common legend below in a single row (`grc1leg`)
+    for an appendix slide; y axes as in the rule below, evaluated on the six countries only;
   - `lp_main_<shock>_<outcome>.png`: appendix, one energy price, EA for oil and gas
     (fixed y axis with labels -.4(.1).4, so that graphs can be placed side by side on the
     same scale; the axis still extends if a band goes beyond ±.4), panel for electricity;
@@ -222,7 +224,8 @@ the robustness variant `unsm`.
   value at each horizon, with the critical value); a warning is printed when it is below
   the critical value for a maximum 2SLS bias of `$lp_ivtau`% (default 10%).
 - **Outputs.** `${out}/lp_energy_iv_ea.dta` / `.xlsx`; graphs with prefix `lp_iv_`
-  (`og_EA`, `og_ctry` and `_sq`, `ctry_slides`, `main` with the fixed -.4(.1).4 y axis, `app`: smooth LP baseline; `rob` with baseline,
+  (`og_EA`, `og_EA_wide` (EA oil and gas, wide and flat, xsize 9 like `ctry_slides`, for a Word page
+  with the EA and country graphs stacked), `og_ctry` and `_sq`, `ctry_slides`, `main` with the fixed -.4(.1).4 y axis, `app`: smooth LP baseline; `rob` with baseline,
   unsmoothed, monthly instruments and pre-Covid) and `lp_rf_` (reduced form, `og_EA`, `og_ctry`). The `.tex` files and the slides use the IV graphs; the
   OLS graphs of the last OLS run are shown in an appendix of `main_graphs.tex` for
   comparison (including electricity, which has no instrument).
