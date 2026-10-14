@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lpiv_energy_ea.txt
   log type:  text
- opened on:  13 Oct 2026, 23:16:04
+ opened on:  14 Oct 2026, 00:21:10
 
 . 
 . *******************************************************************************
@@ -56,7 +56,7 @@
 . *   lp_iv_ (solo petrolio e gas):
 . *   lp_iv_og_EA_*   : EA, petrolio (blu) e gas (rosso) nello stesso grafico
 . *   lp_iv_og_ctry_* : EA e paesi, petrolio e gas, stesso asse y stretto (_sq: versione quadrata)
-. *   lp_iv_ctry_slides_* : solo paesi (senza EA), petrolio e gas, formato largo per le slide
+. *   lp_iv_ctry_slides_* : solo paesi (senza EA), petrolio e gas, 2 righe x 3 colonne con legenda sotto (slide)
 . *   lp_iv_main_*    : singolo prezzo, EA, asse y fisso -.4(.1).4 (grafici affiancabili)
 . *   lp_iv_app_*     : singolo prezzo, paesi, stesso asse y stretto
 . *   lp_iv_rob_*     : base (smussate), non smussate (unsm), strumenti mensili (umid) e
@@ -65,18 +65,6 @@
 . *   il periodo campionario di lp_iv_main_*, lp_iv_og_EA_* e lp_rf_og_EA_* è scritto in
 . *   graphs/smp_lp_*.tex
 . *******************************************************************************
-. 
-. foreach p in ivreg2 ranktest weakivtest avar {
-  2.         cap which `p'
-  3.         if _rc ssc install `p'
-  4. }
-
-. which ivreg2
-/home/opt/stata_studi_ado/i/ivreg2.ado
-*! ivreg2 4.1.11  22Nov2019
-*! authors cfb & mes
-*! see end of file for version comments
-
 . 
 . * Asse y stretto: range dai dati (incluso lo 0) ed etichette interne al range, così da lasciare
 . * il minimo spazio bianco sopra e sotto. Passo delle etichette (se non dato come 3° argomento)
@@ -1792,7 +1780,7 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_rob_TTFSpot
 >                                 graphregion(color(white) margin(vsmall)) name(g_`c', replace) nodraw
  51.                         local gl "`gl' g_`c'"
  52.                         if "`vr'" == "base" & "`c'" != "EA" {
- 53.                                 twoway `pl', yline(0, lcolor(black)) legend(off) ///
+ 53.                                 twoway `pl', yline(0, lcolor(black)) legend(order(3 "`lo_`vr''" 4 "`lg_`vr''") rows(1) region(lstyle(none))) ///
 >                                         subtitle("`c'" "Oil `qo0'–`qo1'; gas `qg0'–`qg1'", size(small)) ///
 >                                         xtitle("Quarters", size(small)) ytitle("pp") xlabel(0(2)$hmax) `ysl_`c'' ///
 >                                         graphregion(color(white) margin(vsmall)) name(s_`c', replace) nodraw
@@ -1811,9 +1799,10 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_rob_TTFSpot
  62.                 * Versione quadrata (nota e slide)
 .                 graph combine `gl', imargin(tiny) cols(3) xsize(6) ysize(6) graphregion(color(white) margin(vsmall)) name(combsq, replace)
  63.                 graph export ${gph}/`px'_og_ctry_`y'_sq.png, replace
- 64.                 * Slide di appendice: solo paesi (senza EA), 4 colonne e legenda nell'ultimo riquadro
+ 64.                 * Slide di appendice: solo paesi (senza EA), 2 righe x 3 colonne, legenda comune semplice sotto su una riga (grc1leg)
 .                 if "`gs'" != "" {
- 65.                         graph combine `gs' g_leg, imargin(tiny) cols(4) xsize(10) ysize(4.6) graphregion(color(white) margin(vsmall)) name(combsl, replace)
+ 65.                         grc1leg `gs', legendfrom(`: word 1 of `gs'') position(6) ring(1) cols(3) imargin(tiny) xsize(9) ysize(5) graphregion(color(white) margin(vsmall)) name(c
+> ombsl, replace)
  66.                         graph export ${gph}/`px'_ctry_slides_`y'.png, replace
  67.                 }
  68.         }
@@ -1874,5 +1863,5 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_dur
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lpiv_energy_ea.txt
   log type:  text
- closed on:  13 Oct 2026, 23:56:57
+ closed on:  14 Oct 2026, 01:00:05
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

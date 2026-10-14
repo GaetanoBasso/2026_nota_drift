@@ -8,6 +8,10 @@ cap log close
 *******************************************************************************
 * 0) SETUP E PARAMETRI
 *******************************************************************************
+foreach p in ivreg2 ranktest weakivtest avar {
+	cap which `p'
+	if _rc ssc install `p'
+}
 
 * --- Cartelle ---
 if `"`c(os)'"' == "Windows" 		global   stem   `"//osiride-fs/group/main/892fl"'

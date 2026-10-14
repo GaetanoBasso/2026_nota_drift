@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lp_energy_ea.txt
   log type:  text
- opened on:  13 Oct 2026, 23:56:57
+ opened on:  14 Oct 2026, 01:00:05
 
 . 
 . *******************************************************************************
@@ -28,7 +28,7 @@
 . * - Grafici senza titoli (titoli e note nel file TeX), bande al 90%:
 . *   lp_og_EA_*      : EA, petrolio (blu) e gas (rosso) nello stesso grafico
 . *   lp_og_ctry_*    : EA e paesi, petrolio e gas, stesso asse y stretto (_sq: versione quadrata)
-. *   lp_ctry_slides_* : solo paesi (senza EA e panel), petrolio e gas, formato largo per le slide
+. *   lp_ctry_slides_* : solo paesi (senza EA e panel), petrolio e gas, 2 righe x 3 colonne con legenda sotto (slide)
 . *   lp_main_*       : singolo prezzo, EA per petrolio e gas, panel per l'elettricità
 . *   lp_app_*        : singolo prezzo, panel e paesi restanti, stesso asse y stretto
 . *   lp_rob_*        : base e pre-Covid per l'unità di lp_main_*
@@ -38,6 +38,14 @@
 . cap which xtscc
 
 . if _rc ssc install xtscc
+
+. * grc1leg2 (SSC): grafici combinati con una sola legenda
+. cap which grc1leg2
+
+. if _rc ssc install grc1leg2
+checking grc1leg2 consistency and verifying not already installed...
+installing into /home/user/m029601/ado/plus/...
+installation complete.
 
 . which xtscc
 /home/user/m029601/ado/plus/x/xtscc.ado
@@ -845,7 +853,7 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_ELEEURMWH_
 >                         graphregion(color(white) margin(vsmall)) name(g_`c', replace) nodraw
  45.                 local gl "`gl' g_`c'"
  46.                 if "`c'" != "EA" {
- 47.                         twoway `pl', yline(0, lcolor(black)) legend(off) ///
+ 47.                         twoway `pl', yline(0, lcolor(black)) legend(order(3 "Oil price" 4 "Gas price") rows(1) region(lstyle(none))) ///
 >                                 subtitle("`c'" "Oil `qo0'–`qo1'; gas `qg0'–`qg1'", size(small)) ///
 >                                 xtitle("Quarters", size(small)) ytitle("pp") xlabel(0(2)$hmax) `ysl_`c'' ///
 >                                 graphregion(color(white) margin(vsmall)) name(s_`c', replace) nodraw
@@ -863,9 +871,10 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_ELEEURMWH_
  55.         * Versione quadrata (nota e slide)
 .         graph combine `gl', imargin(tiny) cols(3) xsize(6) ysize(6) graphregion(color(white) margin(vsmall)) name(combsq, replace)
  56.         graph export ${gph}/lp_og_ctry_`y'_sq.png, replace
- 57.         * Slide di appendice: solo paesi (senza EA e panel), 4 colonne e legenda nell'ultimo riquadro
+ 57.         * Slide di appendice: solo paesi (senza EA e panel), 2 righe x 3 colonne, legenda comune semplice sotto su una riga (grc1leg2)
 .         if "`gs'" != "" {
- 58.                 graph combine `gs' g_leg, imargin(tiny) cols(4) xsize(10) ysize(4.6) graphregion(color(white) margin(vsmall)) name(combsl, replace)
+ 58.                 grc1leg2 `gs', legendfrom(`: word 1 of `gs'') position(6) ring(1) cols(3) imargin(tiny) xsize(9) ysize(5) graphregion(color(white) margin(vsmall)) name(combsl, 
+> replace)
  59.                 graph export ${gph}/lp_ctry_slides_`y'.png, replace
  60.         }
  61. }
@@ -874,30 +883,35 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_ELEEURMWH_
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_contr.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_contr.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_contr_sq.png saved as PNG format
+-grc1leg2- working...
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_contr.png saved as PNG format
   asse y comune: differenza tra le ampiezze delle bande  0.45
   asse y comune: differenza tra le ampiezze delle bande  0.45
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_hicp.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_hicp.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_hicp_sq.png saved as PNG format
+-grc1leg2- working...
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_hicp.png saved as PNG format
   asse y comune: differenza tra le ampiezze delle bande  0.41
   asse y comune: differenza tra le ampiezze delle bande  0.41
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_wageH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_wageH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_wageH_sq.png saved as PNG format
+-grc1leg2- working...
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_wageH.png saved as PNG format
   asse y comune: differenza tra le ampiezze delle bande  1.44
   asse y comune: differenza tra le ampiezze delle bande  1.44
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_occH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_occH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_occH_sq.png saved as PNG format
+-grc1leg2- working...
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_occH.png saved as PNG format
   asse y comune: differenza tra le ampiezze delle bande  0.20
   asse y comune: differenza tra le ampiezze delle bande  0.20
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_dur.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_dur.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_dur_sq.png saved as PNG format
+-grc1leg2- working...
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_dur.png saved as PNG format
 
 . 
@@ -905,5 +919,5 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_du
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lp_energy_ea.txt
   log type:  text
- closed on:  14 Oct 2026, 00:02:27
+ closed on:  14 Oct 2026, 01:05:38
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
