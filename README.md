@@ -223,9 +223,14 @@ the robustness variant `unsm`.
   heteroskedasticity and autocorrelation. Reported only in the log (minimum, maximum and
   value at each horizon, with the critical value); a warning is printed when it is below
   the critical value for a maximum 2SLS bias of `$lp_ivtau`% (default 10%).
+- **Graphs only.** With `$lp_ivest = 0` in `master.do` the estimation is skipped and all graphs
+  are redrawn from the saved `${out}/lp_energy_iv_ea.dta` (much faster). The oil+gas graphs (EA,
+  EA wide, country slides) are drawn first.
 - **Outputs.** `${out}/lp_energy_iv_ea.dta` / `.xlsx`; graphs with prefix `lp_iv_`
-  (`og_EA`, `og_EA_wide` (EA oil and gas, wide and flat, xsize 9 like `ctry_slides`, for a Word page
-  with the EA and country graphs stacked), `og_ctry` and `_sq`, `ctry_slides`, `main` with the fixed -.4(.1).4 y axis, `app`: smooth LP baseline; `rob` with baseline,
+  (`og_EA`, `og_EA_wide_contr` and `og_EA_wide_wageH` (EA oil and gas, wide and flat, xsize 9 like
+  `ctry_slides`, for a Word page with the EA and country graphs stacked: title inside the plot area,
+  "a. Negotiated wage growth" and "b. Actual hourly wage growth", legend only in the wageH graph,
+  y axis -.4(.2).4), `og_ctry` and `_sq`, `ctry_slides`, `main` with the fixed -.4(.1).4 y axis, `app`: smooth LP baseline; `rob` with baseline,
   unsmoothed, monthly instruments and pre-Covid) and `lp_rf_` (reduced form, `og_EA`, `og_ctry`). The `.tex` files and the slides use the IV graphs; the
   OLS graphs of the last OLS run are shown in an appendix of `main_graphs.tex` for
   comparison (including electricity, which has no instrument).
