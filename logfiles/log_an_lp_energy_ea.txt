@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lp_energy_ea.txt
   log type:  text
- opened on:  14 Oct 2026, 01:00:05
+ opened on:  14 Oct 2026, 18:10:05
 
 . 
 . *******************************************************************************
@@ -35,18 +35,6 @@
 . *   il periodo campionario di lp_main_* e lp_og_EA_* è scritto in graphs/smp_*.tex
 . *******************************************************************************
 . 
-. cap which xtscc
-
-. if _rc ssc install xtscc
-
-. * grc1leg2 (SSC): grafici combinati con una sola legenda
-. cap which grc1leg2
-
-. if _rc ssc install grc1leg2
-checking grc1leg2 consistency and verifying not already installed...
-installing into /home/user/m029601/ado/plus/...
-installation complete.
-
 . which xtscc
 /home/user/m029601/ado/plus/x/xtscc.ado
 *! xtscc, version 1.4, Daniel Hoechle, 01dec2017
@@ -871,47 +859,44 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rob_ELEEURMWH_
  55.         * Versione quadrata (nota e slide)
 .         graph combine `gl', imargin(tiny) cols(3) xsize(6) ysize(6) graphregion(color(white) margin(vsmall)) name(combsq, replace)
  56.         graph export ${gph}/lp_og_ctry_`y'_sq.png, replace
- 57.         * Slide di appendice: solo paesi (senza EA e panel), 2 righe x 3 colonne, legenda comune semplice sotto su una riga (grc1leg2)
+ 57.         * Slide di appendice: solo paesi (senza EA e panel), 2 righe x 3 colonne, legenda comune semplice sotto su una riga (grc1leg)
 .         if "`gs'" != "" {
- 58.                 grc1leg2 `gs', legendfrom(`: word 1 of `gs'') position(6) ring(1) cols(3) imargin(tiny) xsize(9) ysize(5) graphregion(color(white) margin(vsmall)) name(combsl, 
-> replace)
- 59.                 graph export ${gph}/lp_ctry_slides_`y'.png, replace
- 60.         }
- 61. }
+ 58.                 grc1leg `gs', legendfrom(`: word 1 of `gs'') position(6) ring(1) cols(3) imargin(tiny) xsize(9) ysize(5) graphregion(color(white) margin(vsmall)) name(combsl, r
+> eplace)
+ 59.                 * grc1leg non applica xsize/ysize: dimensioni imposte con graph display
+.                 graph display combsl, xsize(9) ysize(5)
+ 60.                 graph export ${gph}/lp_ctry_slides_`y'.png, replace
+ 61.         }
+ 62. }
   asse y comune: differenza tra le ampiezze delle bande  0.50
   asse y comune: differenza tra le ampiezze delle bande  0.45
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_contr.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_contr.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_contr_sq.png saved as PNG format
--grc1leg2- working...
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_contr.png saved as PNG format
   asse y comune: differenza tra le ampiezze delle bande  0.45
   asse y comune: differenza tra le ampiezze delle bande  0.45
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_hicp.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_hicp.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_hicp_sq.png saved as PNG format
--grc1leg2- working...
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_hicp.png saved as PNG format
   asse y comune: differenza tra le ampiezze delle bande  0.41
   asse y comune: differenza tra le ampiezze delle bande  0.41
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_wageH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_wageH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_wageH_sq.png saved as PNG format
--grc1leg2- working...
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_wageH.png saved as PNG format
   asse y comune: differenza tra le ampiezze delle bande  1.44
   asse y comune: differenza tra le ampiezze delle bande  1.44
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_occH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_occH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_occH_sq.png saved as PNG format
--grc1leg2- working...
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_occH.png saved as PNG format
   asse y comune: differenza tra le ampiezze delle bande  0.20
   asse y comune: differenza tra le ampiezze delle bande  0.20
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_EA_dur.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_dur.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_og_ctry_dur_sq.png saved as PNG format
--grc1leg2- working...
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_dur.png saved as PNG format
 
 . 
@@ -919,5 +904,5 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_ctry_slides_du
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lp_energy_ea.txt
   log type:  text
- closed on:  14 Oct 2026, 01:05:38
+ closed on:  14 Oct 2026, 18:15:43
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
