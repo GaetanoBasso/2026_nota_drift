@@ -222,7 +222,8 @@ the robustness variant `unsm`.
   value at each horizon, with the critical value); a warning is printed when it is below
   the critical value for a maximum 2SLS bias of `$lp_ivtau`% (default 10%).
 - **Outputs.** `${out}/lp_energy_iv_ea.dta` / `.xlsx`; graphs with prefix `lp_iv_`
-  (`og_EA`, `og_ctry` and `_sq`, `ctry_slides`, `main` with the fixed -.4(.1).4 y axis, `app`: smooth LP baseline; `rob` with baseline,
+  (`og_EA`, `og_EA_wide` (EA oil and gas, wide and flat, xsize 9 like `ctry_slides`, for a Word page
+  with the EA and country graphs stacked), `og_ctry` and `_sq`, `ctry_slides`, `main` with the fixed -.4(.1).4 y axis, `app`: smooth LP baseline; `rob` with baseline,
   unsmoothed, monthly instruments and pre-Covid) and `lp_rf_` (reduced form, `og_EA`, `og_ctry`). The `.tex` files and the slides use the IV graphs; the
   OLS graphs of the last OLS run are shown in an appendix of `main_graphs.tex` for
   comparison (including electricity, which has no instrument).

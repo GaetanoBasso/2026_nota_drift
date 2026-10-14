@@ -56,6 +56,8 @@ log using ${log}/log_an_lpiv_energy_ea.txt, t replace
 *   lp_iv_ (solo petrolio e gas):
 *   lp_iv_og_EA_*   : EA, petrolio (blu) e gas (rosso) nello stesso grafico
 *   lp_iv_og_ctry_* : EA e paesi, petrolio e gas, stesso asse y stretto (_sq: versione quadrata)
+*   lp_iv_og_EA_wide_* : come lp_iv_og_EA_*, largo e basso (xsize 9 come lp_iv_ctry_slides_*), per una
+*                     pagina Word con EA e paesi uno sotto l'altro
 *   lp_iv_ctry_slides_* : solo paesi (senza EA), petrolio e gas, 2 righe x 3 colonne con legenda sotto (slide)
 *   lp_iv_main_*    : singolo prezzo, EA, asse y fisso -.4(.1).4 (grafici affiancabili)
 *   lp_iv_app_*     : singolo prezzo, paesi, stesso asse y stretto
@@ -550,6 +552,17 @@ foreach vr in base rf {
 					yscale(range(-.5 .5)) ylabel(-.5(.1).5,) ///
 					graphregion(color(white)) name(gog, replace)
 				graph export ${gph}/`px'_og_EA_`y'.png, replace
+				* Versione larga e bassa (solo LP-IV di base): stessa larghezza dei grafici per paese
+				* *_ctry_slides_* (xsize 9), così nella pagina Word i caratteri hanno la stessa scala
+				if "`vr'" == "base" {
+					twoway `pl', yline(0, lcolor(black)) ///
+						legend(order(3 "`lo_`vr''" 4 "`lg_`vr''") rows(1) position(6) size(small) region(lstyle(none))) ///
+						subtitle("EA" "Oil `qo0'–`qo1'; gas `qg0'–`qg1'", size(small)) ///
+						xtitle("Quarters", size(small)) ytitle("pp", size(small)) xlabel(0(2)$hmax, labsize(small)) ///
+						yscale(range(-.5 .5)) ylabel(-.5(.25).5, labsize(small)) ///
+						xsize(9) ysize(2.5) graphregion(color(white) margin(vsmall)) name(gogw, replace)
+					graph export ${gph}/lp_iv_og_EA_wide_`y'.png, replace
+				}
 			}
 			twoway `pl', yline(0, lcolor(black)) legend(off) ///
 				subtitle("`c'" "Oil `qo0'–`qo1'; gas `qg0'–`qg1'", size(small)) ///
@@ -579,6 +592,8 @@ foreach vr in base rf {
 		* Slide di appendice: solo paesi (senza EA), 2 righe x 3 colonne, legenda comune semplice sotto su una riga (grc1leg)
 		if "`gs'" != "" {
 			grc1leg `gs', legendfrom(`: word 1 of `gs'') position(6) ring(1) cols(3) imargin(tiny) xsize(9) ysize(5) graphregion(color(white) margin(vsmall)) name(combsl, replace)
+			* grc1leg non applica xsize/ysize: dimensioni imposte con graph display
+			graph display combsl, xsize(9) ysize(5)
 			graph export ${gph}/`px'_ctry_slides_`y'.png, replace
 		}
 	}
