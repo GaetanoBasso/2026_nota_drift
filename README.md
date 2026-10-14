@@ -49,7 +49,9 @@ Requirements:
 
 - `getTimeSeries`, used to download the ECB and Eurostat series. It is not an official Stata or SSC
   command, so it has to be available in the environment where the code runs.
-- `xtscc` (Hoechle, 2007), from SSC. `an_lp_energy_ea.do` installs it if it is missing.
+- `xtscc` (Hoechle, 2007), `ivreg2`, `ranktest`, `weakivtest` and `avar`, from SSC, and `grc1leg`
+  (V. Wiggins, from `http://www.stata.com/users/vwiggins/`, not on SSC): `master.do` installs
+  them if they are missing.
 - Internet access from Stata to the Bundesbank SDMX API (1-year Bund yield, downloaded
   with `import delimited`).
 - Read access to the shared folders `${source_na}` and `${source_contr}`, and to
@@ -151,8 +153,8 @@ Outputs:
   - `lp_og_ctry_<outcome>.png`: EA and the six countries, oil and gas, y axes as in the
     rule below, legend in a cell of its own (`_sq`: square version, used in the note and the slides);
   - `lp_ctry_slides_<outcome>.png`: the six countries without EA and the panel, oil and gas,
-    2 rows × 3 columns (rectangular) with one plain common legend below in a single row (`grc1leg2`,
-    SSC) for an appendix slide; y axes as in the rule below, evaluated on the six countries only;
+    2 rows × 3 columns (rectangular) with one plain common legend below in a single row (`grc1leg`)
+    for an appendix slide; y axes as in the rule below, evaluated on the six countries only;
   - `lp_main_<shock>_<outcome>.png`: appendix, one energy price, EA for oil and gas
     (fixed y axis with labels -.4(.1).4, so that graphs can be placed side by side on the
     same scale; the axis still extends if a band goes beyond ±.4), panel for electricity;

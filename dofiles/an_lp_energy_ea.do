@@ -35,11 +35,6 @@ log using ${log}/log_an_lp_energy_ea.txt, t replace
 *   il periodo campionario di lp_main_* e lp_og_EA_* è scritto in graphs/smp_*.tex
 *******************************************************************************
 
-cap which xtscc
-if _rc ssc install xtscc
-* grc1leg2 (SSC): grafici combinati con una sola legenda
-cap which grc1leg2
-if _rc ssc install grc1leg2
 which xtscc
 
 * Asse y stretto: range dai dati (incluso lo 0) ed etichette interne al range, così da lasciare
@@ -419,9 +414,11 @@ foreach y of global lp_outcomes {
 	* Versione quadrata (nota e slide)
 	graph combine `gl', imargin(tiny) cols(3) xsize(6) ysize(6) graphregion(color(white) margin(vsmall)) name(combsq, replace)
 	graph export ${gph}/lp_og_ctry_`y'_sq.png, replace
-	* Slide di appendice: solo paesi (senza EA e panel), 2 righe x 3 colonne, legenda comune semplice sotto su una riga (grc1leg2)
+	* Slide di appendice: solo paesi (senza EA e panel), 2 righe x 3 colonne, legenda comune semplice sotto su una riga (grc1leg)
 	if "`gs'" != "" {
-		grc1leg2 `gs', legendfrom(`: word 1 of `gs'') position(6) ring(1) cols(3) imargin(tiny) xsize(9) ysize(5) graphregion(color(white) margin(vsmall)) name(combsl, replace)
+		grc1leg `gs', legendfrom(`: word 1 of `gs'') position(6) ring(1) cols(3) imargin(tiny) xsize(9) ysize(5) graphregion(color(white) margin(vsmall)) name(combsl, replace)
+		* grc1leg non applica xsize/ysize: dimensioni imposte con graph display
+		graph display combsl, xsize(9) ysize(5)
 		graph export ${gph}/lp_ctry_slides_`y'.png, replace
 	}
 }
