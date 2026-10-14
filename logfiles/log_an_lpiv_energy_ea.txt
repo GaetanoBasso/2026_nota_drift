@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lpiv_energy_ea.txt
   log type:  text
- opened on:  14 Oct 2026, 17:29:34
+ opened on:  14 Oct 2026, 22:19:45
 
 . 
 . *******************************************************************************
@@ -230,6 +230,12 @@
 Panel variable: geocode (unbalanced)
  Time variable: timeq, 1983q1 to 2026q3
          Delta: 1 quarter
+
+. 
+. * Labels
+. label variable contr "Negotiated wage growth"
+
+. label variable wageH "Hourly wage growth"
 
 . 
 . * Shock scalati a un aumento del 10%
@@ -1779,10 +1785,10 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_rob_TTFSpot
 .                                 * *_ctry_slides_* (xsize 9), così nella pagina Word i caratteri hanno la stessa scala
 .                                 if "`vr'" == "base" {
  50.                                         twoway `pl', yline(0, lcolor(black)) ///
->                                                 legend(order(3 "`lo_`vr''" 4 "`lg_`vr''") rows(1) position(6) size(small) region(lstyle(none))) ///
->                                                 subtitle("EA" "Oil `qo0'–`qo1'; gas `qg0'–`qg1'", size(small)) ///
->                                                 xtitle("Quarters", size(small)) ytitle("pp", size(small)) xlabel(0(2)$hmax, labsize(small)) ///
->                                                 yscale(range(-.5 .5)) ylabel(-.5(.25).5, labsize(small)) ///
+>                                                 legend(order(3 "`lo_`vr''" 4 "`lg_`vr''") rows(1) position(6) region(lstyle(none))) ///
+>                                                 subtitle("Oil `qo0'–`qo1'; gas `qg0'–`qg1'" "`: var label `y''") ///
+>                                                 xtitle("Quarters") ytitle("pp", size(small)) xlabel(0(2)$hmax) ///
+>                                                 yscale(range(-.5 .5)) ylabel(-.5(.25).5) ///
 >                                                 xsize(9) ysize(2.5) graphregion(color(white) margin(vsmall)) name(gogw, replace)
  51.                                         graph export ${gph}/lp_iv_og_EA_wide_`y'.png, replace
  52.                                 }
@@ -1825,7 +1831,7 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_rob_TTFSpot
   asse y comune: differenza tra le ampiezze delle bande  0.61
   asse y comune: differenza tra le ampiezze delle bande  0.56
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_contr.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_wide_contr.png not found)
+variable contr not found
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_wide_contr.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_contr.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_contr_sq.png saved as PNG format
@@ -1833,7 +1839,7 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides
   asse y comune: differenza tra le ampiezze delle bande  0.86
   asse y comune: differenza tra le ampiezze delle bande  0.86
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_hicp.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_wide_hicp.png not found)
+variable hicp not found
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_wide_hicp.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_hicp.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_hicp_sq.png saved as PNG format
@@ -1841,7 +1847,7 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides
   asse y comune: differenza tra le ampiezze delle bande  1.23
   asse y comune: differenza tra le ampiezze delle bande  1.21
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_wageH.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_wide_wageH.png not found)
+variable wageH not found
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_wide_wageH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_wageH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_wageH_sq.png saved as PNG format
@@ -1849,7 +1855,7 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides
   asse y comune: differenza tra le ampiezze delle bande  0.77
   asse y comune: differenza tra le ampiezze delle bande  0.77
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_occH.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_wide_occH.png not found)
+variable occH not found
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_wide_occH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_occH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_occH_sq.png saved as PNG format
@@ -1857,7 +1863,7 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides
   asse y comune: differenza tra le ampiezze delle bande  0.29
   asse y comune: differenza tra le ampiezze delle bande  0.29
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_dur.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_wide_dur.png not found)
+variable dur not found
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_wide_dur.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_dur.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_dur_sq.png saved as PNG format
@@ -1888,5 +1894,5 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_dur
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lpiv_energy_ea.txt
   log type:  text
- closed on:  14 Oct 2026, 18:10:05
+ closed on:  14 Oct 2026, 23:01:35
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

@@ -217,6 +217,10 @@ end
 use ${data}/dataset_ea.dta, clear
 xtset geocode timeq
 
+* Labels
+label variable contr "Negotiated wage growth"
+label variable wageH "Hourly wage growth"
+
 * Shock scalati a un aumento del 10%
 foreach s of global lp_ivshocks {
 	replace `s' = `s'/10
@@ -556,10 +560,10 @@ foreach vr in base rf {
 				* *_ctry_slides_* (xsize 9), così nella pagina Word i caratteri hanno la stessa scala
 				if "`vr'" == "base" {
 					twoway `pl', yline(0, lcolor(black)) ///
-						legend(order(3 "`lo_`vr''" 4 "`lg_`vr''") rows(1) position(6) size(small) region(lstyle(none))) ///
-						subtitle("EA" "Oil `qo0'–`qo1'; gas `qg0'–`qg1'", size(small)) ///
-						xtitle("Quarters", size(small)) ytitle("pp", size(small)) xlabel(0(2)$hmax, labsize(small)) ///
-						yscale(range(-.5 .5)) ylabel(-.5(.25).5, labsize(small)) ///
+						legend(order(3 "`lo_`vr''" 4 "`lg_`vr''") rows(1) position(6) region(lstyle(none))) ///
+						subtitle("Oil `qo0'–`qo1'; gas `qg0'–`qg1'" "`: var label `y''") ///
+						xtitle("Quarters") ytitle("pp", size(small)) xlabel(0(2)$hmax) ///
+						yscale(range(-.5 .5)) ylabel(-.5(.25).5) ///
 						xsize(9) ysize(2.5) graphregion(color(white) margin(vsmall)) name(gogw, replace)
 					graph export ${gph}/lp_iv_og_EA_wide_`y'.png, replace
 				}
