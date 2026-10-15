@@ -70,6 +70,8 @@ global covid_dum = 1
 *               un polinomio di 2° grado
 * lp_slp_us   : undersmoothing per le bande delle LP smussate: errori standard e centro delle
 *               bande calcolati con lambda/lp_slp_us (lambda scelto per validazione incrociata)
+* lp_ivest    : LP-IV (an_lpiv_energy_ea.do): 1 = stima e grafici; 0 = solo grafici, dai risultati
+*               già salvati in ${out}/lp_energy_iv_ea.dta (molto più veloce)
 * lp_ytol     : grafici a più pannelli: asse y comune se le ampiezze delle bande al 90%
 *               (max hi90 - min lo90 del pannello) differiscono al massimo di lp_ytol punti
 *               percentuali; altrimenti un asse per pannello, con lo stesso passo delle etichette
@@ -84,6 +86,7 @@ global lp_ivtau    = 10
 global lp_slp_r    = 3
 global lp_slp_us   = 10
 global lp_ytol     = 1.6
+global lp_ivest    = 1
 
 *******************************************************************************
 * 1) CREAZIONE DATASET

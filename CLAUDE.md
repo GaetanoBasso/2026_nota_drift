@@ -77,7 +77,9 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   effective F of Montiel Olea–Pflueger (`weakivtest`) only in the log, weak if below the critical
   value for a `$lp_ivtau`% maximum bias;
   outputs prefixed `lp_iv_`.
-- Graphs: no titles or notes in Stata (they go in the `.tex` files); 90% bands only;
+- Graphs: no titles or notes in Stata (they go in the `.tex` files; exception: the Word-page graphs
+  `lp_iv_og_EA_wide_*`, with the title inside the plot area, and `lp_iv_ctry_slides_contr`/`_wageH`, with
+  the title on one line at the top left); 90% bands only;
   multi-panel graphs (`lp_ypanels`) share an explicit, tight y range (`lp_yaxis`: data range incl. 0,
   no `ycommon`) if the band widths differ by at most `$lp_ytol` pp across panels, otherwise each panel
   has its own tight range with the same label step
@@ -86,7 +88,9 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   unemployment go to the appendix. Square versions (`_sq`) only where a layout needs them. EA main graphs
   (`lp_main_*`, `lp_iv_main_*`) have a fixed y axis, `ylabel(-.4(.1).4)`; `*_ctry_slides_*` = countries
   without EA and panel, oil and gas, 2 rows x 3 columns with one common legend below (`grc1leg`), for slides; `lp_iv_og_EA_wide_*` = EA oil
-  and gas, xsize(9) ysize(2.5), to be stacked with `lp_iv_ctry_slides_*` in a Word page.
+  and gas, contr and wageH only, xsize(9), y axis -.4(.2).4, legend only in wageH, to be stacked with
+  `lp_iv_ctry_slides_*` in a Word page. `$lp_ivest = 0` skips the IV estimation and only redraws the
+  graphs from `${out}/lp_energy_iv_ea.dta` (oil+gas graphs first).
 
 ## Karpathy guidelines
 
