@@ -230,7 +230,9 @@ the robustness variant `unsm`.
   (`og_EA`, `og_EA_wide_contr` and `og_EA_wide_wageH` (EA oil and gas, wide and flat, xsize 9 like
   `ctry_slides`, for a Word page with the EA and country graphs stacked: title inside the plot area,
   "a. Negotiated wage growth" and "b. Actual hourly wage growth", legend only in the wageH graph,
-  y axis -.4(.2).4), `og_ctry` and `_sq`, `ctry_slides`, `main` with the fixed -.4(.1).4 y axis, `app`: smooth LP baseline; `rob` with baseline,
+  y axis -.4(.2).4; the country slides for contr and wageH, `ctry_slides_contr` and `ctry_slides_wageH`,
+  carry the titles "c. Negotiated wage growth, by country" and "d. Actual hourly wage growth, by country",
+  on one line at the top left), `og_ctry` and `_sq`, `ctry_slides`, `main` with the fixed -.4(.1).4 y axis, `app`: smooth LP baseline; `rob` with baseline,
   unsmoothed, monthly instruments and pre-Covid) and `lp_rf_` (reduced form, `og_EA`, `og_ctry`). The `.tex` files and the slides use the IV graphs; the
   OLS graphs of the last OLS run are shown in an appendix of `main_graphs.tex` for
   comparison (including electricity, which has no instrument).

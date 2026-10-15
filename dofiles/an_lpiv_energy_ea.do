@@ -58,7 +58,8 @@ log using ${log}/log_an_lpiv_energy_ea.txt, t replace
 *   lp_iv_og_ctry_* : EA e paesi, petrolio e gas, stesso asse y stretto (_sq: versione quadrata)
 *   lp_iv_og_EA_wide_contr, _wageH : EA, largo e basso (xsize 9 come lp_iv_ctry_slides_*), per una
 *                     pagina Word con EA e paesi uno sotto l'altro; titolo dentro il grafico,
-*                     legenda solo in wageH, asse y -.4(.2).4
+*                     legenda solo in wageH, asse y -.4(.2).4; lp_iv_ctry_slides_contr e _wageH con titolo
+*                     (c. e d.) in alto a sinistra
 * - $lp_ivest == 0: salta la stima e rifà solo i grafici dai risultati salvati
 *   lp_iv_ctry_slides_* : solo paesi (senza EA), petrolio e gas, 2 righe x 3 colonne con legenda sotto (slide)
 *   lp_iv_main_*    : singolo prezzo, EA, asse y fisso -.4(.1).4 (grafici affiancabili)
@@ -422,6 +423,8 @@ local lg_rf    "Gas supply shock"
 * Titoli dei grafici larghi per la pagina Word
 local ttl_contr "a. Negotiated wage growth"
 local ttl_wageH "b. Actual hourly wage growth"
+local tts_contr "c. Negotiated wage growth, by country"
+local tts_wageH "d. Actual hourly wage growth, by country"
 foreach vr in base rf {
 	local px "`pfx_`vr''"
 	foreach y of global lp_outcomes {
@@ -524,8 +527,12 @@ foreach vr in base rf {
 		graph combine `gl', imargin(tiny) cols(3) xsize(6) ysize(6) graphregion(color(white) margin(vsmall)) name(combsq, replace)
 		graph export ${gph}/`px'_og_ctry_`y'_sq.png, replace
 		* Slide di appendice: solo paesi (senza EA), 2 righe x 3 colonne, legenda comune semplice sotto su una riga (grc1leg)
+		* contr e wageH (pagina Word): titolo in alto a sinistra, su una riga e senza margini (dentro
+		* l'area coprirebbe sottotitolo ed etichette del primo pannello)
 		if "`gs'" != "" {
-			grc1leg `gs', legendfrom(`: word 1 of `gs'') position(6) ring(1) cols(3) imargin(tiny) xsize(9) ysize(5) graphregion(color(white) margin(vsmall)) name(combsl, replace)
+			local tsl ""
+			if inlist("`y'", "contr", "wageH") local tsl `"title("`tts_`y''", position(11) size(medium) margin(zero))"'
+			grc1leg `gs', legendfrom(`: word 1 of `gs'') position(6) ring(1) cols(3) imargin(tiny) `tsl' xsize(9) ysize(5) graphregion(color(white) margin(vsmall)) name(combsl, replace)
 			* grc1leg non applica xsize/ysize: dimensioni imposte con graph display
 			graph display combsl, xsize(9) ysize(5)
 			graph export ${gph}/`px'_ctry_slides_`y'.png, replace

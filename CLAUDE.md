@@ -78,7 +78,8 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   value for a `$lp_ivtau`% maximum bias;
   outputs prefixed `lp_iv_`.
 - Graphs: no titles or notes in Stata (they go in the `.tex` files; exception: the Word-page graphs
-  `lp_iv_og_EA_wide_*`, with the title inside the plot area); 90% bands only;
+  `lp_iv_og_EA_wide_*`, with the title inside the plot area, and `lp_iv_ctry_slides_contr`/`_wageH`, with
+  the title on one line at the top left); 90% bands only;
   multi-panel graphs (`lp_ypanels`) share an explicit, tight y range (`lp_yaxis`: data range incl. 0,
   no `ycommon`) if the band widths differ by at most `$lp_ytol` pp across panels, otherwise each panel
   has its own tight range with the same label step
