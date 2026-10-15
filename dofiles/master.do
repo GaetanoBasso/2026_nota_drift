@@ -86,7 +86,7 @@ global lp_ivtau    = 10
 global lp_slp_r    = 3
 global lp_slp_us   = 10
 global lp_ytol     = 1.6
-global lp_ivest    = 1
+global lp_ivest    = 0
 
 *******************************************************************************
 * 1) CREAZIONE DATASET
@@ -103,5 +103,5 @@ global lp_ivest    = 1
 do ${do}/an_lpiv_energy_ea.do
 
 * Local Projections (Jordà, 2005) OLS: shock dei prezzi energetici su retribuzioni e prezzi; robustezza
-do ${do}/an_lp_energy_ea.do
+*do ${do}/an_lp_energy_ea.do
 

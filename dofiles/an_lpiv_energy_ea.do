@@ -95,7 +95,7 @@ program lp_yaxis, rclass
 	* Prima e ultima etichetta interne al range (tolleranza per gli errori di arrotondamento)
 	local y0 = round(ceil(`ymin'/`st' - 1e-9)*`st', 1e-10)
 	local y1 = round(floor(`ymax'/`st' + 1e-9)*`st', 1e-10)
-	return local opt "yscale(range(`ymin' `ymax')) ylabel(`y0'(`st')`y1', labsize(small))"
+	return local opt "yscale(range(`ymin' `ymax')) ylabel(`y0'(`st')`y1')" /*, labsize(small)*/
 	return scalar st = `st'
 end
 
@@ -421,10 +421,10 @@ local lg_base  "Gas price"
 local lo_rf    "Oil supply news shock"
 local lg_rf    "Gas supply shock"
 * Titoli dei grafici larghi per la pagina Word
-local ttl_contr "a. Negotiated wage growth"
-local ttl_wageH "b. Actual hourly wage growth"
-local tts_contr "c. Negotiated wage growth, by country"
-local tts_wageH "d. Actual hourly wage growth, by country"
+local ttl_contr "a. Negotiated wages, euro area"
+local ttl_wageH "b. Actual hourly wages, euro area"
+local tts_contr "c. Negotiated wages, by country"
+local tts_wageH "d. Actual hourly wages, by country"
 foreach vr in base rf {
 	local px "`pfx_`vr''"
 	foreach y of global lp_outcomes {
@@ -481,34 +481,35 @@ foreach vr in base rf {
 					xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
 					yscale(range(-.5 .5)) ylabel(-.5(.1).5,) ///
 					graphregion(color(white)) name(gog, replace)
-				graph export ${gph}/`px'_og_EA_`y'.png, replace
+				graph export ${gph}/`px'_og_EA_`y'.png, replace width(3000)
 				* Versione larga e bassa per la pagina Word (solo LP-IV di base, contr e wageH): stessa
 				* larghezza dei grafici per paese *_ctry_slides_* (xsize 9); titolo dentro l'area del
 				* grafico in alto; legenda solo in wageH (più alto di 0,3 pollici per la riga della
 				* legenda, così le due aree del grafico hanno la stessa altezza)
 				if "`vr'" == "base" & inlist("`y'", "contr", "wageH") {
 					local lgw "off"
-					local ysw = 2.5
+					local ysw = 2.8
 					if "`y'" == "wageH" {
-						local lgw `"order(3 "`lo_`vr''" 4 "`lg_`vr''") rows(1) position(6) region(lstyle(none))"'
+						local lgw "off" /*`"order(3 "`lo_`vr''" 4 "`lg_`vr''") rows(1) position(6) region(lstyle(none))"'*/
 						local ysw = 2.8
 					}
 					twoway `pl', yline(0, lcolor(black)) legend(`lgw') ///
-						title("`ttl_`y''", ring(0) position(11) size(medium)) ///
+						title("`ttl_`y''", ring(1) position(12) size(large) margin(zero)) ///
+						subtitle("Oil `qo0'–`qo1'; gas `qg0'–`qg1'", ring(0) position(12) margin(zero) size(medsmall)) ///
 						xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
 						yscale(range(-.4 .4)) ylabel(-.4(.2).4) ///
 						xsize(9) ysize(`ysw') graphregion(color(white) margin(vsmall)) name(gogw, replace)
-					graph export ${gph}/lp_iv_og_EA_wide_`y'.png, replace
+					graph export ${gph}/lp_iv_og_EA_wide_`y'.png, replace width(3000)
 				}
 			}
 			twoway `pl', yline(0, lcolor(black)) legend(off) ///
-				subtitle("`c'" "Oil `qo0'–`qo1'; gas `qg0'–`qg1'", size(small)) ///
+				subtitle("`c'" "Oil `qo0'–`qo1'; gas `qg0'–`qg1'", ring(0) size(medsmall)) ///
 				xtitle("Quarters", size(small)) ytitle("pp") xlabel(0(2)$hmax) `yax_`c'' ///
 				graphregion(color(white) margin(vsmall)) name(g_`c', replace) nodraw
 			local gl "`gl' g_`c'"
 			if "`vr'" == "base" & "`c'" != "EA" {
 				twoway `pl', yline(0, lcolor(black)) legend(order(3 "`lo_`vr''" 4 "`lg_`vr''") rows(1) region(lstyle(none))) ///
-					subtitle("`c'" "Oil `qo0'–`qo1'; gas `qg0'–`qg1'", size(small)) ///
+					subtitle("`c'" "Oil `qo0'–`qo1'; gas `qg0'–`qg1'", size(medsmall)) ///
 					xtitle("Quarters", size(small)) ytitle("pp") xlabel(0(2)$hmax) `ysl_`c'' ///
 					graphregion(color(white) margin(vsmall)) name(s_`c', replace) nodraw
 				local gs "`gs' s_`c'"
@@ -522,20 +523,20 @@ foreach vr in base rf {
 			plotregion(style(none)) graphregion(color(white)) name(g_leg, replace) nodraw
 		local gl "`gl' g_leg"
 		graph combine `gl', imargin(tiny) graphregion(color(white) margin(vsmall)) name(comb, replace)
-		graph export ${gph}/`px'_og_ctry_`y'.png, replace
+		graph export ${gph}/`px'_og_ctry_`y'.png, replace width(3000)
 		* Versione quadrata (nota e slide)
 		graph combine `gl', imargin(tiny) cols(3) xsize(6) ysize(6) graphregion(color(white) margin(vsmall)) name(combsq, replace)
-		graph export ${gph}/`px'_og_ctry_`y'_sq.png, replace
+		graph export ${gph}/`px'_og_ctry_`y'_sq.png, replace width(3000)
 		* Slide di appendice: solo paesi (senza EA), 2 righe x 3 colonne, legenda comune semplice sotto su una riga (grc1leg)
 		* contr e wageH (pagina Word): titolo in alto a sinistra, su una riga e senza margini (dentro
 		* l'area coprirebbe sottotitolo ed etichette del primo pannello)
 		if "`gs'" != "" {
 			local tsl ""
-			if inlist("`y'", "contr", "wageH") local tsl `"title("`tts_`y''", position(11) size(medium) margin(zero))"'
+			if inlist("`y'", "contr", "wageH") local tsl `"title("`tts_`y''", position(12) size(medium) margin(zero))"' 
 			grc1leg `gs', legendfrom(`: word 1 of `gs'') position(6) ring(1) cols(3) imargin(tiny) `tsl' xsize(9) ysize(5) graphregion(color(white) margin(vsmall)) name(combsl, replace)
 			* grc1leg non applica xsize/ysize: dimensioni imposte con graph display
 			graph display combsl, xsize(9) ysize(5)
-			graph export ${gph}/`px'_ctry_slides_`y'.png, replace
+			graph export ${gph}/`px'_ctry_slides_`y'.png, replace width(3000)
 		}
 	}
 }
@@ -576,7 +577,7 @@ foreach s of global lp_ivshocks {
 			xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
 			yscale(range(-.4 .4)) ylabel(-.4(.1).4) ///
 			graphregion(color(white)) name(gmain, replace)
-		graph export ${gph}/lp_iv_main_`s'_`y'.png, replace
+		graph export ${gph}/lp_iv_main_`s'_`y'.png, replace width(3000)
 
 		* --- Appendice: paesi, asse y comune se le bande hanno ampiezze simili ($lp_ytol) --- *
 		local gl ""
@@ -603,7 +604,7 @@ foreach s of global lp_ivshocks {
 		}
 		if "`gl'" != "" {
 			graph combine `gl', imargin(tiny) graphregion(color(white) margin(vsmall)) name(comb, replace)
-			graph export ${gph}/lp_iv_app_`s'_`y'.png, replace
+			graph export ${gph}/lp_iv_app_`s'_`y'.png, replace width(3000)
 		}
 
 		* --- Robustezza: LP non smussate, strumenti mensili e pre-Covid per l'EA --- *
@@ -621,7 +622,7 @@ foreach s of global lp_ivshocks {
 		twoway `pl', yline(0, lcolor(black)) legend(order(`lg') rows(1) position(6)) ///
 			xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) ///
 			graphregion(color(white)) name(grob, replace)
-		graph export ${gph}/lp_iv_rob_`s'_`y'.png, replace
+		graph export ${gph}/lp_iv_rob_`s'_`y'.png, replace width(3000)
 	}
 }
 
