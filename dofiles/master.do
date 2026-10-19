@@ -86,14 +86,14 @@ global lp_ivtau    = 10
 global lp_slp_r    = 3
 global lp_slp_us   = 10
 global lp_ytol     = 1.6
-global lp_ivest    = 0
+global lp_ivest    = 1
 
 *******************************************************************************
 * 1) CREAZIONE DATASET
 *******************************************************************************
 
 * Dataset panel trimestrale: CN Eurostat, retribuzioni contrattuali BCE, HICP, controlli macro, prezzi energetici
-do ${do}/cr_dataset_ea.do
+*do ${do}/cr_dataset_ea.do
 
 *******************************************************************************
 * 2) ANALISI

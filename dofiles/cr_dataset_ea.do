@@ -365,7 +365,7 @@ drop occH
 rename _occH occH
 * Tasso di disoccupazione: differenza congiunturale (il livello ur resta tra i controlli)
 gen dur = ur - l.ur
-* Tasso di disoccupazione: differenza congiunturale (il livello ur resta tra i controlli)
+* Tightness: differenza congiunturale JVR/urate
 gen dtightness = tightness - l.tightness
 * Logaritmo della produzione industriale
 gen lip = ln(ip)

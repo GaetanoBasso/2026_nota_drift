@@ -285,7 +285,7 @@ if $lp_ivest == 1 {
 	}
 
 	tempname pf
-	postfile `pf' str5 spec str5 geo str4 variant str20 shock str12 outcome byte h double(b bc se) int(N tmin tmax) using ${out}/lp_energy_iv_ea.dta, replace
+	postfile `pf' str5 spec str5 geo str4 variant str20 shock str12 outcome byte h double(b bc se) int(N tmin tmax) using ${out}/lp_energy_iv_ea_st.dta, replace
 
 	local nz : word count $lp_ivshocks
 
@@ -312,7 +312,7 @@ if $lp_ivest == 1 {
 						local ctrl "`ctrl' L`l'_`v'"
 					}
 				}
-				foreach vr in unsm umid pre rf base hinf linf htgt ltgt {
+				foreach vr in /*unsm umid pre rf base*/ hinf linf htgt ltgt {
 					* Strumenti: media trimestrale (tutte tranne umid) o shock mensili separati (umid)
 					local zi "`z'"
 					if "`vr'" == "umid" local zi "`z'1 `z'2 `z'3"
@@ -440,6 +440,10 @@ if $lp_ivest == 1 {
 
 	* Intervalli di confidenza (bande al 90%) ed Excel
 	use ${out}/lp_energy_iv_ea.dta, clear
+	drop if inlist(variant, "hinf", "linf", "htgt", "ltgt")
+	drop lo90 hi90
+	append using ${out}/lp_energy_iv_ea_st.dta
+	
 	* Bande centrate su bc (= b tranne che per le LP smussate: stima con undersmoothing)
 	gen lo90 = bc - invnormal(0.95)*se
 	gen hi90 = bc + invnormal(0.95)*se
