@@ -60,6 +60,13 @@ log using ${log}/log_an_lpiv_energy_ea.txt, t replace
 *                     pagina Word con EA e paesi uno sotto l'altro; titolo dentro il grafico,
 *                     legenda solo in wageH, asse y -.4(.2).4; lp_iv_ctry_slides_contr e _wageH con titolo
 *                     (c. e d.) in alto a sinistra
+*   lp_iv_infl_*, lp_iv_tight_* : eterogeneità per l'EA (stati alto/basso, petrolio e gas, 4 linee),
+*                     con bande al 90%; _nb: senza bande
+* - Eterogeneità (varianti hinf/linf, htgt/ltgt): LP-IV smussate con la specificazione di base, sul
+*   sottocampione delle date dello shock t nello stato (equivale a interagire tutti i regressori con
+*   lo stato); hinf: inflazione di fondo (media della var. % a/a dell'HICP core nei 2 trimestri
+*   precedenti) sopra il 75° percentile del paese; htgt: tightness (posti vacanti/disoccupazione)
+*   in t-1 sopra la mediana del paese
 * - $lp_ivest == 0: salta la stima e rifà solo i grafici dai risultati salvati
 *   lp_iv_ctry_slides_* : solo paesi (senza EA), petrolio e gas, 2 righe x 3 colonne con legenda sotto (slide)
 *   lp_iv_main_*    : singolo prezzo, EA, asse y fisso -.4(.1).4 (grafici affiancabili)
@@ -154,7 +161,7 @@ real matrix lp_slp(real matrix S, real scalar H, real scalar r, real scalar k)
 {
 	real colvector y, x, z, t, hh, xh, sel, ut, ts, cs, mse, w, e, b, se
 	real matrix B, D, P, X, Xh, A, th, g, Om, Gl, V
-	real scalar n, K, h, j, sc, i, f, a1, a2, lam, best, m, l
+	real scalar n, K, h, j, sc, i, f, a1, a2, lam, best, m, l, t0, m2
 
 	y = S[., 1]; x = S[., 2]; z = S[., 3]; t = S[., 4]; hh = S[., 5]
 	n = rows(y)
@@ -200,14 +207,18 @@ real matrix lp_slp(real matrix S, real scalar H, real scalar r, real scalar k)
 	th = lusolve(A, cross(Xh, y))
 	// Errori standard: punteggi aggregati per trimestre dello shock, Newey-West con H+1 ritardi
 	e = y - X * th
-	g = J(m, K, 0)
+	// righe di g per trimestre effettivo (zeri nei trimestri fuori campione, ad es. nell'altro
+	// stato): i ritardi di Newey-West restano in trimestri anche nei sottocampioni con buchi
+	t0 = min(t)
+	m2 = max(t) - t0 + 1
+	g = J(m2, K, 0)
 	for (j = 1; j <= m; j++) {
 		sel = selectindex(t :== ut[j])
-		g[j, .] = colsum(Xh[sel, .] :* e[sel])
+		g[ut[j] - t0 + 1, .] = colsum(Xh[sel, .] :* e[sel])
 	}
 	Om = cross(g, g)
-	for (l = 1; l <= min((H + 1, m - 1)); l++) {
-		Gl = cross(g[|l + 1, 1 \ m, K|], g[|1, 1 \ m - l, K|])
+	for (l = 1; l <= min((H + 1, m2 - 1)); l++) {
+		Gl = cross(g[|l + 1, 1 \ m2, K|], g[|1, 1 \ m2 - l, K|])
 		Om = Om + (1 - l / (H + 2)) * (Gl + Gl')
 	}
 	A = luinv(A)
@@ -250,6 +261,21 @@ if $lp_ivest == 1 {
 		}
 	}
 
+	* Stati per l'eterogeneità (solo LP-IV smussate, specificazione di base), definiti in t (data
+	* dello shock) e paese per paese:
+	* - hinf: inflazione di fondo alta se la media della var. % a/a dell'HICP core nei 2 trimestri
+	*   precedenti supera il 75° percentile del paese (adattato da Corsello e Foschi, 2026)
+	* - htgt: mercato del lavoro teso se la tightness (tasso di posti vacanti / tasso di
+	*   disoccupazione) in t-1 supera la mediana del paese
+	gen hicpx_bar = (L1.hicpx + L2.hicpx)/2
+	egen p75_hicpx_bar = pctile(hicpx_bar), p(75) by(geocode)
+	gen byte hinf = hicpx_bar > p75_hicpx_bar if !missing(hicpx_bar)
+	gen tgt1 = L1.tightness
+	egen p50_tgt1 = median(tgt1), by(geocode)
+	gen byte htgt = tgt1 > p50_tgt1 if !missing(tgt1)
+	tab geo hinf, missing
+	tab geo htgt, missing
+
 	* Strumenti disponibili (mensili per posizione nel trimestre e media trimestrale);
 	* deviazione standard dello strumento trimestrale per scalare la forma ridotta
 	foreach z of global lp_ivinstr {
@@ -259,7 +285,7 @@ if $lp_ivest == 1 {
 	}
 
 	tempname pf
-	postfile `pf' str5 spec str5 geo str4 variant str20 shock str8 outcome byte h double(b bc se) int(N tmin tmax) using ${out}/lp_energy_iv_ea.dta, replace
+	postfile `pf' str5 spec str5 geo str4 variant str20 shock str12 outcome byte h double(b bc se) int(N tmin tmax) using ${out}/lp_energy_iv_ea.dta, replace
 
 	local nz : word count $lp_ivshocks
 
@@ -286,8 +312,8 @@ if $lp_ivest == 1 {
 						local ctrl "`ctrl' L`l'_`v'"
 					}
 				}
-				foreach vr in unsm umid pre rf base {
-					* Strumenti: media trimestrale (base, unsm, pre, rf) o shock mensili separati (umid)
+				foreach vr in unsm umid pre rf base hinf linf htgt ltgt {
+					* Strumenti: media trimestrale (tutte tranne umid) o shock mensili separati (umid)
 					local zi "`z'"
 					if "`vr'" == "umid" local zi "`z'1 `z'2 `z'3"
 					local xr "`cv'"
@@ -300,10 +326,22 @@ if $lp_ivest == 1 {
 					local s0 = .
 					local s1 = .
 					local ylast = .
-					if "`vr'" == "base" mata: S = J(0, 5, .)
+					* LP smussate: base e stati (alto/basso: stessa specificazione sul sottocampione delle
+					* date dello shock nello stato, cioè tutti i regressori interagiti con lo stato)
+					local slp = inlist("`vr'", "base", "hinf", "linf", "htgt", "ltgt")
+					local nk : word count `ctrl' `xr'
+					if `slp' {
+						mata: S = J(0, 5, .)
+						forv h = 0/$hmax {
+							local N`h' ""
+						}
+					}
 					forv h = 0/$hmax {
 						local xc ""
 						if "`vr'" == "pre" local xc "& timeq + `h' <= tq(2019q4)"
+						if inlist("`vr'", "hinf", "htgt") local xc "& `vr' == 1"
+						if "`vr'" == "linf" local xc "& hinf == 0"
+						if "`vr'" == "ltgt" local xc "& htgt == 0"
 						cap drop lhs smp
 						qui gen lhs = F`h'.`y'
 						qui gen byte smp = 1 `xc'
@@ -312,9 +350,10 @@ if $lp_ivest == 1 {
 						local t0 = r(min)
 						local t1 = r(max)
 						local N = r(N)
-						* LP smussate (base): dati dell'orizzonte h depurati dai controlli, stima dopo il ciclo
-						if "`vr'" == "base" {
-							if `N' == 0 continue
+						* LP smussate: dati dell'orizzonte h depurati dai controlli, stima dopo il ciclo
+						* (orizzonte saltato se le osservazioni non superano di almeno 3 i regressori)
+						if `slp' {
+							if `N' <= `nk' + 2 continue
 							foreach v in lhs `s' `zi' {
 								qui reg `v' `ctrl' `xr' if smp
 								cap drop r_`v'
@@ -370,16 +409,22 @@ if $lp_ivest == 1 {
 						local ylast = max(`ylast', `t1' + `h')
 						post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (`b') (`b') (`se') (`N') (`t0') (`t1')
 					}
-					if "`vr'" == "base" {
+					if `slp' {
+						* Servono almeno 10 trimestri dello shock (validazione incrociata su 5 blocchi)
+						mata: st_local("nS", strofreal(rows(S) ? rows(uniqrows(S[., 4])) : 0))
+						if `nS' < 10 {
+							di as txt "Salto LP smussate: `c' `vr' `s' -> `y' (trimestri dello shock: `nS')"
+							continue
+						}
 						mata: st_matrix("R", lp_slp(S, $hmax, $lp_slp_r, $lp_slp_us))
-						di as txt "LP smussate `c' `s' -> `y': lambda relativo scelto per validazione incrociata = " %9.4g el(R, 1, 4) " (bande con lambda/$lp_slp_us)"
+						di as txt "LP smussate `c' `vr' `s' -> `y' (N a h = 0: `N0'): lambda relativo scelto per validazione incrociata = " %9.4g el(R, 1, 4) " (bande con lambda/$lp_slp_us)"
 						forv h = 0/$hmax {
 							if "`N`h''" == "" continue
 							post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (el(R, `h'+1, 1)) (el(R, `h'+1, 2)) (el(R, `h'+1, 3)) (`N`h'') (`t0`h'') (`t1`h'')
 							local N`h' ""
 						}
 					}
-					if inlist("`vr'", "rf", "base") continue
+					if "`vr'" == "rf" | `slp' continue
 					di as txt "1° stadio `c' `vr' `s' (strumenti `zi') -> `y': F efficace di Montiel Olea-Pflueger min " %6.1f `fmin' ", max " %6.1f `fmax'
 					di as txt "  F efficace per h = 0,...,$hmax:`flist'"
 					di as txt "  valore critico (tau = $lp_ivtau%):`clist'"
@@ -538,6 +583,79 @@ foreach vr in base rf {
 			graph display combsl, xsize(9) ysize(5)
 			graph export ${gph}/`px'_ctry_slides_`y'.png, replace width(3000)
 		}
+	}
+}
+
+* --- Eterogeneità (EA, LP-IV smussate): inflazione di fondo alta/bassa (infl) e mercato del lavoro
+* teso/non teso (tight); petrolio in blu, gas in rosso, stato alto linea continua e scura, stato
+* basso tratteggiata e chiara; lp_iv_<stato>_<y>: con bande al 90%; lp_iv_<stato>_<y>_nb: senza bande --- *
+local col_oh "navy"
+local col_ol "ebblue"
+local col_gh "cranberry"
+local col_gl "orange"
+local lpt_h "solid"
+local lpt_l "dash"
+local lab_o "Oil"
+local lab_g "Gas"
+local lab_h "high"
+local lab_l "low"
+local lab_infl  "core inflation"
+local lab_tight "labour market tightness"
+local cod_infl  "inf"
+local cod_tight "tgt"
+foreach st in infl tight {
+	local sc "`cod_`st''"
+	foreach y of global lp_outcomes {
+		local sel `"geo == "EA" & inlist(variant, "h`sc'", "l`sc'") & inlist(shock, "`o'", "`g'") & outcome == "`y'""'
+		qui count if `sel'
+		if r(N) == 0 continue
+		* Linee disponibili (uno stato può mancare se ha troppo pochi trimestri)
+		local pb ""
+		local pn ""
+		local k = 0
+		foreach sh in o g {
+			foreach r in h l {
+				local cnd `"if geo == "EA" & variant == "`r'`sc'" & shock == "``sh''" & outcome == "`y'""'
+				qui count `cnd'
+				if r(N) == 0 continue
+				local ++k
+				local pb `"`pb' (rarea lo90 hi90 h `cnd', color(`col_`sh'`r''%15) lwidth(none))"'
+				local pn `"`pn' (line b h `cnd', lcolor(`col_`sh'`r'') lpattern(`lpt_`r'') lwidth(medthick))"'
+				local lb`k' "`lab_`sh'', `lab_`r'' `lab_`st''"
+			}
+		}
+		local lgn ""
+		local lgb ""
+		forv j = 1/`k' {
+			local lgn `"`lgn' `j' "`lb`j''""'
+			local lgb `"`lgb' `=`j'+`k'' "`lb`j''""'
+		}
+		* Campioni (date dello shock, h = 0, entrambi gli stati) per le note TeX
+		foreach sh in o g {
+			qui su tmin if `sel' & shock == "``sh''" & h == 0
+			local p0`sh' : di %tq r(min)
+			qui su tmax if `sel' & shock == "``sh''" & h == 0
+			local p1`sh' : di %tq r(max)
+		}
+		file open `fh' using "${gph}/smp_lp_iv_`st'_`y'.tex", write replace
+		file write `fh' "oil `p0o'--`p1o'; gas `p0g'--`p1g'"
+		file close `fh'
+		* Con bande
+		qui su lo90 if `sel'
+		local a = r(min)
+		qui su hi90 if `sel'
+		lp_yaxis `a' `r(max)'
+		twoway `pb' `pn', yline(0, lcolor(black)) legend(order(`lgb') rows(2) position(6) region(lstyle(none))) ///
+			xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) `r(opt)' ///
+			graphregion(color(white)) name(gst, replace)
+		graph export ${gph}/lp_iv_`st'_`y'.png, replace width(3000)
+		* Senza bande
+		qui su b if `sel'
+		lp_yaxis `r(min)' `r(max)'
+		twoway `pn', yline(0, lcolor(black)) legend(order(`lgn') rows(2) position(6) region(lstyle(none))) ///
+			xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) `r(opt)' ///
+			graphregion(color(white)) name(gstn, replace)
+		graph export ${gph}/lp_iv_`st'_`y'_nb.png, replace width(3000)
 	}
 }
 

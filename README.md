@@ -67,10 +67,12 @@ Requirements:
 | `occH` | Hours worked, total economy, quarter-on-quarter % change | same file (variables `occHT*`) |
 | `contr` | Indicator of negotiated wage rates (INWR), total economy, annual growth rate (`GY`), quarterly | ECB INW dataset, downloaded with `getTimeSeries ECB_RESTR INW/.......`. For DE and FR the national provider series (`DE2`, `FR2`) are used |
 | `hicp` | HICP all items (index 2015=100), year-on-year % change of the quarterly average | Eurostat `prc_hicp_midx`, downloaded with `getTimeSeries`; EA = EA20 |
-| `hicpx` | Core HICP: all items excluding energy, food, alcohol and tobacco (index 2015=100), year-on-year % change. Kept in the dataset, not used in the estimates | Eurostat `prc_hicp_midx` (`TOT_X_NRG_FOOD`), `getTimeSeries` |
+| `hicpx` | Core HICP: all items excluding energy, food, alcohol and tobacco (index 2015=100), year-on-year % change. Used only for the core-inflation state of the IV heterogeneity | Eurostat `prc_hicp_midx` (`TOT_X_NRG_FOOD`), `getTimeSeries` |
 | `lip` | Log of industrial production (B–D, seasonally and calendar adjusted, 2021=100), quarterly average | Eurostat `sts_inpr_m`, `getTimeSeries` |
 | `ur` | Unemployment rate (seasonally adjusted, % of labour force), quarterly average | Eurostat `une_rt_m`, `getTimeSeries` |
 | `dur` | Quarter-on-quarter change of `ur` (pp) | computed from `ur` |
+| `jvr` | Job vacancy rate, business economy (B–T), seasonally adjusted; FR and IT also from the series for units with 10 or more employees (`GE10`) where the total is missing; EA = EA21 | Eurostat `jvs_q_r21`, `getTimeSeries`; saved to `${data}/eurostat_jvr_ea_q.dta` |
+| `tightness`, `dtightness` | Labour-market tightness `jvr/ur` (state variable of the IV heterogeneity) and its quarter-on-quarter change (outcome) | computed |
 | `bund1y` | 1-year Bund yield (Svensson term structure, residual maturity 1 year), quarterly average, common to all countries | Deutsche Bundesbank, series `BBSIS.M.I.ZST.ZI.EUR.S1311.B.A604.R01XX.R.A.A._Z._Z.A` |
 | `gasAG` | Gas supply shock of Alessandri and Gazzani (2025, *Journal of Monetary Economics* 151, 103749), quarterly average of the monthly series; `gasAG1`–`gasAG3`: shock in the 1st, 2nd and 3rd month of the quarter; common to all countries; instrument for the gas price in the IV LPs | `GasSupplyShocks.xlsx`, sheet `2025update` (authors' Dropbox), downloaded by `cr_dataset_ea.do` |
 | `oilMP` | Oil supply news shock of Mori and Peersman, column "Updated sample 2025m12", quarterly average of the monthly series; `oilMP1`–`oilMP3`: shock in the 1st, 2nd and 3rd month of the quarter; common to all countries; instrument for the oil price in the IV LPs | authors' Google spreadsheet (exported as csv), downloaded by `cr_dataset_ea.do` |
@@ -223,6 +225,20 @@ the robustness variant `unsm`.
   heteroskedasticity and autocorrelation. Reported only in the log (minimum, maximum and
   value at each horizon, with the critical value); a warning is printed when it is below
   the critical value for a maximum 2SLS bias of `$lp_ivtau`% (default 10%).
+- **Heterogeneity** (variants `hinf`/`linf` and `htgt`/`ltgt`): the baseline smooth LP-IV,
+  same specification, estimated separately on the shock dates t in the high and in the low
+  state, which is equivalent to interacting all regressors (constant included) with the state.
+  States, country by country: core inflation high (`hinf = 1`) if the average year-on-year core
+  HICP inflation over the two previous quarters exceeds the country's 75th percentile (adapted
+  from Corsello and Foschi, 2026); labour-market tightness high (`htgt = 1`) if `tightness` in
+  t-1 exceeds the country's median. Newey–West standard errors use the quarters of the state
+  with lags in calendar quarters (scores set to zero in the other state). A horizon is skipped
+  if the observations do not exceed the regressors by at least three, and the whole state if
+  fewer than 10 shock dates are left; the log reports N at h = 0 and the smoothing chosen for
+  each state. Graphs for the EA: `lp_iv_infl_<outcome>` and `lp_iv_tight_<outcome>`, four lines
+  (oil and gas × high and low state) with 90% bands, and the same without bands (`_nb`); sample
+  periods in `graphs/smp_lp_iv_infl_*.tex` and `smp_lp_iv_tight_*.tex`. Shown in Appendix E of
+  `main_graphs.tex`.
 - **Graphs only.** With `$lp_ivest = 0` in `master.do` the estimation is skipped and all graphs
   are redrawn from the saved `${out}/lp_energy_iv_ea.dta` (much faster). The oil+gas graphs (EA,
   EA wide, country slides) are drawn first.
