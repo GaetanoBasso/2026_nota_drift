@@ -304,6 +304,8 @@ rename tsname2 freq
 rename tsname3 sector
 rename tsname4 emplsize
 rename tsname7 geo
+* EA21 = area dell'euro (come per il tasso di disoccupazione): altrimenti eliminata dal keep sotto
+replace geo="EA" if geo=="EA21"
 keep if freq=="Q"
 keep if sector=="B-T"
 drop tsname* sector freq
