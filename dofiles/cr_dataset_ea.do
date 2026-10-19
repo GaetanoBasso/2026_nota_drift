@@ -295,12 +295,48 @@ gen quarter=quarter(dofq(timeq))
 tempfile prices
 save `prices'
 
+* JVR quarterly, seasonally adjusted from Eurostat, selected countries
+clear
+getTimeSeries EUROSTAT JVS_Q_R21/Q.A-T+B-T.GE10+TOTAL.SA.JVR.BE+DE+ES+FR+IT+NL+EA21 "" "" 0 0
+rename *,l
+split tsname, p(".")
+rename tsname2 freq
+rename tsname3 sector
+rename tsname4 emplsize
+rename tsname7 geo
+keep if freq=="Q"
+keep if sector=="B-T"
+drop tsname* sector freq
+expand 2 if geo=="FR"&date=="2020-Q2"
+bys geo date emplsize: replace date="2020-Q1" if geo=="FR"&date=="2020-Q2"&_n==1
+keep if inlist(geo, "EA", "DE", "IT", "ES", "NL", "FR", "BE")
+assert inlist(geo, "EA", "DE", "IT", "ES", "NL", "FR", "BE")
+replace date=subinstr(date,"-"," ",.)
+gen year=real(word(date,1))
+replace date=subinstr(date,"Q","",.)
+gen quarter=real(word(date,2))
+drop date
+gen int timeq = yq(year, quarter)
+format timeq %tq
+rename value jvr
+preserve
+	keep if emplsize=="GE10"&(geo=="FR"|geo=="IT")
+	tempfile ge10
+	save `ge10'
+restore
+drop if emplsize=="GE10"
+merge 1:1 timeq geo using `ge10', nogen update
+drop emplsize
+save ${data}/eurostat_jvr_ea_q.dta, replace
+tempfile jvr_ea
+save `jvr_ea'
+
 * Merge
 use `cnq_ea', clear
 merge 1:1 timeq geo using `prices', nogen
 merge 1:1 timeq geo using `contr_ea', nogen
 merge 1:1 timeq geo using `hicp_ea', nogen
-foreach v in hicpx ip ur {
+foreach v in hicpx ip ur jvr {
 	merge 1:1 timeq geo using ``v'_ea', nogen
 }
 merge m:1 timeq using `bund', nogen keep(master match)
@@ -311,6 +347,7 @@ replace year = year(dofq(timeq))
 replace quarter = quarter(dofq(timeq))
 encode geo, gen(geocode)
 xtset geocode timeq
+gen tightness = jvr/ur
 foreach v of varlist wageH compH defl clupH hicpx { 
 	gen _`v' = 100*`v'/l4.`v'-100 if _n>4
 	drop `v'
@@ -326,6 +363,8 @@ drop occH
 rename _occH occH
 * Tasso di disoccupazione: differenza congiunturale (il livello ur resta tra i controlli)
 gen dur = ur - l.ur
+* Tasso di disoccupazione: differenza congiunturale (il livello ur resta tra i controlli)
+gen dtightness = tightness - l.tightness
 * Logaritmo della produzione industriale
 gen lip = ln(ip)
 drop ip

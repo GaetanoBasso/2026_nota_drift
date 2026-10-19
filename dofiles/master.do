@@ -77,7 +77,7 @@ global covid_dum = 1
 *               percentuali; altrimenti un asse per pannello, con lo stesso passo delle etichette
 global lp_lags     = 2
 global lp_shocks   "OilSpotUSDBarrel TTFSpotEURMWH ELEEURMWH"
-global lp_outcomes "contr hicp wageH occH dur"
+global lp_outcomes "contr hicp wageH occH dur dtightness"
 global lp_controls "lip ur bund1y"
 global lp_panel    "DE IT NL ES FR BE"
 global lp_ivshocks "OilSpotUSDBarrel TTFSpotEURMWH"
@@ -93,7 +93,7 @@ global lp_ivest    = 0
 *******************************************************************************
 
 * Dataset panel trimestrale: CN Eurostat, retribuzioni contrattuali BCE, HICP, controlli macro, prezzi energetici
-*do ${do}/cr_dataset_ea.do
+do ${do}/cr_dataset_ea.do
 
 *******************************************************************************
 * 2) ANALISI
