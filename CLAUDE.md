@@ -74,9 +74,13 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   (unsmoothed 2SLS per horizon), `umid` (as `unsm` with the 3 monthly shocks, `z1 z2 z3`, U-MIDAS),
   `pre` and `rf` (reduced form of y on `z`, `newey`, 1-s.d. shock, graphs `lp_rf_*` in an
   appendix); heterogeneity `hinf`/`linf` (core inflation, avg of y-o-y `hicpx` in t-1 and t-2 above the
-  country P75) and `htgt`/`ltgt` (`tightness` = `jvr/ur` in t-1 above the country median): baseline smooth
-  LP-IV on the shock dates in each state (= all regressors interacted), graphs `lp_iv_infl_*`/`lp_iv_tight_*`
-  (EA, 4 lines, `_nb` without bands) in Appendix E of `main_graphs.tex`; unsmoothed: `ivreg2 ..., robust kernel(bartlett) bw(h+2)` (= Newey–West lag h+1); lags of y, s and controls in both stages; first-stage
+  country P75) and `htgt`/`ltgt` (`tightness` = `jvr/ur` in t-1 above the country median) and `hbcu`/`lbcu` (cyclical
+  unemployment `bcu`, `tsfilter hp` smoothing 1600 by country, in t-1 not above the country median): baseline
+  smooth LP-IV on the shock dates in each state (= all regressors interacted), graphs `lp_iv_infl_*`/
+  `lp_iv_tight_*`/`lp_iv_bcu_*` (EA, 4 lines, `_nb` without bands) in Appendix E of `main_graphs.tex`;
+  variants estimated = those active in the `foreach vr` loop (now only `hbcu lbcu`), saved to
+  `lp_energy_iv_ea_st.dta` and replacing only the same variants (`drop if inlist(variant, ...)`) in
+  `lp_energy_iv_ea.dta`; unsmoothed: `ivreg2 ..., robust kernel(bartlett) bw(h+2)` (= Newey–West lag h+1); lags of y, s and controls in both stages; first-stage
   effective F of Montiel Olea–Pflueger (`weakivtest`) only in the log, weak if below the critical
   value for a `$lp_ivtau`% maximum bias;
   outputs prefixed `lp_iv_`.

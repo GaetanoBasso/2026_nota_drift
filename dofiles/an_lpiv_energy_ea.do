@@ -60,14 +60,14 @@ log using ${log}/log_an_lpiv_energy_ea.txt, t replace
 *                     pagina Word con EA e paesi uno sotto l'altro; titolo dentro il grafico,
 *                     legenda solo in wageH, asse y -.4(.2).4; lp_iv_ctry_slides_contr e _wageH con titolo
 *                     (c. e d.) in alto a sinistra
-*   lp_iv_infl_*, lp_iv_tight_* : eterogeneità per l'EA (stati alto/basso, petrolio e gas, 4 linee),
-*                     con bande al 90%; _nb: senza bande
+*   lp_iv_infl_*, lp_iv_tight_*, lp_iv_bcu_* : eterogeneità per l'EA (stati alto/basso, petrolio e gas,
+*                     4 linee), con bande al 90%; _nb: senza bande
 * - Eterogeneità (varianti hinf/linf, htgt/ltgt, hbcu/lbcu): LP-IV smussate con la specificazione di base, sul
 *   sottocampione delle date dello shock t nello stato (equivale a interagire tutti i regressori con
 *   lo stato); hinf: inflazione di fondo (media della var. % a/a dell'HICP core nei 2 trimestri
 *   precedenti) sopra il 75° percentile del paese; htgt: tightness (posti vacanti/disoccupazione)
 *   in t-1 sopra la mediana del paese; hbcu: alto business cycle misurato da u rate ciclico (residuo di un HP)
-*   minore della mediana del paese in t-1
+*   minore della mediana del paese in t-1 (tsfilter hp, lambda 1600, paese per paese)
 * - $lp_ivest == 0: salta la stima e rifà solo i grafici dai risultati salvati
 *   lp_iv_ctry_slides_* : solo paesi (senza EA), petrolio e gas, 2 righe x 3 colonne con legenda sotto (slide)
 *   lp_iv_main_*    : singolo prezzo, EA, asse y fisso -.4(.1).4 (grafici affiancabili)
@@ -268,18 +268,18 @@ if $lp_ivest == 1 {
 	*   precedenti supera il 75° percentile del paese (adattato da Corsello e Foschi, 2026)
 	* - htgt: mercato del lavoro teso se la tightness (tasso di posti vacanti / tasso di
 	*   disoccupazione) in t-1 supera la mediana del paese
-	* - hbcu: mercato del lavoro teso se u rate ciclico (da HP filter residual) 
-	*   in t-1 sta sotto la mediana del paese
+	* - hbcu: ciclo economico favorevole se la componente ciclica del tasso di disoccupazione (filtro HP,
+	*   lambda 1600, paese per paese) in t-1 non supera la mediana del paese
 	gen hicpx_bar = (L1.hicpx + L2.hicpx)/2
 	egen p75_hicpx_bar = pctile(hicpx_bar), p(75) by(geocode)
 	gen byte hinf = hicpx_bar > p75_hicpx_bar if !missing(hicpx_bar)
 	gen tgt1 = L1.tightness
 	egen p50_tgt1 = median(tgt1), by(geocode)
 	gen byte htgt = tgt1 > p50_tgt1 if !missing(tgt1)
-	hpfilter ur, cycle(bcu) smooth(1600)
+	tsfilter hp bcu = ur if !missing(ur), smooth(1600)
 	gen bcu1 = L1.bcu
 	egen p50_bcu1 = median(bcu1), by(geocode)
-	gen byte hbcu = bcu1 <= p50_bcu if !missing(bcu1)	
+	gen byte hbcu = bcu1 <= p50_bcu1 if !missing(bcu1)
 	tab geo hinf, missing
 	tab geo htgt, missing
 	tab geo hbcu, missing
@@ -320,7 +320,7 @@ if $lp_ivest == 1 {
 						local ctrl "`ctrl' L`l'_`v'"
 					}
 				}
-				foreach vr in /*unsm umid pre rf base*/ hinf linf htgt ltgt {
+				foreach vr in /*unsm umid pre rf base hinf linf htgt ltgt*/ hbcu lbcu {
 					* Strumenti: media trimestrale (tutte tranne umid) o shock mensili separati (umid)
 					local zi "`z'"
 					if "`vr'" == "umid" local zi "`z'1 `z'2 `z'3"
@@ -336,7 +336,7 @@ if $lp_ivest == 1 {
 					local ylast = .
 					* LP smussate: base e stati (alto/basso: stessa specificazione sul sottocampione delle
 					* date dello shock nello stato, cioè tutti i regressori interagiti con lo stato)
-					local slp = inlist("`vr'", "base", "hinf", "linf", "htgt", "ltgt")
+					local slp = inlist("`vr'", "base", "hinf", "linf", "htgt", "ltgt", "hbcu", "lbcu")
 					local nk : word count `ctrl' `xr'
 					if `slp' {
 						mata: S = J(0, 5, .)
@@ -347,9 +347,10 @@ if $lp_ivest == 1 {
 					forv h = 0/$hmax {
 						local xc ""
 						if "`vr'" == "pre" local xc "& timeq + `h' <= tq(2019q4)"
-						if inlist("`vr'", "hinf", "htgt") local xc "& `vr' == 1"
+						if inlist("`vr'", "hinf", "htgt", "hbcu") local xc "& `vr' == 1"
 						if "`vr'" == "linf" local xc "& hinf == 0"
 						if "`vr'" == "ltgt" local xc "& htgt == 0"
+						if "`vr'" == "lbcu" local xc "& hbcu == 0"
 						cap drop lhs smp
 						qui gen lhs = F`h'.`y'
 						qui gen byte smp = 1 `xc'
@@ -448,7 +449,8 @@ if $lp_ivest == 1 {
 
 	* Intervalli di confidenza (bande al 90%) ed Excel
 	use ${out}/lp_energy_iv_ea.dta, clear
-	drop if inlist(variant, "hinf", "linf", "htgt", "ltgt")
+	* Risultati salvati + nuove stime: si sostituiscono solo le varianti stimate in questa esecuzione
+	drop if inlist(variant, "hbcu", "lbcu")
 	drop lo90 hi90
 	append using ${out}/lp_energy_iv_ea_st.dta
 	
@@ -598,8 +600,8 @@ foreach vr in base rf {
 	}
 }
 
-* --- Eterogeneità (EA, LP-IV smussate): inflazione di fondo alta/bassa (infl) e mercato del lavoro
-* teso/non teso (tight); petrolio in blu, gas in rosso, stato alto linea continua e scura, stato
+* --- Eterogeneità (EA, LP-IV smussate): inflazione di fondo alta/bassa (infl), mercato del lavoro
+* teso/non teso (tight) e ciclo economico favorevole/sfavorevole (bcu); petrolio in blu, gas in rosso, stato alto linea continua e scura, stato
 * basso tratteggiata e chiara; lp_iv_<stato>_<y>: con bande al 90%; lp_iv_<stato>_<y>_nb: senza bande --- *
 local col_oh "navy"
 local col_ol "ebblue"
@@ -613,9 +615,11 @@ local lab_h "high"
 local lab_l "low"
 local lab_infl  "core inflation"
 local lab_tight "labour market tightness"
+local lab_bcu   "business cycle"
 local cod_infl  "inf"
 local cod_tight "tgt"
-foreach st in infl tight {
+local cod_bcu   "bcu"
+foreach st in infl tight bcu {
 	local sc "`cod_`st''"
 	foreach y of global lp_outcomes {
 		local sel `"geo == "EA" & inlist(variant, "h`sc'", "l`sc'") & inlist(shock, "`o'", "`g'") & outcome == "`y'""'
