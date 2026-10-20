@@ -225,20 +225,28 @@ the robustness variant `unsm`.
   heteroskedasticity and autocorrelation. Reported only in the log (minimum, maximum and
   value at each horizon, with the critical value); a warning is printed when it is below
   the critical value for a maximum 2SLS bias of `$lp_ivtau`% (default 10%).
-- **Heterogeneity** (variants `hinf`/`linf` and `htgt`/`ltgt`): the baseline smooth LP-IV,
+- **Heterogeneity** (variants `hinf`/`linf`, `htgt`/`ltgt` and `hbcu`/`lbcu`): the baseline smooth LP-IV,
   same specification, estimated separately on the shock dates t in the high and in the low
   state, which is equivalent to interacting all regressors (constant included) with the state.
   States, country by country: core inflation high (`hinf = 1`) if the average year-on-year core
   HICP inflation over the two previous quarters exceeds the country's 75th percentile (adapted
   from Corsello and Foschi, 2026); labour-market tightness high (`htgt = 1`) if `tightness` in
-  t-1 exceeds the country's median. Newey–West standard errors use the quarters of the state
+  t-1 exceeds the country's median; business cycle high (`hbcu = 1`) if the cyclical component
+  of the unemployment rate `bcu` (two-sided HP filter, `tsfilter hp`, smoothing 1600, country by
+  country) in t-1 does not exceed the country's median. Newey–West standard errors use the quarters of the state
   with lags in calendar quarters (scores set to zero in the other state). A horizon is skipped
   if the observations do not exceed the regressors by at least three, and the whole state if
   fewer than 10 shock dates are left; the log reports N at h = 0 and the smoothing chosen for
-  each state. Graphs for the EA: `lp_iv_infl_<outcome>` and `lp_iv_tight_<outcome>`, four lines
+  each state. Graphs for the EA: `lp_iv_infl_<outcome>`, `lp_iv_tight_<outcome>` and `lp_iv_bcu_<outcome>`, four lines
   (oil and gas × high and low state) with 90% bands, and the same without bands (`_nb`); sample
-  periods in `graphs/smp_lp_iv_infl_*.tex` and `smp_lp_iv_tight_*.tex`. Shown in Appendix E of
-  `main_graphs.tex`.
+  periods in `graphs/smp_lp_iv_infl_*.tex`, `smp_lp_iv_tight_*.tex` and `smp_lp_iv_bcu_*.tex`.
+  Shown in Appendix E of `main_graphs.tex`.
+  To estimate only some variants, list them in the `foreach vr in ...` loop of the IV dofile (the
+  others commented out, e.g. `/*unsm umid pre rf base hinf linf htgt ltgt*/ hbcu lbcu`) and list the
+  same variants in the `drop if inlist(variant, ...)` line after `postclose`: the new estimates
+  are saved in `${out}/lp_energy_iv_ea_st.dta` and replace only those variants in
+  `${out}/lp_energy_iv_ea.dta`, which keeps the other saved results. Currently only `hbcu`/`lbcu`
+  are estimated.
 - **Graphs only.** With `$lp_ivest = 0` in `master.do` the estimation is skipped and all graphs
   are redrawn from the saved `${out}/lp_energy_iv_ea.dta` (much faster). The oil+gas graphs (EA,
   EA wide, country slides) are drawn first.

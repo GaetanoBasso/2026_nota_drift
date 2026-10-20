@@ -64,6 +64,7 @@ $C_t$ & \texttt{dcovid} & Dummy 2020q1--2022q4 (with $p$ lags) & \\
 \multicolumn{4}{l}{\emph{State variables} (heterogeneity, Appendix~\ref{app:het})} \\
  & \texttt{hicpx} & Core HICP (excl.\ energy, food, alcohol and tobacco), year-on-year \% change & Eurostat \\
  & \texttt{tightness} & Job vacancy rate (B--T, seasonally adjusted) / unemployment rate & Eurostat \\
+ & \texttt{bcu} & Cyclical component of the unemployment rate (HP filter, $\lambda=1600$) & Eurostat \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -139,7 +140,10 @@ constant, interacted with the state). States are defined country by country:
 (i) \emph{core inflation}: high if the average year-on-year core HICP inflation over the two
 previous quarters exceeds the country's 75th percentile (adapted from Corsello and Foschi,
 2026), low otherwise; (ii) \emph{labour-market tightness}: high if the ratio of the job
-vacancy rate to the unemployment rate in $t-1$ exceeds the country's median, low otherwise.
+vacancy rate to the unemployment rate in $t-1$ exceeds the country's median, low otherwise;
+(iii) \emph{business cycle}: high if the cyclical component of the unemployment rate (HP
+filter, $\lambda=1600$, two-sided, estimated country by country) in $t-1$ does not exceed the
+country's median, low otherwise.
 Newey--West standard errors are computed on the quarters of each state, with lags in calendar
 quarters. A horizon is skipped when the observations in a state do not exceed the number of
 regressors by at least three.
@@ -752,10 +756,10 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
 \clearpage
 
 %==============================================================================
-\section{Heterogeneity: core inflation and labour-market tightness (IV)}\label{app:het}
+\section{Heterogeneity: core inflation, labour-market tightness and business cycle (IV)}\label{app:het}
 %==============================================================================
 
-\noindent Baseline smooth IV local projections estimated separately in the high and in the low state (see the specification section). Euro area; country estimates are saved in \texttt{lp\_energy\_iv\_ea.dta} (variants \texttt{hinf}, \texttt{linf}, \texttt{htgt}, \texttt{ltgt}).
+\noindent Baseline smooth IV local projections estimated separately in the high and in the low state (see the specification section). Euro area; country estimates are saved in \texttt{lp\_energy\_iv\_ea.dta} (variants \texttt{hinf}, \texttt{linf}, \texttt{htgt}, \texttt{ltgt}, \texttt{hbcu}, \texttt{lbcu}).
 
 \subsection{Core inflation regimes}
 
@@ -854,6 +858,57 @@ y_{t+h} = \alpha^h + \beta^h s_{t}
   \end{minipage}
   \begin{minipage}{0.95\textwidth}\footnotesize
   \emph{Notes}: Response (percentage points) of year-on-year growth in gross wages per hour worked to a 10\% increase in the oil and natural gas prices in the high and in the low labour-market tightness state (oil: dark and light blue; gas: red and orange; high state solid, low state dashed). Smooth 2SLS local projections (Barnichon and Brownlees, 2019; bands by undersmoothing) with the baseline specification, estimated on the shock dates in each state (all regressors interacted with the state); high-tightness state: ratio of the job vacancy rate to the unemployment rate in $t-1$ above the country's median; low state otherwise. Instruments: quarterly averages of the monthly Mori--Peersman oil supply news shocks and Alessandri--Gazzani gas supply shocks. Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$, both states): \smp{lp_iv_tight_wageH}. Sources: Eurostat (quarterly national accounts); Eurostat (core HICP, job vacancy statistics, unemployment); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\clearpage
+
+\subsection{Business-cycle regimes}
+
+\noindent\textbf{Comment.} \tbc{reading of the responses in the high and low business cycle states for oil and gas}.
+
+\begin{figure}[H]
+  \centering
+  \caption{Oil and gas $\rightarrow$ HICP by business cycle: euro area, IV}
+  \label{fig:lp_iv_bcu_hicp}
+  \begin{minipage}{0.49\textwidth}\centering\small Point estimates\\
+  \graphornote{width=\textwidth}{lp_iv_bcu_hicp_nb.png}
+  \end{minipage}\hfill
+  \begin{minipage}{0.49\textwidth}\centering\small With 90\% confidence bands\\
+  \graphornote{width=\textwidth}{lp_iv_bcu_hicp.png}
+  \end{minipage}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Notes}: Response (percentage points) of year-on-year HICP inflation to a 10\% increase in the oil and natural gas prices in the high and in the low business cycle state (oil: dark and light blue; gas: red and orange; high state solid, low state dashed). Smooth 2SLS local projections (Barnichon and Brownlees, 2019; bands by undersmoothing) with the baseline specification, estimated on the shock dates in each state (all regressors interacted with the state); high (favourable) business-cycle state: cyclical component of the unemployment rate (HP filter, $\lambda=1600$, country by country) in $t-1$ not above the country's median; low state otherwise. Instruments: quarterly averages of the monthly Mori--Peersman oil supply news shocks and Alessandri--Gazzani gas supply shocks. Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$, both states): \smp{lp_iv_bcu_hicp}. Sources: Eurostat (HICP, \texttt{prc\_hicp\_midx}); Eurostat (unemployment rate); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{Oil and gas $\rightarrow$ negotiated wages by business cycle: euro area, IV}
+  \label{fig:lp_iv_bcu_contr}
+  \begin{minipage}{0.49\textwidth}\centering\small Point estimates\\
+  \graphornote{width=\textwidth}{lp_iv_bcu_contr_nb.png}
+  \end{minipage}\hfill
+  \begin{minipage}{0.49\textwidth}\centering\small With 90\% confidence bands\\
+  \graphornote{width=\textwidth}{lp_iv_bcu_contr.png}
+  \end{minipage}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Notes}: Response (percentage points) of year-on-year negotiated wage growth to a 10\% increase in the oil and natural gas prices in the high and in the low business cycle state (oil: dark and light blue; gas: red and orange; high state solid, low state dashed). Smooth 2SLS local projections (Barnichon and Brownlees, 2019; bands by undersmoothing) with the baseline specification, estimated on the shock dates in each state (all regressors interacted with the state); high (favourable) business-cycle state: cyclical component of the unemployment rate (HP filter, $\lambda=1600$, country by country) in $t-1$ not above the country's median; low state otherwise. Instruments: quarterly averages of the monthly Mori--Peersman oil supply news shocks and Alessandri--Gazzani gas supply shocks. Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$, both states): \smp{lp_iv_bcu_contr}. Sources: ECB (indicator of negotiated wage rates, INW); Eurostat (unemployment rate); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{Oil and gas $\rightarrow$ hourly wages by business cycle: euro area, IV}
+  \label{fig:lp_iv_bcu_wageH}
+  \begin{minipage}{0.49\textwidth}\centering\small Point estimates\\
+  \graphornote{width=\textwidth}{lp_iv_bcu_wageH_nb.png}
+  \end{minipage}\hfill
+  \begin{minipage}{0.49\textwidth}\centering\small With 90\% confidence bands\\
+  \graphornote{width=\textwidth}{lp_iv_bcu_wageH.png}
+  \end{minipage}
+  \begin{minipage}{0.95\textwidth}\footnotesize
+  \emph{Notes}: Response (percentage points) of year-on-year growth in gross wages per hour worked to a 10\% increase in the oil and natural gas prices in the high and in the low business cycle state (oil: dark and light blue; gas: red and orange; high state solid, low state dashed). Smooth 2SLS local projections (Barnichon and Brownlees, 2019; bands by undersmoothing) with the baseline specification, estimated on the shock dates in each state (all regressors interacted with the state); high (favourable) business-cycle state: cyclical component of the unemployment rate (HP filter, $\lambda=1600$, country by country) in $t-1$ not above the country's median; low state otherwise. Instruments: quarterly averages of the monthly Mori--Peersman oil supply news shocks and Alessandri--Gazzani gas supply shocks. Time-series estimate for the euro area, Newey--West standard errors. Controls (both stages): 2 lags of the outcome and of the price change, log industrial production, unemployment rate and 1-year Bund yield; COVID dummy 2020--2022 and its 2 lags. Sample (shock dates, $h=0$, both states): \smp{lp_iv_bcu_wageH}. Sources: Eurostat (quarterly national accounts); Eurostat (unemployment rate); Instruments: Mori and Peersman; Alessandri and Gazzani (2025). Energy prices: quarterly averages of monthly data (file \texttt{Data\_OIL\_ELE\_GAS.xlsx}).
   \end{minipage}
 \end{figure}
 
