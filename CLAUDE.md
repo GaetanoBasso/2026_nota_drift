@@ -77,7 +77,8 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   country P75) and `htgt`/`ltgt` (`tightness` = `jvr/ur` in t-1 above the country median) and `hbcu`/`lbcu` (cyclical
   unemployment `bcu`, `tsfilter hp` smoothing 1600 by country, in t-1 not above the country median): baseline
   smooth LP-IV on the shock dates in each state (= all regressors interacted), graphs `lp_iv_infl_*`/
-  `lp_iv_tight_*`/`lp_iv_bcu_*` (EA, 4 lines, `_nb` without bands) in Appendix E of `main_graphs.tex`;
+  `lp_iv_tight_*`/`lp_iv_bcu_*` (EA, 4 lines, `_nb` without bands; `lp_iv_bcu_oil_*` = oil only, 2 lines with
+  bands) in Appendix E of `main_graphs.tex`;
   variants estimated = those active in the `foreach vr` loop (now only `hbcu lbcu`), saved to
   `lp_energy_iv_ea_st.dta` and replacing only the same variants (`drop if inlist(variant, ...)`) in
   `lp_energy_iv_ea.dta`; unsmoothed: `ivreg2 ..., robust kernel(bartlett) bw(h+2)` (= Newey–West lag h+1); lags of y, s and controls in both stages; first-stage
