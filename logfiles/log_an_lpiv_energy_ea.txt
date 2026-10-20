@@ -1,8 +1,8 @@
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lpiv_energy_ea.txt
   log type:  text
- opened on:  19 Oct 2026, 16:21:35
+ opened on:  20 Oct 2026, 12:20:14
 
 . 
 . *******************************************************************************
@@ -60,13 +60,14 @@
 . *                     pagina Word con EA e paesi uno sotto l'altro; titolo dentro il grafico,
 . *                     legenda solo in wageH, asse y -.4(.2).4; lp_iv_ctry_slides_contr e _wageH con titolo
 . *                     (c. e d.) in alto a sinistra
-. *   lp_iv_infl_*, lp_iv_tight_* : eterogeneità per l'EA (stati alto/basso, petrolio e gas, 4 linee),
-. *                     con bande al 90%; _nb: senza bande
-. * - Eterogeneità (varianti hinf/linf, htgt/ltgt): LP-IV smussate con la specificazione di base, sul
+. *   lp_iv_infl_*, lp_iv_tight_*, lp_iv_bcu_* : eterogeneità per l'EA (stati alto/basso, petrolio e gas,
+. *                     4 linee), con bande al 90%; _nb: senza bande
+. * - Eterogeneità (varianti hinf/linf, htgt/ltgt, hbcu/lbcu): LP-IV smussate con la specificazione di base, sul
 . *   sottocampione delle date dello shock t nello stato (equivale a interagire tutti i regressori con
 . *   lo stato); hinf: inflazione di fondo (media della var. % a/a dell'HICP core nei 2 trimestri
 . *   precedenti) sopra il 75° percentile del paese; htgt: tightness (posti vacanti/disoccupazione)
-. *   in t-1 sopra la mediana del paese
+. *   in t-1 sopra la mediana del paese; hbcu: alto business cycle misurato da u rate ciclico (residuo di un HP)
+. *   minore della mediana del paese in t-1 (tsfilter hp, lambda 1600, paese per paese)
 . * - $lp_ivest == 0: salta la stima e rifà solo i grafici dai risultati salvati
 . *   lp_iv_ctry_slides_* : solo paesi (senza EA), petrolio e gas, 2 righe x 3 colonne con legenda sotto (slide)
 . *   lp_iv_main_*    : singolo prezzo, EA, asse y fisso -.4(.1).4 (grafici affiancabili)
@@ -162,7 +163,7 @@
 . cap mata: mata drop lp_slp()
 
 . mata:
-------------------------------------------------- mata (type end to exit) ----------------------------------------------------------------------------------------------------------
+------------------------------------------------- mata (type end to exit) -----------------------------------------------------------------------------------------------------------
 : real matrix lp_slp(real matrix S, real scalar H, real scalar r, real scalar k)
 > {
 >         real colvector y, x, z, t, hh, xh, sel, ut, ts, cs, mse, w, e, b, se
@@ -234,7 +235,7 @@
 > }
 
 : end
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 . 
 . * Stima (solo se $lp_ivest == 1); con $lp_ivest == 0 si salta la stima e i grafici usano
@@ -306,6 +307,8 @@ Panel variable: geocode (unbalanced)
 .         *   precedenti supera il 75° percentile del paese (adattato da Corsello e Foschi, 2026)
 .         * - htgt: mercato del lavoro teso se la tightness (tasso di posti vacanti / tasso di
 .         *   disoccupazione) in t-1 supera la mediana del paese
+.         * - hbcu: ciclo economico favorevole se la componente ciclica del tasso di disoccupazione (filtro HP,
+.         *   lambda 1600, paese per paese) in t-1 non supera la mediana del paese
 .         gen hicpx_bar = (L1.hicpx + L2.hicpx)/2
 (427 missing values generated)
 .         egen p75_hicpx_bar = pctile(hicpx_bar), p(75) by(geocode)
@@ -316,6 +319,12 @@ Panel variable: geocode (unbalanced)
 .         egen p50_tgt1 = median(tgt1), by(geocode)
 .         gen byte htgt = tgt1 > p50_tgt1 if !missing(tgt1)
 (628 missing values generated)
+.         tsfilter hp bcu = ur if !missing(ur), smooth(1600)
+.         gen bcu1 = L1.bcu
+(56 missing values generated)
+.         egen p50_bcu1 = median(bcu1), by(geocode)
+.         gen byte hbcu = bcu1 <= p50_bcu1 if !missing(bcu1)
+(56 missing values generated)
 .         tab geo hinf, missing
 
            |               hinf
@@ -344,6 +353,20 @@ Panel variable: geocode (unbalanced)
         NL |        36         36        103 |       175 
 -----------+---------------------------------+----------
      Total |       261        259        628 |     1,148 
+.         tab geo hbcu, missing
+
+           |               hbcu
+       geo |         0          1          . |     Total
+-----------+---------------------------------+----------
+        BE |        80         81          1 |       162 
+        DE |        71         71          1 |       143 
+        EA |        53         53         37 |       143 
+        ES |        80         81         14 |       175 
+        FR |        87         87          1 |       175 
+        IT |        87         87          1 |       175 
+        NL |        87         87          1 |       175 
+-----------+---------------------------------+----------
+     Total |       545        547         56 |     1,148 
 . 
 .         * Strumenti disponibili (mensili per posizione nel trimestre e media trimestrale);
 .         * deviazione standard dello strumento trimestrale per scalare la forma ridotta
@@ -369,7 +392,6 @@ Panel variable: geocode (unbalanced)
 . 
 .         tempname pf
 .         postfile `pf' str5 spec str5 geo str4 variant str20 shock str12 outcome byte h double(b bc se) int(N tmin tmax) using ${out}/lp_energy_iv_ea_st.dta, replace
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_iv_ea_st.dta not found)
 . 
 .         local nz : word count $lp_ivshocks
 . 
@@ -396,7 +418,7 @@ Panel variable: geocode (unbalanced)
  16.                                                 local ctrl "`ctrl' L`l'_`v'"
  17.                                         }
  18.                                 }
- 19.                                 foreach vr in /*unsm umid pre rf base*/ hinf linf htgt ltgt {
+ 19.                                 foreach vr in /*unsm umid pre rf base hinf linf htgt ltgt*/ hbcu lbcu {
  20.                                         * Strumenti: media trimestrale (tutte tranne umid) o shock mensili separati (umid)
 .                                         local zi "`z'"
  21.                                         if "`vr'" == "umid" local zi "`z'1 `z'2 `z'3"
@@ -412,7 +434,7 @@ Panel variable: geocode (unbalanced)
  31.                                         local ylast = .
  32.                                         * LP smussate: base e stati (alto/basso: stessa specificazione sul sottocampione delle
 .                                         * date dello shock nello stato, cioè tutti i regressori interagiti con lo stato)
-.                                         local slp = inlist("`vr'", "base", "hinf", "linf", "htgt", "ltgt")
+.                                         local slp = inlist("`vr'", "base", "hinf", "linf", "htgt", "ltgt", "hbcu", "lbcu")
  33.                                         local nk : word count `ctrl' `xr'
  34.                                         if `slp' {
  35.                                                 mata: S = J(0, 5, .)
@@ -423,479 +445,312 @@ Panel variable: geocode (unbalanced)
  40.                                         forv h = 0/$hmax {
  41.                                                 local xc ""
  42.                                                 if "`vr'" == "pre" local xc "& timeq + `h' <= tq(2019q4)"
- 43.                                                 if inlist("`vr'", "hinf", "htgt") local xc "& `vr' == 1"
+ 43.                                                 if inlist("`vr'", "hinf", "htgt", "hbcu") local xc "& `vr' == 1"
  44.                                                 if "`vr'" == "linf" local xc "& hinf == 0"
  45.                                                 if "`vr'" == "ltgt" local xc "& htgt == 0"
- 46.                                                 cap drop lhs smp
- 47.                                                 qui gen lhs = F`h'.`y'
- 48.                                                 qui gen byte smp = 1 `xc'
- 49.                                                 markout smp lhs `s' `zi' `ctrl' `xr'
- 50.                                                 qui su timeq if smp
- 51.                                                 local t0 = r(min)
- 52.                                                 local t1 = r(max)
- 53.                                                 local N = r(N)
- 54.                                                 * LP smussate: dati dell'orizzonte h depurati dai controlli, stima dopo il ciclo
+ 46.                                                 if "`vr'" == "lbcu" local xc "& hbcu == 0"
+ 47.                                                 cap drop lhs smp
+ 48.                                                 qui gen lhs = F`h'.`y'
+ 49.                                                 qui gen byte smp = 1 `xc'
+ 50.                                                 markout smp lhs `s' `zi' `ctrl' `xr'
+ 51.                                                 qui su timeq if smp
+ 52.                                                 local t0 = r(min)
+ 53.                                                 local t1 = r(max)
+ 54.                                                 local N = r(N)
+ 55.                                                 * LP smussate: dati dell'orizzonte h depurati dai controlli, stima dopo il ciclo
 .                                                 * (orizzonte saltato se le osservazioni non superano di almeno 3 i regressori)
 .                                                 if `slp' {
- 55.                                                         if `N' <= `nk' + 2 continue
- 56.                                                         foreach v in lhs `s' `zi' {
- 57.                                                                 qui reg `v' `ctrl' `xr' if smp
- 58.                                                                 cap drop r_`v'
- 59.                                                                 qui predict double r_`v' if smp, resid
- 60.                                                         }
- 61.                                                         cap drop hcur
- 62.                                                         qui gen hcur = `h'
- 63.                                                         mata: S = S \ st_data(., "r_lhs r_`s' r_`zi' timeq hcur", "smp")
- 64.                                                         drop r_lhs r_`s' r_`zi' hcur
- 65.                                                         local N`h' = `N'
- 66.                                                         local t0`h' = `t0'
- 67.                                                         local t1`h' = `t1'
- 68.                                                         continue
- 69.                                                 }
- 70.                                                 * Forma ridotta: risposta a uno shock di 1 deviazione standard dello strumento
+ 56.                                                         if `N' <= `nk' + 2 continue
+ 57.                                                         foreach v in lhs `s' `zi' {
+ 58.                                                                 qui reg `v' `ctrl' `xr' if smp
+ 59.                                                                 cap drop r_`v'
+ 60.                                                                 qui predict double r_`v' if smp, resid
+ 61.                                                         }
+ 62.                                                         cap drop hcur
+ 63.                                                         qui gen hcur = `h'
+ 64.                                                         mata: S = S \ st_data(., "r_lhs r_`s' r_`zi' timeq hcur", "smp")
+ 65.                                                         drop r_lhs r_`s' r_`zi' hcur
+ 66.                                                         local N`h' = `N'
+ 67.                                                         local t0`h' = `t0'
+ 68.                                                         local t1`h' = `t1'
+ 69.                                                         continue
+ 70.                                                 }
+ 71.                                                 * Forma ridotta: risposta a uno shock di 1 deviazione standard dello strumento
 .                                                 if "`vr'" == "rf" {
- 71.                                                         cap newey lhs `zi' `ctrl' `xr' if smp, lag(`=`h'+1')
- 72.                                                         if _rc {
- 73.                                                                 di as txt "Salto: `c' `vr' `s' -> `y', h=`h' (rc=" _rc ")"
- 74.                                                                 continue
- 75.                                                         }
- 76.                                                         post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (_b[`zi']*`sd_`z'') (_b[`zi']*`sd_`z'') (_se[`zi']*`sd_`z'') (e
-> (N)) (`t0') (`t1')
- 77.                                                         continue
- 78.                                                 }
- 79.                                                 cap ivreg2 lhs `ctrl' `xr' (`s' = `zi') if smp, robust kernel(bartlett) bw(`=`h'+2') small
- 80.                                                 if _rc {
- 81.                                                         di as txt "Salto: `c' `vr' `s' -> `y', h=`h' (rc=" _rc ")"
- 82.                                                         local flist "`flist' n.a."
- 83.                                                         local clist "`clist' n.a."
- 84.                                                         continue
- 85.                                                 }
- 86.                                                 local b = _b[`s']
- 87.                                                 local se = _se[`s']
- 88.                                                 local N = e(N)
- 89.                                                 * F efficace di Montiel Olea e Pflueger e valore critico (tau = $lp_ivtau%)
+ 72.                                                         cap newey lhs `zi' `ctrl' `xr' if smp, lag(`=`h'+1')
+ 73.                                                         if _rc {
+ 74.                                                                 di as txt "Salto: `c' `vr' `s' -> `y', h=`h' (rc=" _rc ")"
+ 75.                                                                 continue
+ 76.                                                         }
+ 77.                                                         post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (_b[`zi']*`sd_`z'') (_b[`zi']*`sd_`z'') (_se[`zi']*`sd_`z'') (e(
+> N)) (`t0') (`t1')
+ 78.                                                         continue
+ 79.                                                 }
+ 80.                                                 cap ivreg2 lhs `ctrl' `xr' (`s' = `zi') if smp, robust kernel(bartlett) bw(`=`h'+2') small
+ 81.                                                 if _rc {
+ 82.                                                         di as txt "Salto: `c' `vr' `s' -> `y', h=`h' (rc=" _rc ")"
+ 83.                                                         local flist "`flist' n.a."
+ 84.                                                         local clist "`clist' n.a."
+ 85.                                                         continue
+ 86.                                                 }
+ 87.                                                 local b = _b[`s']
+ 88.                                                 local se = _se[`s']
+ 89.                                                 local N = e(N)
+ 90.                                                 * F efficace di Montiel Olea e Pflueger e valore critico (tau = $lp_ivtau%)
 .                                                 local F = .
- 90.                                                 local ccrit = .
- 91.                                                 cap weakivtest, level(0.05)
- 92.                                                 if !_rc {
- 93.                                                         local F = r(F_eff)
- 94.                                                         local ccrit = r(c_TSLS_$lp_ivtau)
- 95.                                                 }
- 96.                                                 local flist "`flist' `: di %5.1f `F''"
- 97.                                                 local clist "`clist' `: di %5.1f `ccrit''"
- 98.                                                 local fmin = min(`fmin', `F')
- 99.                                                 local fmax = max(`fmax', `F')
-100.                                                 if !missing(`F', `ccrit') & `F' < `ccrit' local weak "`weak' `h'"
-101.                                                 * Date dello shock (orizzonte 0) e ultimo trimestre dell'outcome usato
+ 91.                                                 local ccrit = .
+ 92.                                                 cap weakivtest, level(0.05)
+ 93.                                                 if !_rc {
+ 94.                                                         local F = r(F_eff)
+ 95.                                                         local ccrit = r(c_TSLS_$lp_ivtau)
+ 96.                                                 }
+ 97.                                                 local flist "`flist' `: di %5.1f `F''"
+ 98.                                                 local clist "`clist' `: di %5.1f `ccrit''"
+ 99.                                                 local fmin = min(`fmin', `F')
+100.                                                 local fmax = max(`fmax', `F')
+101.                                                 if !missing(`F', `ccrit') & `F' < `ccrit' local weak "`weak' `h'"
+102.                                                 * Date dello shock (orizzonte 0) e ultimo trimestre dell'outcome usato
 .                                                 if `h' == 0 {
-102.                                                         local s0 = `t0'
-103.                                                         local s1 = `t1'
-104.                                                 }
-105.                                                 local ylast = max(`ylast', `t1' + `h')
-106.                                                 post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (`b') (`b') (`se') (`N') (`t0') (`t1')
-107.                                         }
-108.                                         if `slp' {
-109.                                                 * Servono almeno 10 trimestri dello shock (validazione incrociata su 5 blocchi)
+103.                                                         local s0 = `t0'
+104.                                                         local s1 = `t1'
+105.                                                 }
+106.                                                 local ylast = max(`ylast', `t1' + `h')
+107.                                                 post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (`b') (`b') (`se') (`N') (`t0') (`t1')
+108.                                         }
+109.                                         if `slp' {
+110.                                                 * Servono almeno 10 trimestri dello shock (validazione incrociata su 5 blocchi)
 .                                                 mata: st_local("nS", strofreal(rows(S) ? rows(uniqrows(S[., 4])) : 0))
-110.                                                 if `nS' < 10 {
-111.                                                         di as txt "Salto LP smussate: `c' `vr' `s' -> `y' (trimestri dello shock: `nS')"
-112.                                                         continue
-113.                                                 }
-114.                                                 mata: st_matrix("R", lp_slp(S, $hmax, $lp_slp_r, $lp_slp_us))
-115.                                                 di as txt "LP smussate `c' `vr' `s' -> `y' (N a h = 0: `N0'): lambda relativo scelto per validazione incrociata = " %9.4g el(R,
->  1, 4) " (bande con lambda/$lp_slp_us)"
-116.                                                 forv h = 0/$hmax {
-117.                                                         if "`N`h''" == "" continue
-118.                                                         post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (el(R, `h'+1, 1)) (el(R, `h'+1, 2)) (el(R, `h'+1, 3)) (`N`h'') 
-> (`t0`h'') (`t1`h'')
-119.                                                         local N`h' ""
-120.                                                 }
-121.                                         }
-122.                                         if "`vr'" == "rf" | `slp' continue
-123.                                         di as txt "1° stadio `c' `vr' `s' (strumenti `zi') -> `y': F efficace di Montiel Olea-Pflueger min " %6.1f `fmin' ", max " %6.1f `fmax'
-124.                                         di as txt "  F efficace per h = 0,...,$hmax:`flist'"
-125.                                         di as txt "  valore critico (tau = $lp_ivtau%):`clist'"
-126.                                         di as txt "  campione: shock " %tq `s0' "-" %tq `s1' " (h = 0); outcome fino a " %tq `ylast'
-127.                                         if "`weak'" != "" di as err "  ATTENZIONE: strumenti deboli (F efficace < valore critico) per h =`weak'"
-128.                                 }
-129.                         }
-130.                 }
-131.                 restore
-132.         }
+111.                                                 if `nS' < 10 {
+112.                                                         di as txt "Salto LP smussate: `c' `vr' `s' -> `y' (trimestri dello shock: `nS')"
+113.                                                         continue
+114.                                                 }
+115.                                                 mata: st_matrix("R", lp_slp(S, $hmax, $lp_slp_r, $lp_slp_us))
+116.                                                 di as txt "LP smussate `c' `vr' `s' -> `y' (N a h = 0: `N0'): lambda relativo scelto per validazione incrociata = " %9.4g el(R, 
+> 1, 4) " (bande con lambda/$lp_slp_us)"
+117.                                                 forv h = 0/$hmax {
+118.                                                         if "`N`h''" == "" continue
+119.                                                         post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (el(R, `h'+1, 1)) (el(R, `h'+1, 2)) (el(R, `h'+1, 3)) (`N`h'') (
+> `t0`h'') (`t1`h'')
+120.                                                         local N`h' ""
+121.                                                 }
+122.                                         }
+123.                                         if "`vr'" == "rf" | `slp' continue
+124.                                         di as txt "1° stadio `c' `vr' `s' (strumenti `zi') -> `y': F efficace di Montiel Olea-Pflueger min " %6.1f `fmin' ", max " %6.1f `fmax'
+125.                                         di as txt "  F efficace per h = 0,...,$hmax:`flist'"
+126.                                         di as txt "  valore critico (tau = $lp_ivtau%):`clist'"
+127.                                         di as txt "  campione: shock " %tq `s0' "-" %tq `s1' " (h = 0); outcome fino a " %tq `ylast'
+128.                                         if "`weak'" != "" di as err "  ATTENZIONE: strumenti deboli (F efficace < valore critico) per h =`weak'"
+129.                                 }
+130.                         }
+131.                 }
+132.                 restore
+133.         }
 (1,005 observations deleted)
 
 Time variable: timeq, 1991q1 to 2026q3
         Delta: 1 quarter
-LP smussate DE hinf OilSpotUSDBarrel -> contr (N a h = 0: 27): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE linf OilSpotUSDBarrel -> contr (N a h = 0: 87): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate DE htgt OilSpotUSDBarrel -> contr (N a h = 0: 31): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
-LP smussate DE ltgt OilSpotUSDBarrel -> contr (N a h = 0: 29): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE hinf OilSpotUSDBarrel -> hicp (N a h = 0: 27): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate DE linf OilSpotUSDBarrel -> hicp (N a h = 0: 87): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate DE htgt OilSpotUSDBarrel -> hicp (N a h = 0: 31): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE ltgt OilSpotUSDBarrel -> hicp (N a h = 0: 29): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate DE hinf OilSpotUSDBarrel -> wageH (N a h = 0: 27): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
-LP smussate DE linf OilSpotUSDBarrel -> wageH (N a h = 0: 87): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE htgt OilSpotUSDBarrel -> wageH (N a h = 0: 31): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
-LP smussate DE ltgt OilSpotUSDBarrel -> wageH (N a h = 0: 29): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE hinf OilSpotUSDBarrel -> occH (N a h = 0: 27): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE linf OilSpotUSDBarrel -> occH (N a h = 0: 87): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE htgt OilSpotUSDBarrel -> occH (N a h = 0: 31): lambda relativo scelto per validazione incrociata =     3.162 (bande con lambda/10)
-LP smussate DE ltgt OilSpotUSDBarrel -> occH (N a h = 0: 29): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE hinf OilSpotUSDBarrel -> dur (N a h = 0: 27): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE linf OilSpotUSDBarrel -> dur (N a h = 0: 87): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE htgt OilSpotUSDBarrel -> dur (N a h = 0: 31): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-LP smussate DE ltgt OilSpotUSDBarrel -> dur (N a h = 0: 29): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
-LP smussate DE hinf OilSpotUSDBarrel -> dtightness (N a h = 0: 21): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
-LP smussate DE linf OilSpotUSDBarrel -> dtightness (N a h = 0: 37): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate DE htgt OilSpotUSDBarrel -> dtightness (N a h = 0: 31): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
-LP smussate DE ltgt OilSpotUSDBarrel -> dtightness (N a h = 0: 27): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate DE hinf TTFSpotEURMWH -> contr (N a h = 0: 25): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE linf TTFSpotEURMWH -> contr (N a h = 0: 52): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE htgt TTFSpotEURMWH -> contr (N a h = 0: 31): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE ltgt TTFSpotEURMWH -> contr (N a h = 0: 29): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
-LP smussate DE hinf TTFSpotEURMWH -> hicp (N a h = 0: 25): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate DE linf TTFSpotEURMWH -> hicp (N a h = 0: 52): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE htgt TTFSpotEURMWH -> hicp (N a h = 0: 31): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE ltgt TTFSpotEURMWH -> hicp (N a h = 0: 29): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
-LP smussate DE hinf TTFSpotEURMWH -> wageH (N a h = 0: 25): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE linf TTFSpotEURMWH -> wageH (N a h = 0: 52): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
-LP smussate DE htgt TTFSpotEURMWH -> wageH (N a h = 0: 31): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate DE ltgt TTFSpotEURMWH -> wageH (N a h = 0: 29): lambda relativo scelto per validazione incrociata =       .01 (bande con lambda/10)
-LP smussate DE hinf TTFSpotEURMWH -> occH (N a h = 0: 25): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate DE linf TTFSpotEURMWH -> occH (N a h = 0: 52): lambda relativo scelto per validazione incrociata =     3.162 (bande con lambda/10)
-LP smussate DE htgt TTFSpotEURMWH -> occH (N a h = 0: 31): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate DE ltgt TTFSpotEURMWH -> occH (N a h = 0: 29): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE hinf TTFSpotEURMWH -> dur (N a h = 0: 25): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE linf TTFSpotEURMWH -> dur (N a h = 0: 52): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE htgt TTFSpotEURMWH -> dur (N a h = 0: 31): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-LP smussate DE ltgt TTFSpotEURMWH -> dur (N a h = 0: 29): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
-LP smussate DE hinf TTFSpotEURMWH -> dtightness (N a h = 0: 21): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
-LP smussate DE linf TTFSpotEURMWH -> dtightness (N a h = 0: 37): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE htgt TTFSpotEURMWH -> dtightness (N a h = 0: 31): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate DE ltgt TTFSpotEURMWH -> dtightness (N a h = 0: 27): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate DE hbcu OilSpotUSDBarrel -> contr (N a h = 0: 62): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate DE lbcu OilSpotUSDBarrel -> contr (N a h = 0: 59): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate DE hbcu OilSpotUSDBarrel -> hicp (N a h = 0: 58): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate DE lbcu OilSpotUSDBarrel -> hicp (N a h = 0: 56): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate DE hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 59): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate DE lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 59): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
+LP smussate DE hbcu OilSpotUSDBarrel -> occH (N a h = 0: 62): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate DE lbcu OilSpotUSDBarrel -> occH (N a h = 0: 59): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate DE hbcu OilSpotUSDBarrel -> dur (N a h = 0: 62): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate DE lbcu OilSpotUSDBarrel -> dur (N a h = 0: 59): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate DE hbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 32): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
+LP smussate DE lbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 26): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate DE hbcu TTFSpotEURMWH -> contr (N a h = 0: 43): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate DE lbcu TTFSpotEURMWH -> contr (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate DE hbcu TTFSpotEURMWH -> hicp (N a h = 0: 43): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate DE lbcu TTFSpotEURMWH -> hicp (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate DE hbcu TTFSpotEURMWH -> wageH (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
+LP smussate DE lbcu TTFSpotEURMWH -> wageH (N a h = 0: 34): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate DE hbcu TTFSpotEURMWH -> occH (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate DE lbcu TTFSpotEURMWH -> occH (N a h = 0: 34): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+LP smussate DE hbcu TTFSpotEURMWH -> dur (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate DE lbcu TTFSpotEURMWH -> dur (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate DE hbcu TTFSpotEURMWH -> dtightness (N a h = 0: 32): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate DE lbcu TTFSpotEURMWH -> dtightness (N a h = 0: 26): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
 (973 observations deleted)
 
 Time variable: timeq, 1983q1 to 2026q3
         Delta: 1 quarter
-LP smussate IT hinf OilSpotUSDBarrel -> contr (N a h = 0: 24): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT linf OilSpotUSDBarrel -> contr (N a h = 0: 74): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT htgt OilSpotUSDBarrel -> contr (N a h = 0: 42): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT ltgt OilSpotUSDBarrel -> contr (N a h = 0: 45): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate IT hinf OilSpotUSDBarrel -> hicp (N a h = 0: 24): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate IT linf OilSpotUSDBarrel -> hicp (N a h = 0: 74): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate IT htgt OilSpotUSDBarrel -> hicp (N a h = 0: 42): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT ltgt OilSpotUSDBarrel -> hicp (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate IT hinf OilSpotUSDBarrel -> wageH (N a h = 0: 24): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT linf OilSpotUSDBarrel -> wageH (N a h = 0: 74): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT htgt OilSpotUSDBarrel -> wageH (N a h = 0: 42): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT ltgt OilSpotUSDBarrel -> wageH (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT hinf OilSpotUSDBarrel -> occH (N a h = 0: 24): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT linf OilSpotUSDBarrel -> occH (N a h = 0: 74): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT htgt OilSpotUSDBarrel -> occH (N a h = 0: 42): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT ltgt OilSpotUSDBarrel -> occH (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT hinf OilSpotUSDBarrel -> dur (N a h = 0: 24): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT linf OilSpotUSDBarrel -> dur (N a h = 0: 74): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT htgt OilSpotUSDBarrel -> dur (N a h = 0: 42): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT ltgt OilSpotUSDBarrel -> dur (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     3.162 (bande con lambda/10)
-LP smussate IT hinf OilSpotUSDBarrel -> dtightness (N a h = 0: 16): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate IT linf OilSpotUSDBarrel -> dtightness (N a h = 0: 69): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT htgt OilSpotUSDBarrel -> dtightness (N a h = 0: 41): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate IT ltgt OilSpotUSDBarrel -> dtightness (N a h = 0: 44): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT hinf TTFSpotEURMWH -> contr (N a h = 0: 16): lambda relativo scelto per validazione incrociata =     .0001 (bande con lambda/10)
-LP smussate IT linf TTFSpotEURMWH -> contr (N a h = 0: 61): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT htgt TTFSpotEURMWH -> contr (N a h = 0: 37): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate IT ltgt TTFSpotEURMWH -> contr (N a h = 0: 40): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT hinf TTFSpotEURMWH -> hicp (N a h = 0: 16): lambda relativo scelto per validazione incrociata =    .03162 (bande con lambda/10)
-LP smussate IT linf TTFSpotEURMWH -> hicp (N a h = 0: 61): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT htgt TTFSpotEURMWH -> hicp (N a h = 0: 37): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT ltgt TTFSpotEURMWH -> hicp (N a h = 0: 40): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-LP smussate IT hinf TTFSpotEURMWH -> wageH (N a h = 0: 16): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
-LP smussate IT linf TTFSpotEURMWH -> wageH (N a h = 0: 61): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT htgt TTFSpotEURMWH -> wageH (N a h = 0: 37): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate IT ltgt TTFSpotEURMWH -> wageH (N a h = 0: 40): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT hinf TTFSpotEURMWH -> occH (N a h = 0: 16): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate IT linf TTFSpotEURMWH -> occH (N a h = 0: 61): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT htgt TTFSpotEURMWH -> occH (N a h = 0: 37): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate IT ltgt TTFSpotEURMWH -> occH (N a h = 0: 40): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate IT hinf TTFSpotEURMWH -> dur (N a h = 0: 16): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
-LP smussate IT linf TTFSpotEURMWH -> dur (N a h = 0: 61): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT htgt TTFSpotEURMWH -> dur (N a h = 0: 37): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT ltgt TTFSpotEURMWH -> dur (N a h = 0: 40): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT hinf TTFSpotEURMWH -> dtightness (N a h = 0: 16): lambda relativo scelto per validazione incrociata =    .03162 (bande con lambda/10)
-LP smussate IT linf TTFSpotEURMWH -> dtightness (N a h = 0: 61): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT htgt TTFSpotEURMWH -> dtightness (N a h = 0: 37): lambda relativo scelto per validazione incrociata =         1 (bande con lambda/10)
-LP smussate IT ltgt TTFSpotEURMWH -> dtightness (N a h = 0: 40): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate IT hbcu OilSpotUSDBarrel -> contr (N a h = 0: 57): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate IT lbcu OilSpotUSDBarrel -> contr (N a h = 0: 64): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT hbcu OilSpotUSDBarrel -> hicp (N a h = 0: 57): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate IT lbcu OilSpotUSDBarrel -> hicp (N a h = 0: 57): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate IT hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 57): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate IT lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 61): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT hbcu OilSpotUSDBarrel -> occH (N a h = 0: 57): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT lbcu OilSpotUSDBarrel -> occH (N a h = 0: 64): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT hbcu OilSpotUSDBarrel -> dur (N a h = 0: 57): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT lbcu OilSpotUSDBarrel -> dur (N a h = 0: 64): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT hbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 46): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT lbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 39): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT hbcu TTFSpotEURMWH -> contr (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     3.162 (bande con lambda/10)
+LP smussate IT lbcu TTFSpotEURMWH -> contr (N a h = 0: 32): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT hbcu TTFSpotEURMWH -> hicp (N a h = 0: 45): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
+LP smussate IT lbcu TTFSpotEURMWH -> hicp (N a h = 0: 32): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate IT hbcu TTFSpotEURMWH -> wageH (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate IT lbcu TTFSpotEURMWH -> wageH (N a h = 0: 32): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+LP smussate IT hbcu TTFSpotEURMWH -> occH (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT lbcu TTFSpotEURMWH -> occH (N a h = 0: 32): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate IT hbcu TTFSpotEURMWH -> dur (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT lbcu TTFSpotEURMWH -> dur (N a h = 0: 32): lambda relativo scelto per validazione incrociata =     .0001 (bande con lambda/10)
+LP smussate IT hbcu TTFSpotEURMWH -> dtightness (N a h = 0: 45): lambda relativo scelto per validazione incrociata =         1 (bande con lambda/10)
+LP smussate IT lbcu TTFSpotEURMWH -> dtightness (N a h = 0: 32): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
 (973 observations deleted)
 
 Time variable: timeq, 1983q1 to 2026q3
         Delta: 1 quarter
-LP smussate NL hinf OilSpotUSDBarrel -> contr (N a h = 0: 24): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
-LP smussate NL linf OilSpotUSDBarrel -> contr (N a h = 0: 74): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL htgt OilSpotUSDBarrel -> contr (N a h = 0: 35): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate NL ltgt OilSpotUSDBarrel -> contr (N a h = 0: 36): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate NL hinf OilSpotUSDBarrel -> hicp (N a h = 0: 24): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
-LP smussate NL linf OilSpotUSDBarrel -> hicp (N a h = 0: 74): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate NL htgt OilSpotUSDBarrel -> hicp (N a h = 0: 35): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL ltgt OilSpotUSDBarrel -> hicp (N a h = 0: 36): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate NL hinf OilSpotUSDBarrel -> wageH (N a h = 0: 24): lambda relativo scelto per validazione incrociata =     3.162 (bande con lambda/10)
-LP smussate NL linf OilSpotUSDBarrel -> wageH (N a h = 0: 74): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate NL htgt OilSpotUSDBarrel -> wageH (N a h = 0: 35): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate NL ltgt OilSpotUSDBarrel -> wageH (N a h = 0: 36): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate NL hinf OilSpotUSDBarrel -> occH (N a h = 0: 24): lambda relativo scelto per validazione incrociata =    .03162 (bande con lambda/10)
-LP smussate NL linf OilSpotUSDBarrel -> occH (N a h = 0: 74): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL htgt OilSpotUSDBarrel -> occH (N a h = 0: 35): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL ltgt OilSpotUSDBarrel -> occH (N a h = 0: 36): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL hinf OilSpotUSDBarrel -> dur (N a h = 0: 24): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
-LP smussate NL linf OilSpotUSDBarrel -> dur (N a h = 0: 74): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL htgt OilSpotUSDBarrel -> dur (N a h = 0: 35): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL ltgt OilSpotUSDBarrel -> dur (N a h = 0: 36): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL hinf OilSpotUSDBarrel -> dtightness (N a h = 0: 16): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
-LP smussate NL linf OilSpotUSDBarrel -> dtightness (N a h = 0: 53): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL htgt OilSpotUSDBarrel -> dtightness (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL ltgt OilSpotUSDBarrel -> dtightness (N a h = 0: 36): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL hinf TTFSpotEURMWH -> contr (N a h = 0: 16): lambda relativo scelto per validazione incrociata =      .001 (bande con lambda/10)
-LP smussate NL linf TTFSpotEURMWH -> contr (N a h = 0: 61): lambda relativo scelto per validazione incrociata =         1 (bande con lambda/10)
-LP smussate NL htgt TTFSpotEURMWH -> contr (N a h = 0: 35): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL ltgt TTFSpotEURMWH -> contr (N a h = 0: 36): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL hinf TTFSpotEURMWH -> hicp (N a h = 0: 16): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate NL linf TTFSpotEURMWH -> hicp (N a h = 0: 61): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL htgt TTFSpotEURMWH -> hicp (N a h = 0: 35): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate NL ltgt TTFSpotEURMWH -> hicp (N a h = 0: 36): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate NL hinf TTFSpotEURMWH -> wageH (N a h = 0: 16): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
-LP smussate NL linf TTFSpotEURMWH -> wageH (N a h = 0: 61): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
-LP smussate NL htgt TTFSpotEURMWH -> wageH (N a h = 0: 35): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate NL ltgt TTFSpotEURMWH -> wageH (N a h = 0: 36): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate NL hinf TTFSpotEURMWH -> occH (N a h = 0: 16): lambda relativo scelto per validazione incrociata =     .0001 (bande con lambda/10)
-LP smussate NL linf TTFSpotEURMWH -> occH (N a h = 0: 61): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL htgt TTFSpotEURMWH -> occH (N a h = 0: 35): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL ltgt TTFSpotEURMWH -> occH (N a h = 0: 36): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate NL hinf TTFSpotEURMWH -> dur (N a h = 0: 16): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
-LP smussate NL linf TTFSpotEURMWH -> dur (N a h = 0: 61): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-LP smussate NL htgt TTFSpotEURMWH -> dur (N a h = 0: 35): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate NL ltgt TTFSpotEURMWH -> dur (N a h = 0: 36): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-LP smussate NL hinf TTFSpotEURMWH -> dtightness (N a h = 0: 16): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate NL linf TTFSpotEURMWH -> dtightness (N a h = 0: 53): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL htgt TTFSpotEURMWH -> dtightness (N a h = 0: 33): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-LP smussate NL ltgt TTFSpotEURMWH -> dtightness (N a h = 0: 36): lambda relativo scelto per validazione incrociata =         1 (bande con lambda/10)
+LP smussate NL hbcu OilSpotUSDBarrel -> contr (N a h = 0: 49): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL lbcu OilSpotUSDBarrel -> contr (N a h = 0: 49): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL hbcu OilSpotUSDBarrel -> hicp (N a h = 0: 53): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate NL lbcu OilSpotUSDBarrel -> hicp (N a h = 0: 49): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate NL hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 53): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate NL lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 49): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate NL hbcu OilSpotUSDBarrel -> occH (N a h = 0: 53): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate NL lbcu OilSpotUSDBarrel -> occH (N a h = 0: 49): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL hbcu OilSpotUSDBarrel -> dur (N a h = 0: 53): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL lbcu OilSpotUSDBarrel -> dur (N a h = 0: 49): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate NL hbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 36): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL lbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     3.162 (bande con lambda/10)
+LP smussate NL hbcu TTFSpotEURMWH -> contr (N a h = 0: 42): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+LP smussate NL lbcu TTFSpotEURMWH -> contr (N a h = 0: 35): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
+LP smussate NL hbcu TTFSpotEURMWH -> hicp (N a h = 0: 42): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL lbcu TTFSpotEURMWH -> hicp (N a h = 0: 35): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate NL hbcu TTFSpotEURMWH -> wageH (N a h = 0: 42): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate NL lbcu TTFSpotEURMWH -> wageH (N a h = 0: 35): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
+LP smussate NL hbcu TTFSpotEURMWH -> occH (N a h = 0: 42): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL lbcu TTFSpotEURMWH -> occH (N a h = 0: 35): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate NL hbcu TTFSpotEURMWH -> dur (N a h = 0: 42): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL lbcu TTFSpotEURMWH -> dur (N a h = 0: 35): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL hbcu TTFSpotEURMWH -> dtightness (N a h = 0: 36): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL lbcu TTFSpotEURMWH -> dtightness (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
 (973 observations deleted)
 
 Time variable: timeq, 1983q1 to 2026q3
         Delta: 1 quarter
-LP smussate ES hinf OilSpotUSDBarrel -> contr (N a h = 0: 22): lambda relativo scelto per validazione incrociata =   .003162 (bande con lambda/10)
-LP smussate ES linf OilSpotUSDBarrel -> contr (N a h = 0: 72): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES htgt OilSpotUSDBarrel -> contr (N a h = 0: 30): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES ltgt OilSpotUSDBarrel -> contr (N a h = 0: 33): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate ES hinf OilSpotUSDBarrel -> hicp (N a h = 0: 22): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate ES linf OilSpotUSDBarrel -> hicp (N a h = 0: 72): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES htgt OilSpotUSDBarrel -> hicp (N a h = 0: 30): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES ltgt OilSpotUSDBarrel -> hicp (N a h = 0: 33): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate ES hinf OilSpotUSDBarrel -> wageH (N a h = 0: 22): lambda relativo scelto per validazione incrociata =   .003162 (bande con lambda/10)
-LP smussate ES linf OilSpotUSDBarrel -> wageH (N a h = 0: 72): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES htgt OilSpotUSDBarrel -> wageH (N a h = 0: 30): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES ltgt OilSpotUSDBarrel -> wageH (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES hinf OilSpotUSDBarrel -> occH (N a h = 0: 22): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
-LP smussate ES linf OilSpotUSDBarrel -> occH (N a h = 0: 72): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES htgt OilSpotUSDBarrel -> occH (N a h = 0: 30): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
-LP smussate ES ltgt OilSpotUSDBarrel -> occH (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES hinf OilSpotUSDBarrel -> dur (N a h = 0: 22): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate ES linf OilSpotUSDBarrel -> dur (N a h = 0: 72): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate ES htgt OilSpotUSDBarrel -> dur (N a h = 0: 30): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate ES ltgt OilSpotUSDBarrel -> dur (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-Salto LP smussate: ES hinf OilSpotUSDBarrel -> dtightness (trimestri dello shock: 0)
-LP smussate ES linf OilSpotUSDBarrel -> dtightness (N a h = 0: 51): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES htgt OilSpotUSDBarrel -> dtightness (N a h = 0: 28): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate ES ltgt OilSpotUSDBarrel -> dtightness (N a h = 0: 33): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-Salto LP smussate: ES hinf TTFSpotEURMWH -> contr (trimestri dello shock: 0)
-LP smussate ES linf TTFSpotEURMWH -> contr (N a h = 0: 64): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES htgt TTFSpotEURMWH -> contr (N a h = 0: 30): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate ES ltgt TTFSpotEURMWH -> contr (N a h = 0: 33): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-Salto LP smussate: ES hinf TTFSpotEURMWH -> hicp (trimestri dello shock: 0)
-LP smussate ES linf TTFSpotEURMWH -> hicp (N a h = 0: 64): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES htgt TTFSpotEURMWH -> hicp (N a h = 0: 30): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate ES ltgt TTFSpotEURMWH -> hicp (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-Salto LP smussate: ES hinf TTFSpotEURMWH -> wageH (trimestri dello shock: 0)
-LP smussate ES linf TTFSpotEURMWH -> wageH (N a h = 0: 64): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES htgt TTFSpotEURMWH -> wageH (N a h = 0: 30): lambda relativo scelto per validazione incrociata =     3.162 (bande con lambda/10)
-LP smussate ES ltgt TTFSpotEURMWH -> wageH (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-Salto LP smussate: ES hinf TTFSpotEURMWH -> occH (trimestri dello shock: 0)
-LP smussate ES linf TTFSpotEURMWH -> occH (N a h = 0: 64): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
-LP smussate ES htgt TTFSpotEURMWH -> occH (N a h = 0: 30): lambda relativo scelto per validazione incrociata =     3.162 (bande con lambda/10)
-LP smussate ES ltgt TTFSpotEURMWH -> occH (N a h = 0: 33): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-Salto LP smussate: ES hinf TTFSpotEURMWH -> dur (trimestri dello shock: 0)
-LP smussate ES linf TTFSpotEURMWH -> dur (N a h = 0: 64): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES htgt TTFSpotEURMWH -> dur (N a h = 0: 30): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate ES ltgt TTFSpotEURMWH -> dur (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-Salto LP smussate: ES hinf TTFSpotEURMWH -> dtightness (trimestri dello shock: 0)
-LP smussate ES linf TTFSpotEURMWH -> dtightness (N a h = 0: 51): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate ES htgt TTFSpotEURMWH -> dtightness (N a h = 0: 28): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
-LP smussate ES ltgt TTFSpotEURMWH -> dtightness (N a h = 0: 33): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate ES hbcu OilSpotUSDBarrel -> contr (N a h = 0: 64): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+LP smussate ES lbcu OilSpotUSDBarrel -> contr (N a h = 0: 57): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES hbcu OilSpotUSDBarrel -> hicp (N a h = 0: 64): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
+LP smussate ES lbcu OilSpotUSDBarrel -> hicp (N a h = 0: 50): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 64): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate ES lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 54): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES hbcu OilSpotUSDBarrel -> occH (N a h = 0: 64): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES lbcu OilSpotUSDBarrel -> occH (N a h = 0: 57): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES hbcu OilSpotUSDBarrel -> dur (N a h = 0: 64): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate ES lbcu OilSpotUSDBarrel -> dur (N a h = 0: 57): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate ES hbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 36): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate ES lbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 25): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate ES hbcu TTFSpotEURMWH -> contr (N a h = 0: 46): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
+LP smussate ES lbcu TTFSpotEURMWH -> contr (N a h = 0: 31): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate ES hbcu TTFSpotEURMWH -> hicp (N a h = 0: 46): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate ES lbcu TTFSpotEURMWH -> hicp (N a h = 0: 31): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+LP smussate ES hbcu TTFSpotEURMWH -> wageH (N a h = 0: 46): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES lbcu TTFSpotEURMWH -> wageH (N a h = 0: 31): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES hbcu TTFSpotEURMWH -> occH (N a h = 0: 46): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES lbcu TTFSpotEURMWH -> occH (N a h = 0: 31): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
+LP smussate ES hbcu TTFSpotEURMWH -> dur (N a h = 0: 46): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate ES lbcu TTFSpotEURMWH -> dur (N a h = 0: 31): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate ES hbcu TTFSpotEURMWH -> dtightness (N a h = 0: 36): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES lbcu TTFSpotEURMWH -> dtightness (N a h = 0: 25): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
 (973 observations deleted)
 
 Time variable: timeq, 1983q1 to 2026q3
         Delta: 1 quarter
-LP smussate FR hinf OilSpotUSDBarrel -> contr (N a h = 0: 28): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate FR linf OilSpotUSDBarrel -> contr (N a h = 0: 86): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate FR htgt OilSpotUSDBarrel -> contr (N a h = 0: 43): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-LP smussate FR ltgt OilSpotUSDBarrel -> contr (N a h = 0: 47): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate FR hinf OilSpotUSDBarrel -> hicp (N a h = 0: 28): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate FR linf OilSpotUSDBarrel -> hicp (N a h = 0: 86): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate FR htgt OilSpotUSDBarrel -> hicp (N a h = 0: 43): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate FR ltgt OilSpotUSDBarrel -> hicp (N a h = 0: 47): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR hinf OilSpotUSDBarrel -> wageH (N a h = 0: 28): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR linf OilSpotUSDBarrel -> wageH (N a h = 0: 86): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR htgt OilSpotUSDBarrel -> wageH (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR ltgt OilSpotUSDBarrel -> wageH (N a h = 0: 47): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR hinf OilSpotUSDBarrel -> occH (N a h = 0: 28): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate FR linf OilSpotUSDBarrel -> occH (N a h = 0: 86): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate FR htgt OilSpotUSDBarrel -> occH (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR ltgt OilSpotUSDBarrel -> occH (N a h = 0: 47): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR hinf OilSpotUSDBarrel -> dur (N a h = 0: 28): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate FR linf OilSpotUSDBarrel -> dur (N a h = 0: 86): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate FR htgt OilSpotUSDBarrel -> dur (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate FR ltgt OilSpotUSDBarrel -> dur (N a h = 0: 47): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate FR hinf OilSpotUSDBarrel -> dtightness (N a h = 0: 23): lambda relativo scelto per validazione incrociata =    .03162 (bande con lambda/10)
-LP smussate FR linf OilSpotUSDBarrel -> dtightness (N a h = 0: 65): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-LP smussate FR htgt OilSpotUSDBarrel -> dtightness (N a h = 0: 43): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate FR ltgt OilSpotUSDBarrel -> dtightness (N a h = 0: 45): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
-LP smussate FR hinf TTFSpotEURMWH -> contr (N a h = 0: 18): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
-LP smussate FR linf TTFSpotEURMWH -> contr (N a h = 0: 59): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR htgt TTFSpotEURMWH -> contr (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR ltgt TTFSpotEURMWH -> contr (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR hinf TTFSpotEURMWH -> hicp (N a h = 0: 18): lambda relativo scelto per validazione incrociata =    .03162 (bande con lambda/10)
-LP smussate FR linf TTFSpotEURMWH -> hicp (N a h = 0: 59): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate FR htgt TTFSpotEURMWH -> hicp (N a h = 0: 43): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate FR ltgt TTFSpotEURMWH -> hicp (N a h = 0: 34): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate FR hinf TTFSpotEURMWH -> wageH (N a h = 0: 18): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate FR linf TTFSpotEURMWH -> wageH (N a h = 0: 59): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate FR htgt TTFSpotEURMWH -> wageH (N a h = 0: 43): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate FR ltgt TTFSpotEURMWH -> wageH (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR hinf TTFSpotEURMWH -> occH (N a h = 0: 18): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate FR linf TTFSpotEURMWH -> occH (N a h = 0: 59): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate FR htgt TTFSpotEURMWH -> occH (N a h = 0: 43): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate FR ltgt TTFSpotEURMWH -> occH (N a h = 0: 34): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate FR hinf TTFSpotEURMWH -> dur (N a h = 0: 18): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-LP smussate FR linf TTFSpotEURMWH -> dur (N a h = 0: 59): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate FR htgt TTFSpotEURMWH -> dur (N a h = 0: 43): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate FR ltgt TTFSpotEURMWH -> dur (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR hinf TTFSpotEURMWH -> dtightness (N a h = 0: 18): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate FR linf TTFSpotEURMWH -> dtightness (N a h = 0: 59): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate FR htgt TTFSpotEURMWH -> dtightness (N a h = 0: 43): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate FR ltgt TTFSpotEURMWH -> dtightness (N a h = 0: 34): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate FR hbcu OilSpotUSDBarrel -> contr (N a h = 0: 61): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate FR lbcu OilSpotUSDBarrel -> contr (N a h = 0: 60): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate FR hbcu OilSpotUSDBarrel -> hicp (N a h = 0: 58): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate FR lbcu OilSpotUSDBarrel -> hicp (N a h = 0: 56): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate FR hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 58): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate FR lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 60): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate FR hbcu OilSpotUSDBarrel -> occH (N a h = 0: 61): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate FR lbcu OilSpotUSDBarrel -> occH (N a h = 0: 60): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate FR hbcu OilSpotUSDBarrel -> dur (N a h = 0: 61): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate FR lbcu OilSpotUSDBarrel -> dur (N a h = 0: 60): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
+LP smussate FR hbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 43): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate FR lbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate FR hbcu TTFSpotEURMWH -> contr (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate FR lbcu TTFSpotEURMWH -> contr (N a h = 0: 34): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate FR hbcu TTFSpotEURMWH -> hicp (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate FR lbcu TTFSpotEURMWH -> hicp (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate FR hbcu TTFSpotEURMWH -> wageH (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate FR lbcu TTFSpotEURMWH -> wageH (N a h = 0: 34): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate FR hbcu TTFSpotEURMWH -> occH (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate FR lbcu TTFSpotEURMWH -> occH (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate FR hbcu TTFSpotEURMWH -> dur (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate FR lbcu TTFSpotEURMWH -> dur (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
+LP smussate FR hbcu TTFSpotEURMWH -> dtightness (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate FR lbcu TTFSpotEURMWH -> dtightness (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
 (986 observations deleted)
 
 Time variable: timeq, 1986q2 to 2026q3
         Delta: 1 quarter
-LP smussate BE hinf OilSpotUSDBarrel -> contr (N a h = 0: 24): lambda relativo scelto per validazione incrociata =    .03162 (bande con lambda/10)
-LP smussate BE linf OilSpotUSDBarrel -> contr (N a h = 0: 78): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate BE htgt OilSpotUSDBarrel -> contr (N a h = 0: 27): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate BE ltgt OilSpotUSDBarrel -> contr (N a h = 0: 24): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate BE hinf OilSpotUSDBarrel -> hicp (N a h = 0: 24): lambda relativo scelto per validazione incrociata =       .01 (bande con lambda/10)
-LP smussate BE linf OilSpotUSDBarrel -> hicp (N a h = 0: 78): lambda relativo scelto per validazione incrociata =     3.162 (bande con lambda/10)
-LP smussate BE htgt OilSpotUSDBarrel -> hicp (N a h = 0: 27): lambda relativo scelto per validazione incrociata =    .03162 (bande con lambda/10)
-LP smussate BE ltgt OilSpotUSDBarrel -> hicp (N a h = 0: 24): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate BE hinf OilSpotUSDBarrel -> wageH (N a h = 0: 24): lambda relativo scelto per validazione incrociata =       .01 (bande con lambda/10)
-LP smussate BE linf OilSpotUSDBarrel -> wageH (N a h = 0: 78): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate BE htgt OilSpotUSDBarrel -> wageH (N a h = 0: 27): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate BE ltgt OilSpotUSDBarrel -> wageH (N a h = 0: 24): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate BE hinf OilSpotUSDBarrel -> occH (N a h = 0: 24): lambda relativo scelto per validazione incrociata =         1 (bande con lambda/10)
-LP smussate BE linf OilSpotUSDBarrel -> occH (N a h = 0: 78): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate BE htgt OilSpotUSDBarrel -> occH (N a h = 0: 27): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate BE ltgt OilSpotUSDBarrel -> occH (N a h = 0: 24): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate BE hinf OilSpotUSDBarrel -> dur (N a h = 0: 24): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
-LP smussate BE linf OilSpotUSDBarrel -> dur (N a h = 0: 78): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate BE htgt OilSpotUSDBarrel -> dur (N a h = 0: 27): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate BE ltgt OilSpotUSDBarrel -> dur (N a h = 0: 24): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-Salto LP smussate: BE hinf OilSpotUSDBarrel -> dtightness (trimestri dello shock: 0)
-LP smussate BE linf OilSpotUSDBarrel -> dtightness (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     3.162 (bande con lambda/10)
-LP smussate BE htgt OilSpotUSDBarrel -> dtightness (N a h = 0: 27): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate BE ltgt OilSpotUSDBarrel -> dtightness (N a h = 0: 22): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-LP smussate BE hinf TTFSpotEURMWH -> contr (N a h = 0: 19): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate BE linf TTFSpotEURMWH -> contr (N a h = 0: 58): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate BE htgt TTFSpotEURMWH -> contr (N a h = 0: 27): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
-LP smussate BE ltgt TTFSpotEURMWH -> contr (N a h = 0: 24): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate BE hinf TTFSpotEURMWH -> hicp (N a h = 0: 19): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
-LP smussate BE linf TTFSpotEURMWH -> hicp (N a h = 0: 58): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate BE htgt TTFSpotEURMWH -> hicp (N a h = 0: 27): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate BE ltgt TTFSpotEURMWH -> hicp (N a h = 0: 24): lambda relativo scelto per validazione incrociata =   .003162 (bande con lambda/10)
-LP smussate BE hinf TTFSpotEURMWH -> wageH (N a h = 0: 19): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate BE linf TTFSpotEURMWH -> wageH (N a h = 0: 58): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate BE htgt TTFSpotEURMWH -> wageH (N a h = 0: 27): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate BE ltgt TTFSpotEURMWH -> wageH (N a h = 0: 24): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate BE hinf TTFSpotEURMWH -> occH (N a h = 0: 19): lambda relativo scelto per validazione incrociata =         1 (bande con lambda/10)
-LP smussate BE linf TTFSpotEURMWH -> occH (N a h = 0: 58): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate BE htgt TTFSpotEURMWH -> occH (N a h = 0: 27): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate BE ltgt TTFSpotEURMWH -> occH (N a h = 0: 24): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate BE hinf TTFSpotEURMWH -> dur (N a h = 0: 19): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate BE linf TTFSpotEURMWH -> dur (N a h = 0: 58): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate BE htgt TTFSpotEURMWH -> dur (N a h = 0: 27): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate BE ltgt TTFSpotEURMWH -> dur (N a h = 0: 24): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-Salto LP smussate: BE hinf TTFSpotEURMWH -> dtightness (trimestri dello shock: 0)
-LP smussate BE linf TTFSpotEURMWH -> dtightness (N a h = 0: 34): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate BE htgt TTFSpotEURMWH -> dtightness (N a h = 0: 27): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate BE ltgt TTFSpotEURMWH -> dtightness (N a h = 0: 22): lambda relativo scelto per validazione incrociata =       .01 (bande con lambda/10)
+LP smussate BE hbcu OilSpotUSDBarrel -> contr (N a h = 0: 55): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate BE lbcu OilSpotUSDBarrel -> contr (N a h = 0: 47): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate BE hbcu OilSpotUSDBarrel -> hicp (N a h = 0: 55): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+LP smussate BE lbcu OilSpotUSDBarrel -> hicp (N a h = 0: 47): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate BE hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 55): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate BE lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 47): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate BE hbcu OilSpotUSDBarrel -> occH (N a h = 0: 55): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate BE lbcu OilSpotUSDBarrel -> occH (N a h = 0: 47): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate BE hbcu OilSpotUSDBarrel -> dur (N a h = 0: 55): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate BE lbcu OilSpotUSDBarrel -> dur (N a h = 0: 47): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
+LP smussate BE hbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 26): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+LP smussate BE lbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 23): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
+LP smussate BE hbcu TTFSpotEURMWH -> contr (N a h = 0: 44): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate BE lbcu TTFSpotEURMWH -> contr (N a h = 0: 33): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate BE hbcu TTFSpotEURMWH -> hicp (N a h = 0: 44): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate BE lbcu TTFSpotEURMWH -> hicp (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate BE hbcu TTFSpotEURMWH -> wageH (N a h = 0: 44): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate BE lbcu TTFSpotEURMWH -> wageH (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate BE hbcu TTFSpotEURMWH -> occH (N a h = 0: 44): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate BE lbcu TTFSpotEURMWH -> occH (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
+LP smussate BE hbcu TTFSpotEURMWH -> dur (N a h = 0: 44): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate BE lbcu TTFSpotEURMWH -> dur (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate BE hbcu TTFSpotEURMWH -> dtightness (N a h = 0: 26): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate BE lbcu TTFSpotEURMWH -> dtightness (N a h = 0: 23): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
 (1,005 observations deleted)
 
 Time variable: timeq, 1991q1 to 2026q3
         Delta: 1 quarter
-LP smussate EA hinf OilSpotUSDBarrel -> contr (N a h = 0: 22): lambda relativo scelto per validazione incrociata =   .003162 (bande con lambda/10)
-LP smussate EA linf OilSpotUSDBarrel -> contr (N a h = 0: 72): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate EA htgt OilSpotUSDBarrel -> contr (N a h = 0: 38): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate EA ltgt OilSpotUSDBarrel -> contr (N a h = 0: 41): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA hinf OilSpotUSDBarrel -> hicp (N a h = 0: 22): lambda relativo scelto per validazione incrociata =     .0001 (bande con lambda/10)
-LP smussate EA linf OilSpotUSDBarrel -> hicp (N a h = 0: 72): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate EA htgt OilSpotUSDBarrel -> hicp (N a h = 0: 38): lambda relativo scelto per validazione incrociata =         1 (bande con lambda/10)
-LP smussate EA ltgt OilSpotUSDBarrel -> hicp (N a h = 0: 41): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate EA hinf OilSpotUSDBarrel -> wageH (N a h = 0: 22): lambda relativo scelto per validazione incrociata =    .03162 (bande con lambda/10)
-LP smussate EA linf OilSpotUSDBarrel -> wageH (N a h = 0: 72): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA htgt OilSpotUSDBarrel -> wageH (N a h = 0: 38): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate EA ltgt OilSpotUSDBarrel -> wageH (N a h = 0: 41): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate EA hinf OilSpotUSDBarrel -> occH (N a h = 0: 22): lambda relativo scelto per validazione incrociata =    .03162 (bande con lambda/10)
-LP smussate EA linf OilSpotUSDBarrel -> occH (N a h = 0: 72): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA htgt OilSpotUSDBarrel -> occH (N a h = 0: 38): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate EA ltgt OilSpotUSDBarrel -> occH (N a h = 0: 41): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA hinf OilSpotUSDBarrel -> dur (N a h = 0: 22): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate EA linf OilSpotUSDBarrel -> dur (N a h = 0: 72): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate EA htgt OilSpotUSDBarrel -> dur (N a h = 0: 38): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate EA ltgt OilSpotUSDBarrel -> dur (N a h = 0: 41): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA hinf OilSpotUSDBarrel -> dtightness (N a h = 0: 18): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
-LP smussate EA linf OilSpotUSDBarrel -> dtightness (N a h = 0: 59): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA htgt OilSpotUSDBarrel -> dtightness (N a h = 0: 38): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA ltgt OilSpotUSDBarrel -> dtightness (N a h = 0: 39): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate EA hinf TTFSpotEURMWH -> contr (N a h = 0: 18): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
-LP smussate EA linf TTFSpotEURMWH -> contr (N a h = 0: 59): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA htgt TTFSpotEURMWH -> contr (N a h = 0: 38): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate EA ltgt TTFSpotEURMWH -> contr (N a h = 0: 39): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA hinf TTFSpotEURMWH -> hicp (N a h = 0: 18): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate EA linf TTFSpotEURMWH -> hicp (N a h = 0: 59): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA htgt TTFSpotEURMWH -> hicp (N a h = 0: 38): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA ltgt TTFSpotEURMWH -> hicp (N a h = 0: 39): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA hinf TTFSpotEURMWH -> wageH (N a h = 0: 18): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
-LP smussate EA linf TTFSpotEURMWH -> wageH (N a h = 0: 59): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate EA htgt TTFSpotEURMWH -> wageH (N a h = 0: 38): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate EA ltgt TTFSpotEURMWH -> wageH (N a h = 0: 39): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate EA hinf TTFSpotEURMWH -> occH (N a h = 0: 18): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
-LP smussate EA linf TTFSpotEURMWH -> occH (N a h = 0: 59): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate EA htgt TTFSpotEURMWH -> occH (N a h = 0: 38): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA ltgt TTFSpotEURMWH -> occH (N a h = 0: 39): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate EA hinf TTFSpotEURMWH -> dur (N a h = 0: 18): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA linf TTFSpotEURMWH -> dur (N a h = 0: 59): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA htgt TTFSpotEURMWH -> dur (N a h = 0: 38): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate EA ltgt TTFSpotEURMWH -> dur (N a h = 0: 39): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA hinf TTFSpotEURMWH -> dtightness (N a h = 0: 18): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA linf TTFSpotEURMWH -> dtightness (N a h = 0: 59): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA htgt TTFSpotEURMWH -> dtightness (N a h = 0: 38): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA ltgt TTFSpotEURMWH -> dtightness (N a h = 0: 39): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate EA hbcu OilSpotUSDBarrel -> contr (N a h = 0: 53): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate EA lbcu OilSpotUSDBarrel -> contr (N a h = 0: 49): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate EA hbcu OilSpotUSDBarrel -> hicp (N a h = 0: 52): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate EA lbcu OilSpotUSDBarrel -> hicp (N a h = 0: 47): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate EA hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 53): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate EA lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 49): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate EA hbcu OilSpotUSDBarrel -> occH (N a h = 0: 53): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate EA lbcu OilSpotUSDBarrel -> occH (N a h = 0: 49): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate EA hbcu OilSpotUSDBarrel -> dur (N a h = 0: 53): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate EA lbcu OilSpotUSDBarrel -> dur (N a h = 0: 48): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate EA hbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate EA lbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 32): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate EA hbcu TTFSpotEURMWH -> contr (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate EA lbcu TTFSpotEURMWH -> contr (N a h = 0: 32): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate EA hbcu TTFSpotEURMWH -> hicp (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate EA lbcu TTFSpotEURMWH -> hicp (N a h = 0: 32): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
+LP smussate EA hbcu TTFSpotEURMWH -> wageH (N a h = 0: 45): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate EA lbcu TTFSpotEURMWH -> wageH (N a h = 0: 32): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate EA hbcu TTFSpotEURMWH -> occH (N a h = 0: 45): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate EA lbcu TTFSpotEURMWH -> occH (N a h = 0: 32): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
+LP smussate EA hbcu TTFSpotEURMWH -> dur (N a h = 0: 45): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+LP smussate EA lbcu TTFSpotEURMWH -> dur (N a h = 0: 32): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate EA hbcu TTFSpotEURMWH -> dtightness (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate EA lbcu TTFSpotEURMWH -> dtightness (N a h = 0: 32): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
 . 
 .         postclose `pf'
 . 
 .         * Intervalli di confidenza (bande al 90%) ed Excel
 .         use ${out}/lp_energy_iv_ea.dta, clear
-.         drop if inlist(variant, "hinf", "linf", "htgt", "ltgt")
+.         * Risultati salvati + nuove stime: si sostituiscono solo le varianti stimate in questa esecuzione
+.         drop if inlist(variant, "hbcu", "lbcu")
 (0 observations deleted)
 .         drop lo90 hi90
 .         append using ${out}/lp_energy_iv_ea_st.dta
-(variable outcome was str8, now str12 to accommodate using data's values)
 .         
 .         * Bande centrate su bc (= b tranne che per le LP smussate: stima con undersmoothing)
 .         gen lo90 = bc - invnormal(0.95)*se
@@ -993,8 +848,8 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_iv_ea.x
  39.                         qui su tmax `cg' & h == 0
  40.                         local pg1 : di %tq r(max)
  41.                         local qg1 : di %tqYY!qq r(max)
- 42.                         local pl `"(rarea lo90 hi90 h `co', color(navy%25) lwidth(none)) (rarea lo90 hi90 h `cg', color(cranberry%25) lwidth(none)) (line b h `co', lcolor(navy
-> ) lwidth(medthick)) (line b h `cg', lcolor(cranberry) lp(longdash) lwidth(medthick))"'
+ 42.                         local pl `"(rarea lo90 hi90 h `co', color(navy%25) lwidth(none)) (rarea lo90 hi90 h `cg', color(cranberry%25) lwidth(none)) (line b h `co', lcolor(navy)
+>  lwidth(medthick)) (line b h `cg', lcolor(cranberry) lp(longdash) lwidth(medthick))"'
  43.                         * Grafico EA a sé stante, con legenda
 .                         if "`c'" == "EA" {
  44.                                 file open `fh' using "${gph}/smp_`px'_og_EA_`y'.tex", write replace
@@ -1056,8 +911,8 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_iv_ea.x
 .                 if "`gs'" != "" {
  75.                         local tsl ""
  76.                         if inlist("`y'", "contr", "wageH") local tsl `"title("`tts_`y''", position(12) size(medium) margin(zero))"' 
- 77.                         grc1leg `gs', legendfrom(`: word 1 of `gs'') position(6) ring(1) cols(3) imargin(tiny) `tsl' xsize(9) ysize(5) graphregion(color(white) margin(vsmall))
->  name(combsl, replace)
+ 77.                         grc1leg `gs', legendfrom(`: word 1 of `gs'') position(6) ring(1) cols(3) imargin(tiny) `tsl' xsize(9) ysize(5) graphregion(color(white) margin(vsmall)) 
+> name(combsl, replace)
  78.                         * grc1leg non applica xsize/ysize: dimensioni imposte con graph display
 .                         graph display combsl, xsize(9) ysize(5)
  79.                         graph export ${gph}/`px'_ctry_slides_`y'.png, replace width(3000)
@@ -1118,8 +973,8 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_dur
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_dur_sq.png saved as PNG format
 
 . 
-. * --- Eterogeneità (EA, LP-IV smussate): inflazione di fondo alta/bassa (infl) e mercato del lavoro
-. * teso/non teso (tight); petrolio in blu, gas in rosso, stato alto linea continua e scura, stato
+. * --- Eterogeneità (EA, LP-IV smussate): inflazione di fondo alta/bassa (infl), mercato del lavoro
+. * teso/non teso (tight) e ciclo economico favorevole/sfavorevole (bcu); petrolio in blu, gas in rosso, stato alto linea continua e scura, stato
 . * basso tratteggiata e chiara; lp_iv_<stato>_<y>: con bande al 90%; lp_iv_<stato>_<y>_nb: senza bande --- *
 . local col_oh "navy"
 
@@ -1145,11 +1000,15 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_dur
 
 . local lab_tight "labour market tightness"
 
+. local lab_bcu   "business cycle"
+
 . local cod_infl  "inf"
 
 . local cod_tight "tgt"
 
-. foreach st in infl tight {
+. local cod_bcu   "bcu"
+
+. foreach st in infl tight bcu {
   2.         local sc "`cod_`st''"
   3.         foreach y of global lp_outcomes {
   4.                 local sel `"geo == "EA" & inlist(variant, "h`sc'", "l`sc'") & inlist(shock, "`o'", "`g'") & outcome == "`y'""'
@@ -1204,66 +1063,60 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_dur
  45.                 graph export ${gph}/lp_iv_`st'_`y'_nb.png, replace width(3000)
  46.         }
  47. }
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_infl_contr.tex not found)
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_contr.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_contr.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_contr_nb.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_contr_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_infl_hicp.tex not found)
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_hicp.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_hicp.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_hicp_nb.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_hicp_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_infl_wageH.tex not found)
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_wageH.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_wageH.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_wageH_nb.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_wageH_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_infl_occH.tex not found)
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_occH.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_occH.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_occH_nb.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_occH_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_infl_dur.tex not found)
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_dur.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_dur.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_dur_nb.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_dur_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_infl_dtightness.tex not found)
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_dtightness.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_dtightness.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_dtightness_nb.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_dtightness_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_tight_contr.tex not found)
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_contr.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_contr.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_contr_nb.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_contr_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_tight_hicp.tex not found)
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_hicp.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_hicp.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_hicp_nb.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_hicp_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_tight_wageH.tex not found)
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_wageH.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_wageH.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_wageH_nb.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_wageH_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_tight_occH.tex not found)
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_occH.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_occH.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_occH_nb.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_occH_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_tight_dur.tex not found)
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_dur.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_dur.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_dur_nb.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_dur_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_tight_dtightness.tex not found)
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_dtightness.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_dtightness.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_dtightness_nb.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_dtightness_nb.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_bcu_contr.tex not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_contr.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_contr.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_contr_nb.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_contr_nb.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_bcu_hicp.tex not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_hicp.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_hicp.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_hicp_nb.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_hicp_nb.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_bcu_wageH.tex not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_wageH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_wageH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_wageH_nb.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_wageH_nb.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_bcu_occH.tex not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_occH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_occH.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_occH_nb.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_occH_nb.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_bcu_dur.tex not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dur.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dur.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dur_nb.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dur_nb.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_bcu_dtightness.tex not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dtightness.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dtightness.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dtightness_nb.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dtightness_nb.png saved as PNG format
 
 . 
 . local lab_base "Baseline (smooth LP)"
@@ -1406,5 +1259,5 @@ Nessun grafico: nessuna stima EA per TTFSpotEURMWH -> dtightness
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lpiv_energy_ea.txt
   log type:  text
- closed on:  19 Oct 2026, 16:26:03
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ closed on:  20 Oct 2026, 12:24:29
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
