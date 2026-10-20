@@ -277,8 +277,9 @@ if $lp_ivest == 1 {
 	egen p50_tgt1 = median(tgt1), by(geocode)
 	gen byte htgt = tgt1 > p50_tgt1 if !missing(tgt1)
 	hpfilter ur, cycle(bcu) smooth(1600)
-	egen p50_bcu = median(bcu), by(geocode)
-	gen byte hbcu = bcu <= p50_bcu if !missing(bcu)	
+	gen bcu1 = L1.bcu
+	egen p50_bcu1 = median(bcu1), by(geocode)
+	gen byte hbcu = bcu1 <= p50_bcu if !missing(bcu1)	
 	tab geo hinf, missing
 	tab geo htgt, missing
 	tab geo hbcu, missing
