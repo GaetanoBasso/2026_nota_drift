@@ -61,7 +61,8 @@ log using ${log}/log_an_lpiv_energy_ea.txt, t replace
 *                     legenda solo in wageH, asse y -.4(.2).4; lp_iv_ctry_slides_contr e _wageH con titolo
 *                     (c. e d.) in alto a sinistra
 *   lp_iv_infl_*, lp_iv_tight_*, lp_iv_bcu_* : eterogeneità per l'EA (stati alto/basso, petrolio e gas,
-*                     4 linee), con bande al 90%; _nb: senza bande
+*                     4 linee), con bande al 90%; _nb: senza bande; lp_iv_bcu_oil_*: ciclo economico,
+*                     solo petrolio (2 linee, con bande)
 * - Eterogeneità (varianti hinf/linf, htgt/ltgt, hbcu/lbcu): LP-IV smussate con la specificazione di base, sul
 *   sottocampione delle date dello shock t nello stato (equivale a interagire tutti i regressori con
 *   lo stato); hinf: inflazione di fondo (media della var. % a/a dell'HICP core nei 2 trimestri
@@ -672,6 +673,35 @@ foreach st in infl tight bcu {
 			xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) `r(opt)' ///
 			graphregion(color(white)) name(gstn, replace)
 		graph export ${gph}/lp_iv_`st'_`y'_nb.png, replace width(3000)
+		* Ciclo economico, solo petrolio: stato alto e basso con bande al 90% (lp_iv_bcu_oil_<y>)
+		if "`st'" == "bcu" {
+			local pbo ""
+			local pno ""
+			local ko = 0
+			foreach r in h l {
+				local cnd `"if geo == "EA" & variant == "`r'`sc'" & shock == "`o'" & outcome == "`y'""'
+				qui count `cnd'
+				if r(N) == 0 continue
+				local ++ko
+				local pbo `"`pbo' (rarea lo90 hi90 h `cnd', color(`col_o`r''%15) lwidth(none))"'
+				local pno `"`pno' (line b h `cnd', lcolor(`col_o`r'') lpattern(`lpt_`r'') lwidth(medthick))"'
+				local lbo`ko' "`lab_o', `lab_`r'' `lab_`st''"
+			}
+			if `ko' > 0 {
+				local lgo ""
+				forv j = 1/`ko' {
+					local lgo `"`lgo' `=`j'+`ko'' "`lbo`j''""'
+				}
+				qui su lo90 if `sel' & shock == "`o'"
+				local a = r(min)
+				qui su hi90 if `sel' & shock == "`o'"
+				lp_yaxis `a' `r(max)'
+				twoway `pbo' `pno', yline(0, lcolor(black)) legend(order(`lgo') rows(1) position(6) region(lstyle(none))) ///
+					xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) `r(opt)' ///
+					graphregion(color(white)) name(gsto, replace)
+				graph export ${gph}/lp_iv_bcu_oil_`y'.png, replace width(3000)
+			}
+		}
 	}
 }
 

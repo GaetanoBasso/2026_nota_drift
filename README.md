@@ -238,7 +238,8 @@ the robustness variant `unsm`.
   if the observations do not exceed the regressors by at least three, and the whole state if
   fewer than 10 shock dates are left; the log reports N at h = 0 and the smoothing chosen for
   each state. Graphs for the EA: `lp_iv_infl_<outcome>`, `lp_iv_tight_<outcome>` and `lp_iv_bcu_<outcome>`, four lines
-  (oil and gas × high and low state) with 90% bands, and the same without bands (`_nb`); sample
+  (oil and gas × high and low state) with 90% bands, and the same without bands (`_nb`); for the
+  business cycle also `lp_iv_bcu_oil_<outcome>`, oil only (high and low state, with 90% bands); sample
   periods in `graphs/smp_lp_iv_infl_*.tex`, `smp_lp_iv_tight_*.tex` and `smp_lp_iv_bcu_*.tex`.
   Shown in Appendix E of `main_graphs.tex`.
   To estimate only some variants, list them in the `foreach vr in ...` loop of the IV dofile (the
