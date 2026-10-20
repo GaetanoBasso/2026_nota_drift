@@ -62,11 +62,12 @@ log using ${log}/log_an_lpiv_energy_ea.txt, t replace
 *                     (c. e d.) in alto a sinistra
 *   lp_iv_infl_*, lp_iv_tight_* : eterogeneità per l'EA (stati alto/basso, petrolio e gas, 4 linee),
 *                     con bande al 90%; _nb: senza bande
-* - Eterogeneità (varianti hinf/linf, htgt/ltgt): LP-IV smussate con la specificazione di base, sul
+* - Eterogeneità (varianti hinf/linf, htgt/ltgt, hbcu/lbcu): LP-IV smussate con la specificazione di base, sul
 *   sottocampione delle date dello shock t nello stato (equivale a interagire tutti i regressori con
 *   lo stato); hinf: inflazione di fondo (media della var. % a/a dell'HICP core nei 2 trimestri
 *   precedenti) sopra il 75° percentile del paese; htgt: tightness (posti vacanti/disoccupazione)
-*   in t-1 sopra la mediana del paese
+*   in t-1 sopra la mediana del paese; hbcu: alto business cycle misurato da u rate ciclico (residuo di un HP)
+*   minore della mediana del paese in t-1
 * - $lp_ivest == 0: salta la stima e rifà solo i grafici dai risultati salvati
 *   lp_iv_ctry_slides_* : solo paesi (senza EA), petrolio e gas, 2 righe x 3 colonne con legenda sotto (slide)
 *   lp_iv_main_*    : singolo prezzo, EA, asse y fisso -.4(.1).4 (grafici affiancabili)
@@ -267,14 +268,20 @@ if $lp_ivest == 1 {
 	*   precedenti supera il 75° percentile del paese (adattato da Corsello e Foschi, 2026)
 	* - htgt: mercato del lavoro teso se la tightness (tasso di posti vacanti / tasso di
 	*   disoccupazione) in t-1 supera la mediana del paese
+	* - hbcu: mercato del lavoro teso se u rate ciclico (da HP filter residual) 
+	*   in t-1 sta sotto la mediana del paese
 	gen hicpx_bar = (L1.hicpx + L2.hicpx)/2
 	egen p75_hicpx_bar = pctile(hicpx_bar), p(75) by(geocode)
 	gen byte hinf = hicpx_bar > p75_hicpx_bar if !missing(hicpx_bar)
 	gen tgt1 = L1.tightness
 	egen p50_tgt1 = median(tgt1), by(geocode)
 	gen byte htgt = tgt1 > p50_tgt1 if !missing(tgt1)
+	hpfilter ur, cycle(bcu) smooth(1600)
+	egen p50_bcu = median(bcu), by(geocode)
+	gen byte hbcu = bcu <= p50_bcu if !missing(bcu)	
 	tab geo hinf, missing
 	tab geo htgt, missing
+	tab geo hbcu, missing
 
 	* Strumenti disponibili (mensili per posizione nel trimestre e media trimestrale);
 	* deviazione standard dello strumento trimestrale per scalare la forma ridotta
