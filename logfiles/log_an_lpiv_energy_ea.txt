@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lpiv_energy_ea.txt
   log type:  text
- opened on:  20 Oct 2026, 12:20:14
+ opened on:  20 Oct 2026, 12:41:24
 
 . 
 . *******************************************************************************
@@ -61,7 +61,8 @@
 . *                     legenda solo in wageH, asse y -.4(.2).4; lp_iv_ctry_slides_contr e _wageH con titolo
 . *                     (c. e d.) in alto a sinistra
 . *   lp_iv_infl_*, lp_iv_tight_*, lp_iv_bcu_* : eterogeneità per l'EA (stati alto/basso, petrolio e gas,
-. *                     4 linee), con bande al 90%; _nb: senza bande
+. *                     4 linee), con bande al 90%; _nb: senza bande; lp_iv_bcu_oil_*: ciclo economico,
+. *                     solo petrolio (2 linee, con bande)
 . * - Eterogeneità (varianti hinf/linf, htgt/ltgt, hbcu/lbcu): LP-IV smussate con la specificazione di base, sul
 . *   sottocampione delle date dello shock t nello stato (equivale a interagire tutti i regressori con
 . *   lo stato); hinf: inflazione di fondo (media della var. % a/a dell'HICP core nei 2 trimestri
@@ -748,7 +749,7 @@ LP smussate EA lbcu TTFSpotEURMWH -> dtightness (N a h = 0: 32): lambda relativo
 .         use ${out}/lp_energy_iv_ea.dta, clear
 .         * Risultati salvati + nuove stime: si sostituiscono solo le varianti stimate in questa esecuzione
 .         drop if inlist(variant, "hbcu", "lbcu")
-(0 observations deleted)
+(2,184 observations deleted)
 .         drop lo90 hi90
 .         append using ${out}/lp_energy_iv_ea_st.dta
 .         
@@ -1061,8 +1062,37 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_dur
 >                         xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) `r(opt)' ///
 >                         graphregion(color(white)) name(gstn, replace)
  45.                 graph export ${gph}/lp_iv_`st'_`y'_nb.png, replace width(3000)
- 46.         }
- 47. }
+ 46.                 * Ciclo economico, solo petrolio: stato alto e basso con bande al 90% (lp_iv_bcu_oil_<y>)
+.                 if "`st'" == "bcu" {
+ 47.                         local pbo ""
+ 48.                         local pno ""
+ 49.                         local ko = 0
+ 50.                         foreach r in h l {
+ 51.                                 local cnd `"if geo == "EA" & variant == "`r'`sc'" & shock == "`o'" & outcome == "`y'""'
+ 52.                                 qui count `cnd'
+ 53.                                 if r(N) == 0 continue
+ 54.                                 local ++ko
+ 55.                                 local pbo `"`pbo' (rarea lo90 hi90 h `cnd', color(`col_o`r''%15) lwidth(none))"'
+ 56.                                 local pno `"`pno' (line b h `cnd', lcolor(`col_o`r'') lpattern(`lpt_`r'') lwidth(medthick))"'
+ 57.                                 local lbo`ko' "`lab_o', `lab_`r'' `lab_`st''"
+ 58.                         }
+ 59.                         if `ko' > 0 {
+ 60.                                 local lgo ""
+ 61.                                 forv j = 1/`ko' {
+ 62.                                         local lgo `"`lgo' `=`j'+`ko'' "`lbo`j''""'
+ 63.                                 }
+ 64.                                 qui su lo90 if `sel' & shock == "`o'"
+ 65.                                 local a = r(min)
+ 66.                                 qui su hi90 if `sel' & shock == "`o'"
+ 67.                                 lp_yaxis `a' `r(max)'
+ 68.                                 twoway `pbo' `pno', yline(0, lcolor(black)) legend(order(`lgo') rows(1) position(6) region(lstyle(none))) ///
+>                                         xtitle("Quarters") ytitle("pp") xlabel(0(2)$hmax) `r(opt)' ///
+>                                         graphregion(color(white)) name(gsto, replace)
+ 69.                                 graph export ${gph}/lp_iv_bcu_oil_`y'.png, replace width(3000)
+ 70.                         }
+ 71.                 }
+ 72.         }
+ 73. }
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_contr.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_contr_nb.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_hicp.png saved as PNG format
@@ -1087,36 +1117,30 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_dur.p
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_dur_nb.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_dtightness.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_dtightness_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_bcu_contr.tex not found)
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_contr.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_contr.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_contr_nb.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_contr_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_bcu_hicp.tex not found)
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_hicp.png not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_contr.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_contr.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_hicp.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_hicp_nb.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_hicp_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_bcu_wageH.tex not found)
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_wageH.png not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_hicp.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_hicp.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_wageH.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_wageH_nb.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_wageH_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_bcu_occH.tex not found)
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_occH.png not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_wageH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_wageH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_occH.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_occH_nb.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_occH_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_bcu_dur.tex not found)
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dur.png not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_occH.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_occH.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dur.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dur_nb.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dur_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/smp_lp_iv_bcu_dtightness.tex not found)
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dtightness.png not found)
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_dur.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_dur.png saved as PNG format
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dtightness.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dtightness_nb.png not found)
 file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dtightness_nb.png saved as PNG format
+(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_dtightness.png not found)
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_dtightness.png saved as PNG format
 
 . 
 . local lab_base "Baseline (smooth LP)"
@@ -1259,5 +1283,5 @@ Nessun grafico: nessuna stima EA per TTFSpotEURMWH -> dtightness
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lpiv_energy_ea.txt
   log type:  text
- closed on:  20 Oct 2026, 12:24:29
+ closed on:  20 Oct 2026, 12:45:37
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
