@@ -100,7 +100,7 @@ global lp_ivest    = 1
 *******************************************************************************
 
 * Local Projections con variabili strumentali (serie storiche): petrolio strumentato con Mori-Peersman, gas con Alessandri-Gazzani; LP smussate (base), non smussate, forma ridotta
-do ${do}/an_lpiv_energy_ea.do
+*do ${do}/an_lpiv_energy_ea.do
 
 * Local Projections (Jordà, 2005) OLS: shock dei prezzi energetici su retribuzioni e prezzi; robustezza
 *do ${do}/an_lp_energy_ea.do

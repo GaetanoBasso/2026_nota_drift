@@ -1,8 +1,35 @@
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lpiv_energy_ea.txt
   log type:  text
- opened on:  20 Oct 2026, 12:41:24
+ opened on:  22 Oct 2026, 12:15:12
+
+. 
+. * rc3: tutti i ritardi da 2 a 3 (outcome, prezzo e strumento, controlli macro, dummy Covid);
+. * il valore di $lp_lags impostato in master.do è ripristinato alla fine del file
+. local lp_lags_master = $lp_lags
+
+. global lp_lags = 3
+
+. 
+. local gph_master = "$gph"
+
+. global gph = "${home}/graphs/v3"
+
+. 
+. local lp_outcomes_master = "$lp_outcomes"
+
+. global lp_outcomes = "contr wageH"
+
+. 
+. local covid_dum_master = $covid_dum
+
+. global covid_dum = 0
+
+. 
+. local lp_controls_master = "$lp_controls"
+
+. global lp_controls = ""
 
 . 
 . *******************************************************************************
@@ -19,35 +46,40 @@
 . * (e in unsm, pre, rf) lo strumento è la media trimestrale dei 3 shock mensili (z); nella variante umid i 3 shock
 . * mensili del trimestre t (z1, z2, z3: 1°, 2° e 3° mese) sono strumenti separati (U-MIDAS,
 . * Foroni, Marcellino e Schumacher, 2015)
-. *   1° stadio: s(t)   = c(h) + g(h)*z(t) + controlli + u(t)
-. *   2° stadio: y(t+h) = a(h) + b(h)*s_hat(t) + controlli + e(t+h)
+. *   1° stadio: s(t-l) = c(h) + g(h)*z(t) + sum_l d_l(h)*z(t-l) + controlli + u(t),  l = 0,...,$lp_lags
+. *   2° stadio: y(t+h) = a(h) + b(h)*s_hat(t) + sum_l c_l(h)*s_hat(t-l) + controlli + e(t+h)
+. *   (rc2) i $lp_lags ritardi del prezzo non sono più controlli esogeni: sono endogeni e
+. *   strumentati con i $lp_lags ritardi dello strumento (stesso shock: oilMP per il petrolio,
+. *   gasAG per il gas; in umid i ritardi dei 3 shock mensili). Sistema esattamente identificato
+. *   (sovraidentificato in umid). Il campione perde i primi $lp_lags trimestri dello strumento
 . * - s: variazione congiunturale logaritmica del prezzo (100*dln P), divisa per 10, quindi b(h)
 . *   è l'effetto di un aumento del 10% del prezzo (il segno degli strumenti è irrilevante)
-. * - controlli (in entrambi gli stadi): gli stessi delle LP OLS: $lp_lags ritardi di y, s e
-. *   $lp_controls (per dur senza ur, collineare con i ritardi di dur); dummy Covid 2020q1-2022q4
+. * - controlli esogeni (in entrambi gli stadi): $lp_lags ritardi di y e
+. *   $lp_controls (per dur senza ur, collineare con i ritardi di dur); dummy Covid 2020q1-2021q1
 . *   e i suoi $lp_lags ritardi (se $covid_dum == 1)
 . * - errori standard Newey-West: ivreg2, robust kernel(bartlett) bw(h+2), cioè h+1 ritardi
 . *   come newey lag(h+1)
-. * - Forza del 1° stadio: F efficace di Montiel Olea e Pflueger (2013) (weakivtest, Pflueger e
-. *   Wang, 2015; robusto a eteroschedasticità e autocorrelazione come gli errori standard),
-. *   riportato solo nel log (minimo, massimo e valore per ogni orizzonte, con il valore critico);
-. *   strumenti segnalati come deboli se F efficace < valore critico per una distorsione massima
-. *   della 2SLS del $lp_ivtau% (livello 5%)
+. * - Forza del 1° stadio (rc2): con più regressori endogeni il F efficace di Montiel Olea e
+. *   Pflueger (weakivtest) non è applicabile; si riporta il F condizionale di Sanderson e
+. *   Windmeijer (2016) per il prezzo in t (ivreg2, opzione ffirst, stessa matrice di varianza
+. *   robusta), solo nel log; strumenti segnalati come deboli se SW F < 10 (soglia empirica)
 . * - Varianti (variabile variant):
 . *   base = LP-IV smussate (Barnichon e Brownlees, 2019), strumento trimestrale: la risposta
 . *          b(h) = B(h)'theta è una spline cubica (nodi a ogni orizzonte), stimata su tutti gli
 . *          orizzonti insieme con una penalità lambda sulle differenze di ordine $lp_slp_r di
-. *          theta; controlli specifici per orizzonte e non penalizzati (eliminati per
-. *          Frisch-Waugh nel campione di ogni orizzonte); lambda scelto per validazione
-. *          incrociata su 5 blocchi temporali contigui. Intervalli di confidenza con
-. *          undersmoothing: stima e errori standard con lambda/$lp_slp_us (distorsione da
+. *          theta; controlli esogeni specifici per orizzonte e non penalizzati (eliminati per
+. *          Frisch-Waugh nel campione di ogni orizzonte); ritardi del prezzo con coefficienti
+. *          specifici per orizzonte, non penalizzati, strumentati con z e i ritardi di z (rc2);
+. *          lambda scelto per validazione incrociata su 5 blocchi temporali contigui.
+. *          Intervalli di confidenza con undersmoothing: stima e errori standard con lambda/$lp_slp_us (distorsione da
 . *          penalità trascurabile), bande centrate su questa stima (variabile bc), mentre la
 . *          linea è la stima con il lambda della validazione incrociata (b); errori standard
 . *          Newey-West (h+1 ritardi) sui punteggi aggregati per trimestre dello shock
 . *   unsm = LP-IV non smussate, orizzonte per orizzonte (ivreg2), strumento trimestrale
 . *   umid = come unsm, 3 shock mensili come strumenti separati
 . *   pre  = come unsm, solo dati pre-Covid (t e t+h fino al 2019q4), senza dummy Covid
-. *   rf   = forma ridotta: OLS di y(t+h) sullo strumento trimestrale e sugli stessi controlli
+. *   rf   = forma ridotta: OLS di y(t+h) sullo strumento trimestrale, sui suoi ritardi e sui
+. *          controlli esogeni (rc2: i ritardi del prezzo sono sostituiti da quelli dello strumento)
 . *          (newey lag(h+1)), risposta a uno shock di 1 deviazione standard dello strumento
 . * - Campione: le date dello shock t richiedono strumenti, prezzo e controlli; l'outcome
 . *   y(t+h) può andare oltre la fine degli strumenti (nel log: date dello shock e ultimo
@@ -158,40 +190,80 @@
 
 . 
 . * LP-IV smussate (Barnichon e Brownlees, 2019). S: una riga per orizzonte e trimestre dello
-. * shock, colonne y, s, z (già depurati dai controlli nel campione di ogni orizzonte), timeq, h.
+. * shock, colonne y, s, z (già depurati dai controlli esogeni nel campione di ogni orizzonte),
+. * timeq, h e (rc2) nw ritardi del prezzo seguiti da nw ritardi dello strumento, depurati allo
+. * stesso modo. I ritardi del prezzo hanno coefficienti specifici per orizzonte e non penalizzati,
+. * e sono strumentati, orizzonte per orizzonte, da z e dai ritardi dello strumento (con nw = 0
+. * la stima coincide con quella della versione originale).
 . * Restituisce per h = 0,...,H: risposta (lambda della validazione incrociata), centro e errore
 . * standard delle bande (lambda/k, undersmoothing) e lambda scelto (relativo)
 . cap mata: mata drop lp_slp()
 
 . mata:
-------------------------------------------------- mata (type end to exit) -----------------------------------------------------------------------------------------------------------
-: real matrix lp_slp(real matrix S, real scalar H, real scalar r, real scalar k)
+------------------------------------------------- mata (type end to exit) ----------------------------------------------------------------------------------------------------------
+: real matrix lp_slp(real matrix S, real scalar H, real scalar r, real scalar k, real scalar nw)
 > {
->         real colvector y, x, z, t, hh, xh, sel, ut, ts, cs, mse, w, e, b, se
->         real matrix B, D, P, X, Xh, A, th, g, Om, Gl, V
->         real scalar n, K, h, j, sc, i, f, a1, a2, lam, best, m, l, t0, m2
+>         real colvector y, x, z, t, hh, xh, sel, ut, ts, cs, mse, w, e, b, se, th, keep
+>         real matrix B, D, P0, P, X, Xh, A, g, Om, Gl, V, W, Zw, Wh, Zh, Pi
+>         real scalar n, K, Kt, h, j, sc, i, f, a1, a2, lam, best, m, l, t0, m2
 > 
 >         y = S[., 1]; x = S[., 2]; z = S[., 3]; t = S[., 4]; hh = S[., 5]
 >         n = rows(y)
->         // 1° stadio in ogni orizzonte: proiezione di s su z (dati già depurati dai controlli)
+>         if (nw > 0) {
+>                 W  = S[|1, 6 \ n, 5 + nw|]
+>                 Zw = S[|1, 6 + nw \ n, 5 + 2 * nw|]
+>                 Wh = J(n, nw, .)
+>         }
+>         // 1° stadio in ogni orizzonte: proiezione di s (e dei suoi ritardi) su z e sui ritardi dello
+>         // strumento (dati già depurati dai controlli esogeni)
 >         xh = J(n, 1, .)
 >         for (h = 0; h <= H; h++) {
 >                 sel = selectindex(hh :== h)
->                 if (rows(sel)) xh[sel] = z[sel] * (cross(z[sel], x[sel]) / cross(z[sel], z[sel]))
+>                 if (!rows(sel)) continue
+>                 if (nw == 0) {
+>                         xh[sel] = z[sel] * (cross(z[sel], x[sel]) / cross(z[sel], z[sel]))
+>                 }
+>                 else {
+>                         Zh = (z[sel], Zw[sel, .])
+>                         Pi = invsym(cross(Zh, Zh))
+>                         xh[sel] = Zh * (Pi * cross(Zh, x[sel]))
+>                         Wh[sel, .] = Zh * (Pi * cross(Zh, W[sel, .]))
+>                 }
 >         }
 >         // Base spline cubica con nodi a ogni orizzonte: valori agli orizzonti interi 1/6, 4/6, 1/6
 >         K = H + 3
 >         B = J(H + 1, K, 0)
 >         for (h = 0; h <= H; h++) B[|h + 1, h + 1 \ h + 1, h + 3|] = (1, 4, 1) / 6
->         // Penalità sulle differenze di ordine r dei coefficienti della spline
+>         // Penalità sulle differenze di ordine r dei coefficienti della spline (nessuna penalità sui
+>         // coefficienti dei ritardi del prezzo)
 >         D = I(K)
 >         for (j = 1; j <= r; j++) D = D[|2, 1 \ rows(D), K|] - D[|1, 1 \ rows(D) - 1, K|]
->         P = cross(D, D)
->         X  = B[hh :+ 1, .] :* x
->         Xh = B[hh :+ 1, .] :* xh
->         // lambda = c * tr(Xh'X)/tr(P), c scelto per validazione incrociata su 5 blocchi contigui
->         // di trimestri dello shock (errore di previsione di y dato lo strumento)
->         sc = trace(cross(Xh, X)) / trace(P)
+>         P0 = cross(D, D)
+>         Kt = K + (H + 1) * nw
+>         P = J(Kt, Kt, 0)
+>         P[|1, 1 \ K, K|] = P0
+>         X  = J(n, Kt, 0)
+>         Xh = J(n, Kt, 0)
+>         X[|1, 1 \ n, K|]  = B[hh :+ 1, .] :* x
+>         Xh[|1, 1 \ n, K|] = B[hh :+ 1, .] :* xh
+>         if (nw > 0) {
+>                 // Ritardi del prezzo: un blocco di nw colonne per orizzonte
+>                 for (h = 0; h <= H; h++) {
+>                         sel = selectindex(hh :== h)
+>                         if (!rows(sel)) continue
+>                         X[sel, (K + h * nw + 1)..(K + (h + 1) * nw)]  = W[sel, .]
+>                         Xh[sel, (K + h * nw + 1)..(K + (h + 1) * nw)] = Wh[sel, .]
+>                 }
+>                 // Colonne degli orizzonti saltati (tutte nulle) eliminate
+>                 keep = (1::K) \ (K :+ selectindex(colsum(abs(X[|1, K + 1 \ n, Kt|])) :> 0)')
+>                 X = X[., keep]
+>                 Xh = Xh[., keep]
+>                 P = P[keep, keep]
+>                 Kt = rows(keep)
+>         }
+>         // lambda = c * tr(Xh'X)/tr(P) (blocco della spline), c scelto per validazione incrociata su
+>         // 5 blocchi contigui di trimestri dello shock (errore di previsione di y dato lo strumento)
+>         sc = trace(cross(Xh[|1, 1 \ n, K|], X[|1, 1 \ n, K|])) / trace(P0)
 >         cs = 10 :^ ((-8::8) / 2)
 >         ut = uniqrows(t)
 >         m = rows(ut)
@@ -209,34 +281,37 @@
 >         w = order(mse, 1)
 >         best = cs[w[1]]
 >         lam = best * sc
->         b = B * lusolve(cross(Xh, X) + lam * P, cross(Xh, y))
+>         th = lusolve(cross(Xh, X) + lam * P, cross(Xh, y))
+>         b = B * th[|1 \ K|]
 >         // Bande con undersmoothing: stima con lambda/k, su cui sono centrate le bande
 >         A = cross(Xh, X) + (lam / k) * P
 >         th = lusolve(A, cross(Xh, y))
->         // Errori standard: punteggi aggregati per trimestre dello shock, Newey-West con H+1 ritardi
+>         // Errori standard: punteggi aggregati per trimestre dello shock, Newey-West con H+1 ritardi;
+>         // residui strutturali (inclusi i ritardi del prezzo)
 >         e = y - X * th
 >         // righe di g per trimestre effettivo (zeri nei trimestri fuori campione, ad es. nell'altro
 >         // stato): i ritardi di Newey-West restano in trimestri anche nei sottocampioni con buchi
 >         t0 = min(t)
 >         m2 = max(t) - t0 + 1
->         g = J(m2, K, 0)
+>         g = J(m2, Kt, 0)
 >         for (j = 1; j <= m; j++) {
 >                 sel = selectindex(t :== ut[j])
 >                 g[ut[j] - t0 + 1, .] = colsum(Xh[sel, .] :* e[sel])
 >         }
 >         Om = cross(g, g)
 >         for (l = 1; l <= min((H + 1, m2 - 1)); l++) {
->                 Gl = cross(g[|l + 1, 1 \ m2, K|], g[|1, 1 \ m2 - l, K|])
+>                 Gl = cross(g[|l + 1, 1 \ m2, Kt|], g[|1, 1 \ m2 - l, Kt|])
 >                 Om = Om + (1 - l / (H + 2)) * (Gl + Gl')
 >         }
 >         A = luinv(A)
 >         V = A * Om * A'
+>         V = V[|1, 1 \ K, K|]
 >         se = sqrt(diagonal(B * V * B'))
->         return((b, B * th, se, J(H + 1, 1, best)))
+>         return((b, B * th[|1 \ K|], se, J(H + 1, 1, best)))
 > }
 
 : end
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 . 
 . * Stima (solo se $lp_ivest == 1); con $lp_ivest == 0 si salta la stima e i grafici usano
@@ -264,34 +339,58 @@ Panel variable: geocode (unbalanced)
   5.         }
 (273 missing values generated)
 (280 missing values generated)
+(287 missing values generated)
 (581 missing values generated)
 (588 missing values generated)
+(595 missing values generated)
 (102 missing values generated)
 (109 missing values generated)
-(351 missing values generated)
-(351 missing values generated)
+(116 missing values generated)
 (295 missing values generated)
 (301 missing values generated)
-(274 missing values generated)
-(280 missing values generated)
-(63 missing values generated)
-(70 missing values generated)
-(635 missing values generated)
-(641 missing values generated)
-(222 missing values generated)
-(229 missing values generated)
-(56 missing values generated)
-(63 missing values generated)
-(7 missing values generated)
-(14 missing values generated)
+(308 missing values generated)
+. 
+.         * Ritardi degli strumenti (media trimestrale e shock mensili), che strumentano i ritardi del prezzo
+.         foreach z of global lp_ivinstr {
+  2.                 foreach v in `z' `z'1 `z'2 `z'3 {
+  3.                         forv l = 1/$lp_lags {
+  4.                                 gen L`l'_`v' = L`l'.`v'
+  5.                         }
+  6.                 }
+  7.         }
+(21 missing values generated)
+(21 missing values generated)
+(21 missing values generated)
+(21 missing values generated)
+(21 missing values generated)
+(21 missing values generated)
+(21 missing values generated)
+(21 missing values generated)
+(21 missing values generated)
+(21 missing values generated)
+(21 missing values generated)
+(21 missing values generated)
+(455 missing values generated)
+(455 missing values generated)
+(455 missing values generated)
+(455 missing values generated)
+(455 missing values generated)
+(455 missing values generated)
+(448 missing values generated)
+(448 missing values generated)
+(448 missing values generated)
+(448 missing values generated)
+(448 missing values generated)
+(448 missing values generated)
 . 
 .         * Dummy Covid e suoi ritardi
-.         gen byte dcovid = inrange(timeq, tq(2020q1), tq(2022q4))
+.         gen byte dcovid = inrange(timeq, tq(2020q1), tq(2021q1))
 .         forv l = 1/$lp_lags {
   2.                 gen byte L`l'_dcovid = L`l'.dcovid
   3.         }
 (7 missing values generated)
 (14 missing values generated)
+(21 missing values generated)
 . 
 .         * Dummy Covid e ritardi (in tutte le specificazioni tranne pre)
 .         local cv ""
@@ -392,7 +491,7 @@ Panel variable: geocode (unbalanced)
        gasAG |         99   -.0103062    .5941834  -1.845275    1.95203
 . 
 .         tempname pf
-.         postfile `pf' str5 spec str5 geo str4 variant str20 shock str12 outcome byte h double(b bc se) int(N tmin tmax) using ${out}/lp_energy_iv_ea_st.dta, replace
+.         postfile `pf' str5 spec str5 geo str4 variant str20 shock str12 outcome byte h double(b bc se) int(N tmin tmax) using ${out}/lp_energy_iv_ea_st_v3.dta, replace
 . 
 .         local nz : word count $lp_ivshocks
 . 
@@ -408,360 +507,867 @@ Panel variable: geocode (unbalanced)
   6.                         local s : word `j' of $lp_ivshocks
   7.                         local z : word `j' of $lp_ivinstr
   8.                         foreach y of global lp_outcomes {
-  9.                                 local ctrl ""
- 10.                                 forv l = 1/$lp_lags {
- 11.                                         local ctrl "`ctrl' L`l'_`y' L`l'_`s'"
- 12.                                 }
- 13.                                 foreach v of global lp_controls {
- 14.                                         * dur: il livello ur è collineare con i ritardi di dur
+  9.                                 * Controlli esogeni: ritardi di y (e macro, sotto); ritardi del prezzo endogeni (endl)
+.                                 local ctrl ""
+ 10.                                 local endl ""
+ 11.                                 forv l = 1/$lp_lags {
+ 12.                                         local ctrl "`ctrl' L`l'_`y'"
+ 13.                                         local endl "`endl' L`l'_`s'"
+ 14.                                 }
+ 15.                                 foreach v of global lp_controls {
+ 16.                                         * dur: il livello ur è collineare con i ritardi di dur
 .                                         if "`y'" == "dur" & "`v'" == "ur" continue
- 15.                                         forv l = 1/$lp_lags {
- 16.                                                 local ctrl "`ctrl' L`l'_`v'"
- 17.                                         }
- 18.                                 }
- 19.                                 foreach vr in /*unsm umid pre rf base hinf linf htgt ltgt*/ hbcu lbcu {
- 20.                                         * Strumenti: media trimestrale (tutte tranne umid) o shock mensili separati (umid)
+ 17.                                         forv l = 1/$lp_lags {
+ 18.                                                 local ctrl "`ctrl' L`l'_`v'"
+ 19.                                         }
+ 20.                                 }
+ 21.                                 foreach vr in unsm umid pre rf base hinf linf htgt ltgt hbcu lbcu {
+ 22.                                         * Strumenti: media trimestrale (tutte tranne umid) o shock mensili separati (umid)
 .                                         local zi "`z'"
- 21.                                         if "`vr'" == "umid" local zi "`z'1 `z'2 `z'3"
- 22.                                         local xr "`cv'"
- 23.                                         if "`vr'" == "pre"  local xr ""
- 24.                                         local fmin = .
- 25.                                         local fmax = .
- 26.                                         local weak ""
- 27.                                         local flist ""
- 28.                                         local clist ""
- 29.                                         local s0 = .
- 30.                                         local s1 = .
- 31.                                         local ylast = .
- 32.                                         * LP smussate: base e stati (alto/basso: stessa specificazione sul sottocampione delle
+ 23.                                         if "`vr'" == "umid" local zi "`z'1 `z'2 `z'3"
+ 24.                                         * Ritardi degli strumenti, per i ritardi del prezzo
+.                                         local zl ""
+ 25.                                         forv l = 1/$lp_lags {
+ 26.                                                 foreach v of local zi {
+ 27.                                                         local zl "`zl' L`l'_`v'"
+ 28.                                                 }
+ 29.                                         }
+ 30.                                         local xr "`cv'"
+ 31.                                         if "`vr'" == "pre"  local xr ""
+ 32.                                         local fmin = .
+ 33.                                         local fmax = .
+ 34.                                         local weak ""
+ 35.                                         local flist ""
+ 36.                                         local clist ""
+ 37.                                         local s0 = .
+ 38.                                         local s1 = .
+ 39.                                         local ylast = .
+ 40.                                         * LP smussate: base e stati (alto/basso: stessa specificazione sul sottocampione delle
 .                                         * date dello shock nello stato, cioè tutti i regressori interagiti con lo stato)
 .                                         local slp = inlist("`vr'", "base", "hinf", "linf", "htgt", "ltgt", "hbcu", "lbcu")
- 33.                                         local nk : word count `ctrl' `xr'
- 34.                                         if `slp' {
- 35.                                                 mata: S = J(0, 5, .)
- 36.                                                 forv h = 0/$hmax {
- 37.                                                         local N`h' ""
- 38.                                                 }
- 39.                                         }
- 40.                                         forv h = 0/$hmax {
- 41.                                                 local xc ""
- 42.                                                 if "`vr'" == "pre" local xc "& timeq + `h' <= tq(2019q4)"
- 43.                                                 if inlist("`vr'", "hinf", "htgt", "hbcu") local xc "& `vr' == 1"
- 44.                                                 if "`vr'" == "linf" local xc "& hinf == 0"
- 45.                                                 if "`vr'" == "ltgt" local xc "& htgt == 0"
- 46.                                                 if "`vr'" == "lbcu" local xc "& hbcu == 0"
- 47.                                                 cap drop lhs smp
- 48.                                                 qui gen lhs = F`h'.`y'
- 49.                                                 qui gen byte smp = 1 `xc'
- 50.                                                 markout smp lhs `s' `zi' `ctrl' `xr'
- 51.                                                 qui su timeq if smp
- 52.                                                 local t0 = r(min)
- 53.                                                 local t1 = r(max)
- 54.                                                 local N = r(N)
- 55.                                                 * LP smussate: dati dell'orizzonte h depurati dai controlli, stima dopo il ciclo
+ 41.                                         local nk : word count `ctrl' `xr' `endl'
+ 42.                                         if `slp' {
+ 43.                                                 mata: S = J(0, 5 + 2*$lp_lags, .)
+ 44.                                                 forv h = 0/$hmax {
+ 45.                                                         local N`h' ""
+ 46.                                                 }
+ 47.                                         }
+ 48.                                         forv h = 0/$hmax {
+ 49.                                                 local xc ""
+ 50.                                                 if "`vr'" == "pre" local xc "& timeq + `h' <= tq(2019q4)"
+ 51.                                                 if inlist("`vr'", "hinf", "htgt", "hbcu") local xc "& `vr' == 1"
+ 52.                                                 if "`vr'" == "linf" local xc "& hinf == 0"
+ 53.                                                 if "`vr'" == "ltgt" local xc "& htgt == 0"
+ 54.                                                 if "`vr'" == "lbcu" local xc "& hbcu == 0"
+ 55.                                                 cap drop lhs smp
+ 56.                                                 qui gen lhs = F`h'.`y'
+ 57.                                                 qui gen byte smp = 1 `xc'
+ 58.                                                 markout smp lhs `s' `zi' `endl' `zl' `ctrl' `xr'
+ 59.                                                 qui su timeq if smp
+ 60.                                                 local t0 = r(min)
+ 61.                                                 local t1 = r(max)
+ 62.                                                 local N = r(N)
+ 63.                                                 * LP smussate: dati dell'orizzonte h depurati dai controlli, stima dopo il ciclo
 .                                                 * (orizzonte saltato se le osservazioni non superano di almeno 3 i regressori)
 .                                                 if `slp' {
- 56.                                                         if `N' <= `nk' + 2 continue
- 57.                                                         foreach v in lhs `s' `zi' {
- 58.                                                                 qui reg `v' `ctrl' `xr' if smp
- 59.                                                                 cap drop r_`v'
- 60.                                                                 qui predict double r_`v' if smp, resid
- 61.                                                         }
- 62.                                                         cap drop hcur
- 63.                                                         qui gen hcur = `h'
- 64.                                                         mata: S = S \ st_data(., "r_lhs r_`s' r_`zi' timeq hcur", "smp")
- 65.                                                         drop r_lhs r_`s' r_`zi' hcur
- 66.                                                         local N`h' = `N'
- 67.                                                         local t0`h' = `t0'
- 68.                                                         local t1`h' = `t1'
- 69.                                                         continue
- 70.                                                 }
- 71.                                                 * Forma ridotta: risposta a uno shock di 1 deviazione standard dello strumento
-.                                                 if "`vr'" == "rf" {
- 72.                                                         cap newey lhs `zi' `ctrl' `xr' if smp, lag(`=`h'+1')
- 73.                                                         if _rc {
- 74.                                                                 di as txt "Salto: `c' `vr' `s' -> `y', h=`h' (rc=" _rc ")"
- 75.                                                                 continue
- 76.                                                         }
- 77.                                                         post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (_b[`zi']*`sd_`z'') (_b[`zi']*`sd_`z'') (_se[`zi']*`sd_`z'') (e(
-> N)) (`t0') (`t1')
- 78.                                                         continue
- 79.                                                 }
- 80.                                                 cap ivreg2 lhs `ctrl' `xr' (`s' = `zi') if smp, robust kernel(bartlett) bw(`=`h'+2') small
- 81.                                                 if _rc {
- 82.                                                         di as txt "Salto: `c' `vr' `s' -> `y', h=`h' (rc=" _rc ")"
- 83.                                                         local flist "`flist' n.a."
- 84.                                                         local clist "`clist' n.a."
+ 64.                                                         if `N' <= `nk' + 2 continue
+ 65.                                                         local rw ""
+ 66.                                                         local rzw ""
+ 67.                                                         foreach v in `endl' {
+ 68.                                                                 local rw "`rw' r_`v'"
+ 69.                                                         }
+ 70.                                                         foreach v in `zl' {
+ 71.                                                                 local rzw "`rzw' r_`v'"
+ 72.                                                         }
+ 73.                                                         foreach v in lhs `s' `zi' `endl' `zl' {
+ 74.                                                                 qui reg `v' `ctrl' `xr' if smp
+ 75.                                                                 cap drop r_`v'
+ 76.                                                                 qui predict double r_`v' if smp, resid
+ 77.                                                         }
+ 78.                                                         cap drop hcur
+ 79.                                                         qui gen hcur = `h'
+ 80.                                                         mata: S = S \ st_data(., "r_lhs r_`s' r_`zi' timeq hcur `rw' `rzw'", "smp")
+ 81.                                                         drop r_lhs r_`s' r_`zi' hcur `rw' `rzw'
+ 82.                                                         local N`h' = `N'
+ 83.                                                         local t0`h' = `t0'
+ 84.                                                         local t1`h' = `t1'
  85.                                                         continue
  86.                                                 }
- 87.                                                 local b = _b[`s']
- 88.                                                 local se = _se[`s']
- 89.                                                 local N = e(N)
- 90.                                                 * F efficace di Montiel Olea e Pflueger e valore critico (tau = $lp_ivtau%)
+ 87.                                                 * Forma ridotta: risposta a uno shock di 1 deviazione standard dello strumento
+.                                                 if "`vr'" == "rf" {
+ 88.                                                         cap newey lhs `zi' `zl' `ctrl' `xr' if smp, lag(`=`h'+1')
+ 89.                                                         if _rc {
+ 90.                                                                 di as txt "Salto: `c' `vr' `s' -> `y', h=`h' (rc=" _rc ")"
+ 91.                                                                 continue
+ 92.                                                         }
+ 93.                                                         post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (_b[`zi']*`sd_`z'') (_b[`zi']*`sd_`z'') (_se[`zi']*`sd_`z'') (e
+> (N)) (`t0') (`t1')
+ 94.                                                         continue
+ 95.                                                 }
+ 96.                                                 cap ivreg2 lhs `ctrl' `xr' (`s' `endl' = `zi' `zl') if smp, robust kernel(bartlett) bw(`=`h'+2') small ffirst
+ 97.                                                 if _rc {
+ 98.                                                         di as txt "Salto: `c' `vr' `s' -> `y', h=`h' (rc=" _rc ")"
+ 99.                                                         local flist "`flist' n.a."
+100.                                                         local clist "`clist' n.a."
+101.                                                         continue
+102.                                                 }
+103.                                                 local b = _b[`s']
+104.                                                 local se = _se[`s']
+105.                                                 local N = e(N)
+106.                                                 * Più regressori endogeni: F condizionale di Sanderson e Windmeijer per il prezzo in t
+.                                                 * (riga SWF della matrice e(first) di ivreg2, ffirst), soglia empirica 10
 .                                                 local F = .
- 91.                                                 local ccrit = .
- 92.                                                 cap weakivtest, level(0.05)
- 93.                                                 if !_rc {
- 94.                                                         local F = r(F_eff)
- 95.                                                         local ccrit = r(c_TSLS_$lp_ivtau)
- 96.                                                 }
- 97.                                                 local flist "`flist' `: di %5.1f `F''"
- 98.                                                 local clist "`clist' `: di %5.1f `ccrit''"
- 99.                                                 local fmin = min(`fmin', `F')
-100.                                                 local fmax = max(`fmax', `F')
-101.                                                 if !missing(`F', `ccrit') & `F' < `ccrit' local weak "`weak' `h'"
-102.                                                 * Date dello shock (orizzonte 0) e ultimo trimestre dell'outcome usato
+107.                                                 local ccrit = 10
+108.                                                 cap {
+109.                                                         tempname FS
+110.                                                         mat `FS' = e(first)
+111.                                                         local F = el(`FS', rownumb(`FS', "SWF"), colnumb(`FS', "`s'"))
+112.                                                 }
+113.                                                 local flist "`flist' `: di %5.1f `F''"
+114.                                                 local clist "`clist' `: di %5.1f `ccrit''"
+115.                                                 local fmin = min(`fmin', `F')
+116.                                                 local fmax = max(`fmax', `F')
+117.                                                 if !missing(`F', `ccrit') & `F' < `ccrit' local weak "`weak' `h'"
+118.                                                 * Date dello shock (orizzonte 0) e ultimo trimestre dell'outcome usato
 .                                                 if `h' == 0 {
-103.                                                         local s0 = `t0'
-104.                                                         local s1 = `t1'
-105.                                                 }
-106.                                                 local ylast = max(`ylast', `t1' + `h')
-107.                                                 post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (`b') (`b') (`se') (`N') (`t0') (`t1')
-108.                                         }
-109.                                         if `slp' {
-110.                                                 * Servono almeno 10 trimestri dello shock (validazione incrociata su 5 blocchi)
-.                                                 mata: st_local("nS", strofreal(rows(S) ? rows(uniqrows(S[., 4])) : 0))
-111.                                                 if `nS' < 10 {
-112.                                                         di as txt "Salto LP smussate: `c' `vr' `s' -> `y' (trimestri dello shock: `nS')"
-113.                                                         continue
-114.                                                 }
-115.                                                 mata: st_matrix("R", lp_slp(S, $hmax, $lp_slp_r, $lp_slp_us))
-116.                                                 di as txt "LP smussate `c' `vr' `s' -> `y' (N a h = 0: `N0'): lambda relativo scelto per validazione incrociata = " %9.4g el(R, 
-> 1, 4) " (bande con lambda/$lp_slp_us)"
-117.                                                 forv h = 0/$hmax {
-118.                                                         if "`N`h''" == "" continue
-119.                                                         post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (el(R, `h'+1, 1)) (el(R, `h'+1, 2)) (el(R, `h'+1, 3)) (`N`h'') (
-> `t0`h'') (`t1`h'')
-120.                                                         local N`h' ""
+119.                                                         local s0 = `t0'
+120.                                                         local s1 = `t1'
 121.                                                 }
-122.                                         }
-123.                                         if "`vr'" == "rf" | `slp' continue
-124.                                         di as txt "1° stadio `c' `vr' `s' (strumenti `zi') -> `y': F efficace di Montiel Olea-Pflueger min " %6.1f `fmin' ", max " %6.1f `fmax'
-125.                                         di as txt "  F efficace per h = 0,...,$hmax:`flist'"
-126.                                         di as txt "  valore critico (tau = $lp_ivtau%):`clist'"
-127.                                         di as txt "  campione: shock " %tq `s0' "-" %tq `s1' " (h = 0); outcome fino a " %tq `ylast'
-128.                                         if "`weak'" != "" di as err "  ATTENZIONE: strumenti deboli (F efficace < valore critico) per h =`weak'"
-129.                                 }
-130.                         }
-131.                 }
-132.                 restore
-133.         }
+122.                                                 local ylast = max(`ylast', `t1' + `h')
+123.                                                 post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (`b') (`b') (`se') (`N') (`t0') (`t1')
+124.                                         }
+125.                                         if `slp' {
+126.                                                 * Servono almeno 10 trimestri dello shock (validazione incrociata su 5 blocchi)
+.                                                 mata: st_local("nS", strofreal(rows(S) ? rows(uniqrows(S[., 4])) : 0))
+127.                                                 if `nS' < 10 {
+128.                                                         di as txt "Salto LP smussate: `c' `vr' `s' -> `y' (trimestri dello shock: `nS')"
+129.                                                         continue
+130.                                                 }
+131.                                                 mata: st_matrix("R", lp_slp(S, $hmax, $lp_slp_r, $lp_slp_us, $lp_lags))
+132.                                                 di as txt "LP smussate `c' `vr' `s' -> `y' (N a h = 0: `N0'): lambda relativo scelto per validazione incrociata = " %9.4g el(R,
+>  1, 4) " (bande con lambda/$lp_slp_us)"
+133.                                                 forv h = 0/$hmax {
+134.                                                         if "`N`h''" == "" continue
+135.                                                         post `pf' ("ts") ("`c'") ("`vr'") ("`s'") ("`y'") (`h') (el(R, `h'+1, 1)) (el(R, `h'+1, 2)) (el(R, `h'+1, 3)) (`N`h'') 
+> (`t0`h'') (`t1`h'')
+136.                                                         local N`h' ""
+137.                                                 }
+138.                                         }
+139.                                         if "`vr'" == "rf" | `slp' continue
+140.                                         di as txt "1° stadio `c' `vr' `s' `endl' (strumenti `zi' `zl') -> `y': F di Sanderson-Windmeijer per `s' min " %6.1f `fmin' ", max " %6
+> .1f `fmax'
+141.                                         di as txt "  SW F per h = 0,...,$hmax:`flist'"
+142.                                         di as txt "  soglia (empirica):`clist'"
+143.                                         di as txt "  campione: shock " %tq `s0' "-" %tq `s1' " (h = 0); outcome fino a " %tq `ylast'
+144.                                         if "`weak'" != "" di as err "  ATTENZIONE: strumenti deboli (SW F < 10) per h =`weak'"
+145.                                 }
+146.                         }
+147.                 }
+148.                 restore
+149.         }
 (1,005 observations deleted)
 
 Time variable: timeq, 1991q1 to 2026q3
         Delta: 1 quarter
-LP smussate DE hbcu OilSpotUSDBarrel -> contr (N a h = 0: 62): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE lbcu OilSpotUSDBarrel -> contr (N a h = 0: 59): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate DE hbcu OilSpotUSDBarrel -> hicp (N a h = 0: 58): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate DE lbcu OilSpotUSDBarrel -> hicp (N a h = 0: 56): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate DE hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 59): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 59): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
-LP smussate DE hbcu OilSpotUSDBarrel -> occH (N a h = 0: 62): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE lbcu OilSpotUSDBarrel -> occH (N a h = 0: 59): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE hbcu OilSpotUSDBarrel -> dur (N a h = 0: 62): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE lbcu OilSpotUSDBarrel -> dur (N a h = 0: 59): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate DE hbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 32): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
-LP smussate DE lbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 26): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE hbcu TTFSpotEURMWH -> contr (N a h = 0: 43): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate DE lbcu TTFSpotEURMWH -> contr (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate DE hbcu TTFSpotEURMWH -> hicp (N a h = 0: 43): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate DE lbcu TTFSpotEURMWH -> hicp (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate DE hbcu TTFSpotEURMWH -> wageH (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate DE lbcu TTFSpotEURMWH -> wageH (N a h = 0: 34): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate DE hbcu TTFSpotEURMWH -> occH (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate DE lbcu TTFSpotEURMWH -> occH (N a h = 0: 34): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-LP smussate DE hbcu TTFSpotEURMWH -> dur (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE lbcu TTFSpotEURMWH -> dur (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate DE hbcu TTFSpotEURMWH -> dtightness (N a h = 0: 32): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate DE lbcu TTFSpotEURMWH -> dtightness (N a h = 0: 26): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+1° stadio DE unsm OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> contr: F di Sanderson-Windmeijer pe
+> r OilSpotUSDBarrel min   34.9, max   56.4
+  SW F per h = 0,...,12:  34.9  35.2  38.1  42.8  48.4  52.4  55.7  51.0  56.4  55.6  49.2  49.0  45.2
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q1-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio DE umid OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3  L1_oilMP1 L1_oilMP2 L1_oilMP3 L2_oilMP1 L2_oilMP2 L
+> 2_oilMP3 L3_oilMP1 L3_oilMP2 L3_oilMP3) -> contr: F di Sanderson-Windmeijer per OilSpotUSDBarrel min   13.4, max   41.6
+  SW F per h = 0,...,12:  13.4  15.2  17.9  21.2  22.2  25.7  25.1  28.2  29.7  30.2  34.4  38.2  41.6
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q1-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio DE pre OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> contr: F di Sanderson-Windmeijer per
+>  OilSpotUSDBarrel min   50.5, max  124.7
+  SW F per h = 0,...,12:  51.7  50.5  74.4  83.1  90.8  98.0 111.0 107.5 117.7 124.7 122.1 104.4  96.4
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q1-2019q4 (h = 0); outcome fino a 2019q4
+LP smussate DE base OilSpotUSDBarrel -> contr (N a h = 0: 120): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate DE hinf OilSpotUSDBarrel -> contr (N a h = 0: 27): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
+LP smussate DE linf OilSpotUSDBarrel -> contr (N a h = 0: 87): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate DE htgt OilSpotUSDBarrel -> contr (N a h = 0: 31): lambda relativo scelto per validazione incrociata =     .0001 (bande con lambda/10)
+LP smussate DE ltgt OilSpotUSDBarrel -> contr (N a h = 0: 29): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate DE hbcu OilSpotUSDBarrel -> contr (N a h = 0: 61): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate DE lbcu OilSpotUSDBarrel -> contr (N a h = 0: 59): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+1° stadio DE unsm OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> wageH: F di Sanderson-Windmeijer pe
+> r OilSpotUSDBarrel min   26.9, max   46.1
+  SW F per h = 0,...,12:  26.9  29.2  31.3  34.0  38.4  43.9  46.1  41.1  44.8  41.7  41.5  41.0  45.6
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio DE umid OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3  L1_oilMP1 L1_oilMP2 L1_oilMP3 L2_oilMP1 L2_oilMP2 L
+> 2_oilMP3 L3_oilMP1 L3_oilMP2 L3_oilMP3) -> wageH: F di Sanderson-Windmeijer per OilSpotUSDBarrel min   14.2, max   44.7
+  SW F per h = 0,...,12:  14.2  15.6  18.7  21.6  24.2  25.4  26.5  29.7  32.2  32.3  34.1  38.2  44.7
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio DE pre OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> wageH: F di Sanderson-Windmeijer per
+>  OilSpotUSDBarrel min   49.1, max  112.9
+  SW F per h = 0,...,12:  54.2  49.1  71.0  73.4  77.1  76.9  82.7  82.4  91.0 112.4 112.9  99.4  93.0
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2019q4 (h = 0); outcome fino a 2019q4
+LP smussate DE base OilSpotUSDBarrel -> wageH (N a h = 0: 117): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate DE hinf OilSpotUSDBarrel -> wageH (N a h = 0: 27): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate DE linf OilSpotUSDBarrel -> wageH (N a h = 0: 87): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+LP smussate DE htgt OilSpotUSDBarrel -> wageH (N a h = 0: 31): lambda relativo scelto per validazione incrociata =     .0001 (bande con lambda/10)
+LP smussate DE ltgt OilSpotUSDBarrel -> wageH (N a h = 0: 29): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate DE hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 58): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate DE lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 59): lambda relativo scelto per validazione incrociata =     3.162 (bande con lambda/10)
+1° stadio DE unsm TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> contr: F di Sanderson-Windmeijer per TTFSpotEUR
+> MWH min    6.5, max   14.6
+  SW F per h = 0,...,12:   8.2   8.2   8.0   6.5   7.1   6.7   7.6   9.1  10.9  10.6  11.1  10.6  14.6
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4 5 6 7
+1° stadio DE umid TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3  L1_gasAG1 L1_gasAG2 L1_gasAG3 L2_gasAG1 L2_gasAG2 L2_gasAG3 L3_
+> gasAG1 L3_gasAG2 L3_gasAG3) -> contr: F di Sanderson-Windmeijer per TTFSpotEURMWH min    6.6, max   26.8
+  SW F per h = 0,...,12:   6.6   7.6  10.0   9.3  12.5  13.9  13.0  18.5  24.5  25.4  26.8  22.8  19.1
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3
+1° stadio DE pre TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> contr: F di Sanderson-Windmeijer per TTFSpotEURM
+> WH min    0.0, max    3.2
+  SW F per h = 0,...,12:   3.2   1.4   1.8   0.6   0.4   1.1   2.9   0.3   0.1   0.0   0.0   0.0   0.1
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2019q4 (h = 0); outcome fino a 2019q4
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
+LP smussate DE base TTFSpotEURMWH -> contr (N a h = 0: 76): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate DE hinf TTFSpotEURMWH -> contr (N a h = 0: 25): lambda relativo scelto per validazione incrociata =     .0001 (bande con lambda/10)
+LP smussate DE linf TTFSpotEURMWH -> contr (N a h = 0: 51): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate DE htgt TTFSpotEURMWH -> contr (N a h = 0: 31): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate DE ltgt TTFSpotEURMWH -> contr (N a h = 0: 29): lambda relativo scelto per validazione incrociata =      .001 (bande con lambda/10)
+LP smussate DE hbcu TTFSpotEURMWH -> contr (N a h = 0: 43): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+LP smussate DE lbcu TTFSpotEURMWH -> contr (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+1° stadio DE unsm TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> wageH: F di Sanderson-Windmeijer per TTFSpotEUR
+> MWH min    8.4, max   12.1
+  SW F per h = 0,...,12:  10.8  10.5  11.2  10.4  10.8   8.4   8.9   9.9  11.0  10.8  11.2  10.8  12.1
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 5 6 7
+1° stadio DE umid TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3  L1_gasAG1 L1_gasAG2 L1_gasAG3 L2_gasAG1 L2_gasAG2 L2_gasAG3 L3_
+> gasAG1 L3_gasAG2 L3_gasAG3) -> wageH: F di Sanderson-Windmeijer per TTFSpotEURMWH min    8.1, max   32.0
+  SW F per h = 0,...,12:   8.1   8.6  12.1  11.7  12.4  14.4  13.9  19.8  25.7  26.1  32.0  28.5  24.2
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1
+1° stadio DE pre TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> wageH: F di Sanderson-Windmeijer per TTFSpotEURM
+> WH min    0.8, max   17.8
+  SW F per h = 0,...,12:   4.3   1.3   2.3   2.5   5.6  10.4  14.7  17.1  17.8  16.2  10.9   5.0   0.8
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2019q4 (h = 0); outcome fino a 2019q4
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4 11 12
+LP smussate DE base TTFSpotEURMWH -> wageH (N a h = 0: 76): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
+LP smussate DE hinf TTFSpotEURMWH -> wageH (N a h = 0: 25): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
+LP smussate DE linf TTFSpotEURMWH -> wageH (N a h = 0: 51): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate DE htgt TTFSpotEURMWH -> wageH (N a h = 0: 31): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate DE ltgt TTFSpotEURMWH -> wageH (N a h = 0: 29): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
+LP smussate DE hbcu TTFSpotEURMWH -> wageH (N a h = 0: 43): lambda relativo scelto per validazione incrociata =       .01 (bande con lambda/10)
+LP smussate DE lbcu TTFSpotEURMWH -> wageH (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
 (973 observations deleted)
 
 Time variable: timeq, 1983q1 to 2026q3
         Delta: 1 quarter
-LP smussate IT hbcu OilSpotUSDBarrel -> contr (N a h = 0: 57): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate IT lbcu OilSpotUSDBarrel -> contr (N a h = 0: 64): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT hbcu OilSpotUSDBarrel -> hicp (N a h = 0: 57): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate IT lbcu OilSpotUSDBarrel -> hicp (N a h = 0: 57): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate IT hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 57): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate IT lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 61): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT hbcu OilSpotUSDBarrel -> occH (N a h = 0: 57): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT lbcu OilSpotUSDBarrel -> occH (N a h = 0: 64): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT hbcu OilSpotUSDBarrel -> dur (N a h = 0: 57): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT lbcu OilSpotUSDBarrel -> dur (N a h = 0: 64): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT hbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 46): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT lbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 39): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT hbcu TTFSpotEURMWH -> contr (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     3.162 (bande con lambda/10)
-LP smussate IT lbcu TTFSpotEURMWH -> contr (N a h = 0: 32): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT hbcu TTFSpotEURMWH -> hicp (N a h = 0: 45): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
-LP smussate IT lbcu TTFSpotEURMWH -> hicp (N a h = 0: 32): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate IT hbcu TTFSpotEURMWH -> wageH (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate IT lbcu TTFSpotEURMWH -> wageH (N a h = 0: 32): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-LP smussate IT hbcu TTFSpotEURMWH -> occH (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT lbcu TTFSpotEURMWH -> occH (N a h = 0: 32): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate IT hbcu TTFSpotEURMWH -> dur (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate IT lbcu TTFSpotEURMWH -> dur (N a h = 0: 32): lambda relativo scelto per validazione incrociata =     .0001 (bande con lambda/10)
-LP smussate IT hbcu TTFSpotEURMWH -> dtightness (N a h = 0: 45): lambda relativo scelto per validazione incrociata =         1 (bande con lambda/10)
-LP smussate IT lbcu TTFSpotEURMWH -> dtightness (N a h = 0: 32): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+1° stadio IT unsm OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> contr: F di Sanderson-Windmeijer pe
+> r OilSpotUSDBarrel min   32.4, max   49.7
+  SW F per h = 0,...,12:  36.9  35.2  38.1  41.7  45.6  47.6  49.7  44.9  47.5  41.9  34.0  36.2  32.4
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q1-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio IT umid OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3  L1_oilMP1 L1_oilMP2 L1_oilMP3 L2_oilMP1 L2_oilMP2 L
+> 2_oilMP3 L3_oilMP1 L3_oilMP2 L3_oilMP3) -> contr: F di Sanderson-Windmeijer per OilSpotUSDBarrel min   11.5, max   37.8
+  SW F per h = 0,...,12:  11.5  11.7  14.1  16.0  16.4  18.1  19.7  23.2  25.1  25.5  29.2  33.5  37.8
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q1-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio IT pre OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> contr: F di Sanderson-Windmeijer per
+>  OilSpotUSDBarrel min   47.8, max   93.7
+  SW F per h = 0,...,12:  53.2  47.8  66.8  73.4  80.6  80.7  88.0  87.0  92.2  93.7  93.5  80.3  73.4
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q1-2019q4 (h = 0); outcome fino a 2019q4
+LP smussate IT base OilSpotUSDBarrel -> contr (N a h = 0: 120): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT hinf OilSpotUSDBarrel -> contr (N a h = 0: 24): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate IT linf OilSpotUSDBarrel -> contr (N a h = 0: 74): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT htgt OilSpotUSDBarrel -> contr (N a h = 0: 42): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
+LP smussate IT ltgt OilSpotUSDBarrel -> contr (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT hbcu OilSpotUSDBarrel -> contr (N a h = 0: 57): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
+LP smussate IT lbcu OilSpotUSDBarrel -> contr (N a h = 0: 63): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+1° stadio IT unsm OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> wageH: F di Sanderson-Windmeijer pe
+> r OilSpotUSDBarrel min   36.7, max   68.8
+  SW F per h = 0,...,12:  36.9  36.7  44.2  50.1  53.2  59.4  66.4  62.7  66.2  65.1  64.8  67.1  68.8
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio IT umid OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3  L1_oilMP1 L1_oilMP2 L1_oilMP3 L2_oilMP1 L2_oilMP2 L
+> 2_oilMP3 L3_oilMP1 L3_oilMP2 L3_oilMP3) -> wageH: F di Sanderson-Windmeijer per OilSpotUSDBarrel min   12.3, max   34.8
+  SW F per h = 0,...,12:  12.3  12.8  15.0  17.0  17.5  18.3  19.4  23.5  24.1  24.5  28.1  31.0  34.8
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio IT pre OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> wageH: F di Sanderson-Windmeijer per
+>  OilSpotUSDBarrel min   48.6, max   99.0
+  SW F per h = 0,...,12:  52.6  48.6  64.9  65.4  69.6  70.5  76.8  78.1  85.2  98.9  99.0  87.4  78.0
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2019q4 (h = 0); outcome fino a 2019q4
+LP smussate IT base OilSpotUSDBarrel -> wageH (N a h = 0: 117): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT hinf OilSpotUSDBarrel -> wageH (N a h = 0: 24): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
+LP smussate IT linf OilSpotUSDBarrel -> wageH (N a h = 0: 74): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT htgt OilSpotUSDBarrel -> wageH (N a h = 0: 42): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate IT ltgt OilSpotUSDBarrel -> wageH (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 57): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
+LP smussate IT lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 60): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+1° stadio IT unsm TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> contr: F di Sanderson-Windmeijer per TTFSpotEUR
+> MWH min    8.9, max   63.0
+  SW F per h = 0,...,12:   9.5   8.9   9.5  10.7  12.6  15.3  14.1  16.7  17.8  19.3  21.0  35.1  63.0
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2
+1° stadio IT umid TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3  L1_gasAG1 L1_gasAG2 L1_gasAG3 L2_gasAG1 L2_gasAG2 L2_gasAG3 L3_
+> gasAG1 L3_gasAG2 L3_gasAG3) -> contr: F di Sanderson-Windmeijer per TTFSpotEURMWH min    7.4, max   44.8
+  SW F per h = 0,...,12:   7.4   9.5  15.6  13.3  16.2  19.5  23.3  28.6  39.5  33.6  40.5  43.1  44.8
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1
+1° stadio IT pre TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> contr: F di Sanderson-Windmeijer per TTFSpotEURM
+> WH min    0.0, max    3.6
+  SW F per h = 0,...,12:   1.2   1.1   0.5   1.7   1.8   3.6   0.8   0.7   0.3   0.1   0.0   0.1   0.1
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2019q4 (h = 0); outcome fino a 2019q4
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
+LP smussate IT base TTFSpotEURMWH -> contr (N a h = 0: 76): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT hinf TTFSpotEURMWH -> contr (N a h = 0: 16): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT linf TTFSpotEURMWH -> contr (N a h = 0: 60): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate IT htgt TTFSpotEURMWH -> contr (N a h = 0: 36): lambda relativo scelto per validazione incrociata =         1 (bande con lambda/10)
+LP smussate IT ltgt TTFSpotEURMWH -> contr (N a h = 0: 40): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+LP smussate IT hbcu TTFSpotEURMWH -> contr (N a h = 0: 44): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+LP smussate IT lbcu TTFSpotEURMWH -> contr (N a h = 0: 32): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+1° stadio IT unsm TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> wageH: F di Sanderson-Windmeijer per TTFSpotEUR
+> MWH min    7.0, max   11.5
+  SW F per h = 0,...,12:   8.7   8.4   8.9   8.7   9.2   7.0   7.3   8.2   9.7   9.3   9.5   9.5  11.5
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4 5 6 7 8 9 10 11
+1° stadio IT umid TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3  L1_gasAG1 L1_gasAG2 L1_gasAG3 L2_gasAG1 L2_gasAG2 L2_gasAG3 L3_
+> gasAG1 L3_gasAG2 L3_gasAG3) -> wageH: F di Sanderson-Windmeijer per TTFSpotEURMWH min    6.9, max   21.6
+  SW F per h = 0,...,12:   6.9   7.3   9.6   9.2  10.7  11.7  12.9  17.0  21.4  20.1  21.6  19.2  17.9
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3
+1° stadio IT pre TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> wageH: F di Sanderson-Windmeijer per TTFSpotEURM
+> WH min    1.3, max   15.4
+  SW F per h = 0,...,12:   1.3   1.8   3.7   3.6   4.7   4.6   9.4   7.3  15.4   8.0   6.0   2.0   3.0
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2019q4 (h = 0); outcome fino a 2019q4
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4 5 6 7 9 10 11 12
+LP smussate IT base TTFSpotEURMWH -> wageH (N a h = 0: 76): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate IT hinf TTFSpotEURMWH -> wageH (N a h = 0: 16): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate IT linf TTFSpotEURMWH -> wageH (N a h = 0: 60): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate IT htgt TTFSpotEURMWH -> wageH (N a h = 0: 36): lambda relativo scelto per validazione incrociata =       .01 (bande con lambda/10)
+LP smussate IT ltgt TTFSpotEURMWH -> wageH (N a h = 0: 40): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate IT hbcu TTFSpotEURMWH -> wageH (N a h = 0: 44): lambda relativo scelto per validazione incrociata =    .03162 (bande con lambda/10)
+LP smussate IT lbcu TTFSpotEURMWH -> wageH (N a h = 0: 32): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
 (973 observations deleted)
 
 Time variable: timeq, 1983q1 to 2026q3
         Delta: 1 quarter
-LP smussate NL hbcu OilSpotUSDBarrel -> contr (N a h = 0: 49): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+1° stadio NL unsm OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> contr: F di Sanderson-Windmeijer pe
+> r OilSpotUSDBarrel min   48.0, max  100.1
+  SW F per h = 0,...,12:  49.9  48.0  60.1  61.6  62.3  69.5  73.4  71.5  77.3  81.8  87.3  85.5 100.1
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2001q4-2025q4 (h = 0); outcome fino a 2026q3
+1° stadio NL umid OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3  L1_oilMP1 L1_oilMP2 L1_oilMP3 L2_oilMP1 L2_oilMP2 L
+> 2_oilMP3 L3_oilMP1 L3_oilMP2 L3_oilMP3) -> contr: F di Sanderson-Windmeijer per OilSpotUSDBarrel min   10.3, max   36.1
+  SW F per h = 0,...,12:  11.0  10.3  13.3  14.0  15.7  17.3  18.4  20.1  23.0  22.9  25.3  30.0  36.1
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2001q4-2025q4 (h = 0); outcome fino a 2026q3
+1° stadio NL pre OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> contr: F di Sanderson-Windmeijer per
+>  OilSpotUSDBarrel min   17.6, max   67.9
+  SW F per h = 0,...,12:  19.7  18.8  17.6  17.9  18.8  21.1  23.2  22.7  26.2  49.4  53.2  60.6  67.9
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2001q4-2019q4 (h = 0); outcome fino a 2019q4
+LP smussate NL base OilSpotUSDBarrel -> contr (N a h = 0: 97): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL hinf OilSpotUSDBarrel -> contr (N a h = 0: 23): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
+LP smussate NL linf OilSpotUSDBarrel -> contr (N a h = 0: 74): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL htgt OilSpotUSDBarrel -> contr (N a h = 0: 35): lambda relativo scelto per validazione incrociata =     .0001 (bande con lambda/10)
+LP smussate NL ltgt OilSpotUSDBarrel -> contr (N a h = 0: 36): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL hbcu OilSpotUSDBarrel -> contr (N a h = 0: 48): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
 LP smussate NL lbcu OilSpotUSDBarrel -> contr (N a h = 0: 49): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL hbcu OilSpotUSDBarrel -> hicp (N a h = 0: 53): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate NL lbcu OilSpotUSDBarrel -> hicp (N a h = 0: 49): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate NL hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 53): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate NL lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 49): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate NL hbcu OilSpotUSDBarrel -> occH (N a h = 0: 53): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate NL lbcu OilSpotUSDBarrel -> occH (N a h = 0: 49): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL hbcu OilSpotUSDBarrel -> dur (N a h = 0: 53): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL lbcu OilSpotUSDBarrel -> dur (N a h = 0: 49): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate NL hbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 36): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL lbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     3.162 (bande con lambda/10)
-LP smussate NL hbcu TTFSpotEURMWH -> contr (N a h = 0: 42): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-LP smussate NL lbcu TTFSpotEURMWH -> contr (N a h = 0: 35): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
-LP smussate NL hbcu TTFSpotEURMWH -> hicp (N a h = 0: 42): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL lbcu TTFSpotEURMWH -> hicp (N a h = 0: 35): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate NL hbcu TTFSpotEURMWH -> wageH (N a h = 0: 42): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate NL lbcu TTFSpotEURMWH -> wageH (N a h = 0: 35): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
-LP smussate NL hbcu TTFSpotEURMWH -> occH (N a h = 0: 42): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL lbcu TTFSpotEURMWH -> occH (N a h = 0: 35): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate NL hbcu TTFSpotEURMWH -> dur (N a h = 0: 42): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL lbcu TTFSpotEURMWH -> dur (N a h = 0: 35): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL hbcu TTFSpotEURMWH -> dtightness (N a h = 0: 36): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate NL lbcu TTFSpotEURMWH -> dtightness (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+1° stadio NL unsm OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> wageH: F di Sanderson-Windmeijer pe
+> r OilSpotUSDBarrel min   30.9, max   75.2
+  SW F per h = 0,...,12:  30.9  34.5  40.8  46.5  54.9  61.4  69.0  66.5  73.3  68.5  70.1  69.3  75.2
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio NL umid OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3  L1_oilMP1 L1_oilMP2 L1_oilMP3 L2_oilMP1 L2_oilMP2 L
+> 2_oilMP3 L3_oilMP1 L3_oilMP2 L3_oilMP3) -> wageH: F di Sanderson-Windmeijer per OilSpotUSDBarrel min   13.5, max   65.1
+  SW F per h = 0,...,12:  13.5  14.7  18.5  21.7  22.8  28.2  30.3  34.9  37.3  38.2  44.1  58.2  65.1
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio NL pre OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> wageH: F di Sanderson-Windmeijer per
+>  OilSpotUSDBarrel min   38.0, max  128.7
+  SW F per h = 0,...,12:  42.6  38.0  49.2  50.2  55.1  55.5  62.0  60.9  67.9 105.1 111.2 122.1 128.7
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2019q4 (h = 0); outcome fino a 2019q4
+LP smussate NL base OilSpotUSDBarrel -> wageH (N a h = 0: 117): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate NL hinf OilSpotUSDBarrel -> wageH (N a h = 0: 24): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL linf OilSpotUSDBarrel -> wageH (N a h = 0: 74): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate NL htgt OilSpotUSDBarrel -> wageH (N a h = 0: 35): lambda relativo scelto per validazione incrociata =     .0001 (bande con lambda/10)
+LP smussate NL ltgt OilSpotUSDBarrel -> wageH (N a h = 0: 36): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
+LP smussate NL hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 62): lambda relativo scelto per validazione incrociata =       .01 (bande con lambda/10)
+LP smussate NL lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 55): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+1° stadio NL unsm TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> contr: F di Sanderson-Windmeijer per TTFSpotEUR
+> MWH min    9.4, max   30.6
+  SW F per h = 0,...,12:   9.6   9.4   9.9  10.9  10.5  11.6  11.3  11.6  15.7  21.8  22.9  23.3  30.6
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q3
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2
+1° stadio NL umid TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3  L1_gasAG1 L1_gasAG2 L1_gasAG3 L2_gasAG1 L2_gasAG2 L2_gasAG3 L3_
+> gasAG1 L3_gasAG2 L3_gasAG3) -> contr: F di Sanderson-Windmeijer per TTFSpotEURMWH min    7.1, max   27.3
+  SW F per h = 0,...,12:   7.1   7.9  11.6   9.7  11.6  12.5  12.6  10.9  14.3  13.9  15.4  16.3  27.3
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q3
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 3
+1° stadio NL pre TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> contr: F di Sanderson-Windmeijer per TTFSpotEURM
+> WH min    0.9, max   10.2
+  SW F per h = 0,...,12:   2.9   0.9   2.4   2.5   4.3   2.7   4.0   4.9   4.0   3.8   1.2   2.6  10.2
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2019q4 (h = 0); outcome fino a 2019q4
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4 5 6 7 8 9 10 11
+LP smussate NL base TTFSpotEURMWH -> contr (N a h = 0: 76): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
+LP smussate NL hinf TTFSpotEURMWH -> contr (N a h = 0: 16): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL linf TTFSpotEURMWH -> contr (N a h = 0: 60): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL htgt TTFSpotEURMWH -> contr (N a h = 0: 35): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL ltgt TTFSpotEURMWH -> contr (N a h = 0: 36): lambda relativo scelto per validazione incrociata =     .0001 (bande con lambda/10)
+LP smussate NL hbcu TTFSpotEURMWH -> contr (N a h = 0: 42): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
+LP smussate NL lbcu TTFSpotEURMWH -> contr (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+1° stadio NL unsm TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> wageH: F di Sanderson-Windmeijer per TTFSpotEUR
+> MWH min    9.2, max   13.5
+  SW F per h = 0,...,12:   9.2   9.2   9.8   9.8  10.5   9.2   9.6  10.6  12.3  12.3  13.4  12.8  13.5
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 5 6
+1° stadio NL umid TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3  L1_gasAG1 L1_gasAG2 L1_gasAG3 L2_gasAG1 L2_gasAG2 L2_gasAG3 L3_
+> gasAG1 L3_gasAG2 L3_gasAG3) -> wageH: F di Sanderson-Windmeijer per TTFSpotEURMWH min    6.1, max   20.2
+  SW F per h = 0,...,12:   6.4   6.1   8.0   8.1   8.5   8.7  10.3  13.6  20.2  17.2  19.4  17.5  19.1
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4 5
+1° stadio NL pre TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> wageH: F di Sanderson-Windmeijer per TTFSpotEURM
+> WH min    1.2, max    9.4
+  SW F per h = 0,...,12:   5.6   1.9   2.8   5.3   3.1   3.6   4.9   3.6   3.1   2.2   1.2   1.2   9.4
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2019q4 (h = 0); outcome fino a 2019q4
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
+LP smussate NL base TTFSpotEURMWH -> wageH (N a h = 0: 76): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL hinf TTFSpotEURMWH -> wageH (N a h = 0: 16): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
+LP smussate NL linf TTFSpotEURMWH -> wageH (N a h = 0: 60): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
+LP smussate NL htgt TTFSpotEURMWH -> wageH (N a h = 0: 35): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate NL ltgt TTFSpotEURMWH -> wageH (N a h = 0: 36): lambda relativo scelto per validazione incrociata =     .0001 (bande con lambda/10)
+LP smussate NL hbcu TTFSpotEURMWH -> wageH (N a h = 0: 42): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate NL lbcu TTFSpotEURMWH -> wageH (N a h = 0: 34): lambda relativo scelto per validazione incrociata =  .0003162 (bande con lambda/10)
 (973 observations deleted)
 
 Time variable: timeq, 1983q1 to 2026q3
         Delta: 1 quarter
-LP smussate ES hbcu OilSpotUSDBarrel -> contr (N a h = 0: 64): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-LP smussate ES lbcu OilSpotUSDBarrel -> contr (N a h = 0: 57): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES hbcu OilSpotUSDBarrel -> hicp (N a h = 0: 64): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate ES lbcu OilSpotUSDBarrel -> hicp (N a h = 0: 50): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 64): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate ES lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 54): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES hbcu OilSpotUSDBarrel -> occH (N a h = 0: 64): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES lbcu OilSpotUSDBarrel -> occH (N a h = 0: 57): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES hbcu OilSpotUSDBarrel -> dur (N a h = 0: 64): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate ES lbcu OilSpotUSDBarrel -> dur (N a h = 0: 57): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate ES hbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 36): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate ES lbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 25): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate ES hbcu TTFSpotEURMWH -> contr (N a h = 0: 46): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
-LP smussate ES lbcu TTFSpotEURMWH -> contr (N a h = 0: 31): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate ES hbcu TTFSpotEURMWH -> hicp (N a h = 0: 46): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate ES lbcu TTFSpotEURMWH -> hicp (N a h = 0: 31): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-LP smussate ES hbcu TTFSpotEURMWH -> wageH (N a h = 0: 46): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES lbcu TTFSpotEURMWH -> wageH (N a h = 0: 31): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES hbcu TTFSpotEURMWH -> occH (N a h = 0: 46): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES lbcu TTFSpotEURMWH -> occH (N a h = 0: 31): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
-LP smussate ES hbcu TTFSpotEURMWH -> dur (N a h = 0: 46): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate ES lbcu TTFSpotEURMWH -> dur (N a h = 0: 31): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate ES hbcu TTFSpotEURMWH -> dtightness (N a h = 0: 36): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate ES lbcu TTFSpotEURMWH -> dtightness (N a h = 0: 25): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
+1° stadio ES unsm OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> contr: F di Sanderson-Windmeijer pe
+> r OilSpotUSDBarrel min   25.3, max   40.1
+  SW F per h = 0,...,12:  25.7  25.3  28.7  30.9  34.2  37.2  40.1  36.4  36.5  36.3  32.7  33.6  29.1
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q1-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio ES umid OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3  L1_oilMP1 L1_oilMP2 L1_oilMP3 L2_oilMP1 L2_oilMP2 L
+> 2_oilMP3 L3_oilMP1 L3_oilMP2 L3_oilMP3) -> contr: F di Sanderson-Windmeijer per OilSpotUSDBarrel min   11.7, max   46.7
+  SW F per h = 0,...,12:  11.7  13.0  16.0  18.4  20.3  23.2  26.6  30.0  32.7  32.6  35.8  42.5  46.7
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q1-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio ES pre OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> contr: F di Sanderson-Windmeijer per
+>  OilSpotUSDBarrel min   46.7, max  148.0
+  SW F per h = 0,...,12:  47.6  46.7  73.4  78.0  89.1  93.0 108.8 107.0 117.7 147.5 148.0 129.8 119.7
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q1-2019q4 (h = 0); outcome fino a 2019q4
+LP smussate ES base OilSpotUSDBarrel -> contr (N a h = 0: 120): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES hinf OilSpotUSDBarrel -> contr (N a h = 0: 22): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES linf OilSpotUSDBarrel -> contr (N a h = 0: 72): lambda relativo scelto per validazione incrociata =     3.162 (bande con lambda/10)
+LP smussate ES htgt OilSpotUSDBarrel -> contr (N a h = 0: 30): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES ltgt OilSpotUSDBarrel -> contr (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     .0001 (bande con lambda/10)
+LP smussate ES hbcu OilSpotUSDBarrel -> contr (N a h = 0: 64): lambda relativo scelto per validazione incrociata =     3.162 (bande con lambda/10)
+LP smussate ES lbcu OilSpotUSDBarrel -> contr (N a h = 0: 56): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+1° stadio ES unsm OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> wageH: F di Sanderson-Windmeijer pe
+> r OilSpotUSDBarrel min   28.5, max   58.5
+  SW F per h = 0,...,12:  28.5  32.5  37.0  41.8  44.0  47.3  51.8  51.2  53.8  54.8  55.2  57.9  58.5
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio ES umid OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3  L1_oilMP1 L1_oilMP2 L1_oilMP3 L2_oilMP1 L2_oilMP2 L
+> 2_oilMP3 L3_oilMP1 L3_oilMP2 L3_oilMP3) -> wageH: F di Sanderson-Windmeijer per OilSpotUSDBarrel min   11.0, max   44.7
+  SW F per h = 0,...,12:  11.0  12.5  14.7  18.2  19.0  20.7  22.4  26.9  29.7  31.0  34.5  40.4  44.7
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio ES pre OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> wageH: F di Sanderson-Windmeijer per
+>  OilSpotUSDBarrel min   36.8, max   91.2
+  SW F per h = 0,...,12:  37.5  36.8  43.3  48.5  51.0  55.9  66.1  69.5  77.4  91.2  90.6  90.5  83.7
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2019q4 (h = 0); outcome fino a 2019q4
+LP smussate ES base OilSpotUSDBarrel -> wageH (N a h = 0: 117): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES hinf OilSpotUSDBarrel -> wageH (N a h = 0: 22): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES linf OilSpotUSDBarrel -> wageH (N a h = 0: 72): lambda relativo scelto per validazione incrociata =       .01 (bande con lambda/10)
+LP smussate ES htgt OilSpotUSDBarrel -> wageH (N a h = 0: 30): lambda relativo scelto per validazione incrociata =       .01 (bande con lambda/10)
+LP smussate ES ltgt OilSpotUSDBarrel -> wageH (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 64): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate ES lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 53): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+1° stadio ES unsm TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> contr: F di Sanderson-Windmeijer per TTFSpotEUR
+> MWH min    8.6, max   22.0
+  SW F per h = 0,...,12:   9.6   9.5   9.6   9.6  10.2   8.6   9.1  10.7  12.5  12.3  12.6  12.7  22.0
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 5 6
+1° stadio ES umid TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3  L1_gasAG1 L1_gasAG2 L1_gasAG3 L2_gasAG1 L2_gasAG2 L2_gasAG3 L3_
+> gasAG1 L3_gasAG2 L3_gasAG3) -> contr: F di Sanderson-Windmeijer per TTFSpotEURMWH min    9.2, max   32.8
+  SW F per h = 0,...,12:   9.2  10.9  15.9  14.3  19.2  19.0  22.5  26.0  31.9  30.4  32.8  29.2  24.7
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0
+1° stadio ES pre TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> contr: F di Sanderson-Windmeijer per TTFSpotEURM
+> WH min    0.5, max    8.4
+  SW F per h = 0,...,12:   3.8   1.7   3.7   4.9   5.3   8.4   6.9   6.7   6.6   4.5   4.2   1.9   0.5
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2019q4 (h = 0); outcome fino a 2019q4
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
+LP smussate ES base TTFSpotEURMWH -> contr (N a h = 0: 76): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES hinf TTFSpotEURMWH -> contr (N a h = 0: 12): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES linf TTFSpotEURMWH -> contr (N a h = 0: 64): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES htgt TTFSpotEURMWH -> contr (N a h = 0: 30): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES ltgt TTFSpotEURMWH -> contr (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES hbcu TTFSpotEURMWH -> contr (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES lbcu TTFSpotEURMWH -> contr (N a h = 0: 31): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+1° stadio ES unsm TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> wageH: F di Sanderson-Windmeijer per TTFSpotEUR
+> MWH min    9.3, max   17.8
+  SW F per h = 0,...,12:  10.0   9.7  10.5  10.6  11.1   9.3   9.5  10.0  11.7  11.8  12.6  15.2  17.8
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 1 5 6 7
+1° stadio ES umid TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3  L1_gasAG1 L1_gasAG2 L1_gasAG3 L2_gasAG1 L2_gasAG2 L2_gasAG3 L3_
+> gasAG1 L3_gasAG2 L3_gasAG3) -> wageH: F di Sanderson-Windmeijer per TTFSpotEURMWH min    7.1, max   24.7
+  SW F per h = 0,...,12:   7.3   7.1   9.0   8.3   9.8  10.9  14.1  17.0  23.8  24.6  24.7  21.1  17.4
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4
+1° stadio ES pre TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> wageH: F di Sanderson-Windmeijer per TTFSpotEURM
+> WH min    1.6, max    7.7
+  SW F per h = 0,...,12:   2.5   1.6   3.8   5.6   4.5   5.1   6.9   7.7   7.2   5.0   3.0   3.9   4.9
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2019q4 (h = 0); outcome fino a 2019q4
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
+LP smussate ES base TTFSpotEURMWH -> wageH (N a h = 0: 76): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES hinf TTFSpotEURMWH -> wageH (N a h = 0: 12): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
+LP smussate ES linf TTFSpotEURMWH -> wageH (N a h = 0: 64): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES htgt TTFSpotEURMWH -> wageH (N a h = 0: 30): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES ltgt TTFSpotEURMWH -> wageH (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     .0001 (bande con lambda/10)
+LP smussate ES hbcu TTFSpotEURMWH -> wageH (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate ES lbcu TTFSpotEURMWH -> wageH (N a h = 0: 31): lambda relativo scelto per validazione incrociata =     3.162 (bande con lambda/10)
 (973 observations deleted)
 
 Time variable: timeq, 1983q1 to 2026q3
         Delta: 1 quarter
-LP smussate FR hbcu OilSpotUSDBarrel -> contr (N a h = 0: 61): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR lbcu OilSpotUSDBarrel -> contr (N a h = 0: 60): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate FR hbcu OilSpotUSDBarrel -> hicp (N a h = 0: 58): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate FR lbcu OilSpotUSDBarrel -> hicp (N a h = 0: 56): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate FR hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 58): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate FR lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 60): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate FR hbcu OilSpotUSDBarrel -> occH (N a h = 0: 61): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate FR lbcu OilSpotUSDBarrel -> occH (N a h = 0: 60): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate FR hbcu OilSpotUSDBarrel -> dur (N a h = 0: 61): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR lbcu OilSpotUSDBarrel -> dur (N a h = 0: 60): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
-LP smussate FR hbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 43): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate FR lbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+1° stadio FR unsm OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> contr: F di Sanderson-Windmeijer pe
+> r OilSpotUSDBarrel min   32.4, max   57.1
+  SW F per h = 0,...,12:  32.4  32.7  36.5  40.6  47.2  51.4  57.1  53.2  55.1  50.4  48.7  49.7  47.6
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q1-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio FR umid OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3  L1_oilMP1 L1_oilMP2 L1_oilMP3 L2_oilMP1 L2_oilMP2 L
+> 2_oilMP3 L3_oilMP1 L3_oilMP2 L3_oilMP3) -> contr: F di Sanderson-Windmeijer per OilSpotUSDBarrel min   10.8, max   39.7
+  SW F per h = 0,...,12:  10.8  11.7  14.2  16.1  16.2  17.4  18.7  22.8  24.5  27.0  29.5  34.5  39.7
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q1-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio FR pre OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> contr: F di Sanderson-Windmeijer per
+>  OilSpotUSDBarrel min   67.9, max  203.7
+  SW F per h = 0,...,12:  70.7  67.9  94.1 106.7 129.4 150.7 161.5 132.2 144.4 203.7 200.0 177.7 152.8
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q1-2019q4 (h = 0); outcome fino a 2019q4
+LP smussate FR base OilSpotUSDBarrel -> contr (N a h = 0: 120): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate FR hinf OilSpotUSDBarrel -> contr (N a h = 0: 28): lambda relativo scelto per validazione incrociata =     .0001 (bande con lambda/10)
+LP smussate FR linf OilSpotUSDBarrel -> contr (N a h = 0: 86): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate FR htgt OilSpotUSDBarrel -> contr (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate FR ltgt OilSpotUSDBarrel -> contr (N a h = 0: 47): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate FR hbcu OilSpotUSDBarrel -> contr (N a h = 0: 60): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate FR lbcu OilSpotUSDBarrel -> contr (N a h = 0: 60): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+1° stadio FR unsm OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> wageH: F di Sanderson-Windmeijer pe
+> r OilSpotUSDBarrel min   27.5, max   52.8
+  SW F per h = 0,...,12:  27.5  27.6  32.4  35.8  39.5  42.0  43.5  42.8  45.1  44.2  46.3  48.0  52.8
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio FR umid OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3  L1_oilMP1 L1_oilMP2 L1_oilMP3 L2_oilMP1 L2_oilMP2 L
+> 2_oilMP3 L3_oilMP1 L3_oilMP2 L3_oilMP3) -> wageH: F di Sanderson-Windmeijer per OilSpotUSDBarrel min   10.8, max   37.5
+  SW F per h = 0,...,12:  10.8  11.1  13.4  15.4  16.6  18.3  19.8  22.7  24.6  26.3  29.4  33.0  37.5
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio FR pre OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> wageH: F di Sanderson-Windmeijer per
+>  OilSpotUSDBarrel min   47.8, max  172.5
+  SW F per h = 0,...,12:  50.6  47.8  82.0  85.3 104.7 110.2 127.2 115.8 124.5 169.1 172.5 149.8 132.0
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2019q4 (h = 0); outcome fino a 2019q4
+LP smussate FR base OilSpotUSDBarrel -> wageH (N a h = 0: 117): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate FR hinf OilSpotUSDBarrel -> wageH (N a h = 0: 28): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
+LP smussate FR linf OilSpotUSDBarrel -> wageH (N a h = 0: 86): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
+LP smussate FR htgt OilSpotUSDBarrel -> wageH (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate FR ltgt OilSpotUSDBarrel -> wageH (N a h = 0: 47): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate FR hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 58): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate FR lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 59): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+1° stadio FR unsm TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> contr: F di Sanderson-Windmeijer per TTFSpotEUR
+> MWH min    6.6, max   18.2
+  SW F per h = 0,...,12:   6.6   8.3  10.0   9.5  11.4  11.0  10.5  11.2  14.4  16.7  15.6  18.2  13.9
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3
+1° stadio FR umid TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3  L1_gasAG1 L1_gasAG2 L1_gasAG3 L2_gasAG1 L2_gasAG2 L2_gasAG3 L3_
+> gasAG1 L3_gasAG2 L3_gasAG3) -> contr: F di Sanderson-Windmeijer per TTFSpotEURMWH min   22.1, max   81.5
+  SW F per h = 0,...,12:  22.1  29.8  39.3  33.9  34.9  33.1  31.9  47.1  77.4  74.7  81.5  63.0  31.3
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio FR pre TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> contr: F di Sanderson-Windmeijer per TTFSpotEURM
+> WH min    0.0, max    4.8
+  SW F per h = 0,...,12:   4.8   1.8   3.1   0.7   0.2   0.8   0.6   0.0   0.0   0.1   0.3   0.2   0.1
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2019q4 (h = 0); outcome fino a 2019q4
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
+LP smussate FR base TTFSpotEURMWH -> contr (N a h = 0: 76): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate FR hinf TTFSpotEURMWH -> contr (N a h = 0: 18): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate FR linf TTFSpotEURMWH -> contr (N a h = 0: 58): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate FR htgt TTFSpotEURMWH -> contr (N a h = 0: 43): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate FR ltgt TTFSpotEURMWH -> contr (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     3.162 (bande con lambda/10)
 LP smussate FR hbcu TTFSpotEURMWH -> contr (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR lbcu TTFSpotEURMWH -> contr (N a h = 0: 34): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate FR hbcu TTFSpotEURMWH -> hicp (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR lbcu TTFSpotEURMWH -> hicp (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR hbcu TTFSpotEURMWH -> wageH (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR lbcu TTFSpotEURMWH -> wageH (N a h = 0: 34): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate FR hbcu TTFSpotEURMWH -> occH (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR lbcu TTFSpotEURMWH -> occH (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR hbcu TTFSpotEURMWH -> dur (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR lbcu TTFSpotEURMWH -> dur (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
-LP smussate FR hbcu TTFSpotEURMWH -> dtightness (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate FR lbcu TTFSpotEURMWH -> dtightness (N a h = 0: 34): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate FR lbcu TTFSpotEURMWH -> contr (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
+1° stadio FR unsm TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> wageH: F di Sanderson-Windmeijer per TTFSpotEUR
+> MWH min    7.9, max   11.2
+  SW F per h = 0,...,12:   8.7   8.9   9.9   9.8   9.9   7.9   8.3   9.6  10.6  10.4  10.4  10.1  11.2
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4 5 6 7
+1° stadio FR umid TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3  L1_gasAG1 L1_gasAG2 L1_gasAG3 L2_gasAG1 L2_gasAG2 L2_gasAG3 L3_
+> gasAG1 L3_gasAG2 L3_gasAG3) -> wageH: F di Sanderson-Windmeijer per TTFSpotEURMWH min    7.4, max   24.7
+  SW F per h = 0,...,12:   7.4   7.5  10.3   9.7  10.9  12.9  13.0  20.2  24.3  23.7  24.7  22.1  19.7
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 3
+1° stadio FR pre TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> wageH: F di Sanderson-Windmeijer per TTFSpotEURM
+> WH min    0.0, max    2.7
+  SW F per h = 0,...,12:   2.4   2.2   2.6   2.7   0.8   2.0   1.0   0.0   0.1   0.0   0.5   0.5   0.5
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2019q4 (h = 0); outcome fino a 2019q4
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
+LP smussate FR base TTFSpotEURMWH -> wageH (N a h = 0: 76): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate FR hinf TTFSpotEURMWH -> wageH (N a h = 0: 18): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
+LP smussate FR linf TTFSpotEURMWH -> wageH (N a h = 0: 58): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate FR htgt TTFSpotEURMWH -> wageH (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate FR ltgt TTFSpotEURMWH -> wageH (N a h = 0: 33): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+LP smussate FR hbcu TTFSpotEURMWH -> wageH (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
+LP smussate FR lbcu TTFSpotEURMWH -> wageH (N a h = 0: 33): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
 (986 observations deleted)
 
 Time variable: timeq, 1986q2 to 2026q3
         Delta: 1 quarter
-LP smussate BE hbcu OilSpotUSDBarrel -> contr (N a h = 0: 55): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate BE lbcu OilSpotUSDBarrel -> contr (N a h = 0: 47): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate BE hbcu OilSpotUSDBarrel -> hicp (N a h = 0: 55): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-LP smussate BE lbcu OilSpotUSDBarrel -> hicp (N a h = 0: 47): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate BE hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 55): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate BE lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 47): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate BE hbcu OilSpotUSDBarrel -> occH (N a h = 0: 55): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate BE lbcu OilSpotUSDBarrel -> occH (N a h = 0: 47): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate BE hbcu OilSpotUSDBarrel -> dur (N a h = 0: 55): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate BE lbcu OilSpotUSDBarrel -> dur (N a h = 0: 47): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
-LP smussate BE hbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 26): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-LP smussate BE lbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 23): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
-LP smussate BE hbcu TTFSpotEURMWH -> contr (N a h = 0: 44): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate BE lbcu TTFSpotEURMWH -> contr (N a h = 0: 33): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate BE hbcu TTFSpotEURMWH -> hicp (N a h = 0: 44): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate BE lbcu TTFSpotEURMWH -> hicp (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate BE hbcu TTFSpotEURMWH -> wageH (N a h = 0: 44): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate BE lbcu TTFSpotEURMWH -> wageH (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate BE hbcu TTFSpotEURMWH -> occH (N a h = 0: 44): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate BE lbcu TTFSpotEURMWH -> occH (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
-LP smussate BE hbcu TTFSpotEURMWH -> dur (N a h = 0: 44): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate BE lbcu TTFSpotEURMWH -> dur (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate BE hbcu TTFSpotEURMWH -> dtightness (N a h = 0: 26): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate BE lbcu TTFSpotEURMWH -> dtightness (N a h = 0: 23): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+1° stadio BE unsm OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> contr: F di Sanderson-Windmeijer pe
+> r OilSpotUSDBarrel min   34.6, max   53.4
+  SW F per h = 0,...,12:  35.2  34.6  39.1  42.6  45.1  49.7  53.4  49.4  49.4  45.6  44.1  43.0  42.9
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q1-2025q4 (h = 0); outcome fino a 2026q3
+1° stadio BE umid OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3  L1_oilMP1 L1_oilMP2 L1_oilMP3 L2_oilMP1 L2_oilMP2 L
+> 2_oilMP3 L3_oilMP1 L3_oilMP2 L3_oilMP3) -> contr: F di Sanderson-Windmeijer per OilSpotUSDBarrel min   12.7, max   44.6
+  SW F per h = 0,...,12:  12.7  13.6  16.6  18.6  20.5  22.6  24.1  25.6  32.2  32.1  34.1  39.3  44.6
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q1-2025q4 (h = 0); outcome fino a 2026q3
+1° stadio BE pre OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> contr: F di Sanderson-Windmeijer per
+>  OilSpotUSDBarrel min   56.8, max  165.0
+  SW F per h = 0,...,12:  66.9  56.8  92.1 104.4 126.6 131.3 156.4 148.2 160.2 165.0 160.9 140.9 107.0
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q1-2019q4 (h = 0); outcome fino a 2019q4
+LP smussate BE base OilSpotUSDBarrel -> contr (N a h = 0: 120): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate BE hinf OilSpotUSDBarrel -> contr (N a h = 0: 24): lambda relativo scelto per validazione incrociata =         1 (bande con lambda/10)
+LP smussate BE linf OilSpotUSDBarrel -> contr (N a h = 0: 78): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+LP smussate BE htgt OilSpotUSDBarrel -> contr (N a h = 0: 27): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
+LP smussate BE ltgt OilSpotUSDBarrel -> contr (N a h = 0: 24): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate BE hbcu OilSpotUSDBarrel -> contr (N a h = 0: 61): lambda relativo scelto per validazione incrociata =     .0001 (bande con lambda/10)
+LP smussate BE lbcu OilSpotUSDBarrel -> contr (N a h = 0: 59): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+1° stadio BE unsm OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> wageH: F di Sanderson-Windmeijer pe
+> r OilSpotUSDBarrel min   33.7, max   67.7
+  SW F per h = 0,...,12:  34.3  33.7  39.1  47.6  49.4  55.2  57.3  59.0  64.6  66.2  63.7  65.5  67.7
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2025q4 (h = 0); outcome fino a 2026q1
+1° stadio BE umid OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3  L1_oilMP1 L1_oilMP2 L1_oilMP3 L2_oilMP1 L2_oilMP2 L
+> 2_oilMP3 L3_oilMP1 L3_oilMP2 L3_oilMP3) -> wageH: F di Sanderson-Windmeijer per OilSpotUSDBarrel min   12.1, max   36.7
+  SW F per h = 0,...,12:  12.1  12.6  14.7  16.9  17.5  20.2  23.1  24.8  25.9  26.6  28.3  32.1  36.7
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2025q4 (h = 0); outcome fino a 2026q1
+1° stadio BE pre OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> wageH: F di Sanderson-Windmeijer per
+>  OilSpotUSDBarrel min   30.8, max   53.6
+  SW F per h = 0,...,12:  36.7  30.8  38.7  39.1  39.9  41.1  42.5  41.2  42.4  50.7  52.0  53.6  50.0
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2019q4 (h = 0); outcome fino a 2019q4
+LP smussate BE base OilSpotUSDBarrel -> wageH (N a h = 0: 117): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate BE hinf OilSpotUSDBarrel -> wageH (N a h = 0: 24): lambda relativo scelto per validazione incrociata =     3.162 (bande con lambda/10)
+LP smussate BE linf OilSpotUSDBarrel -> wageH (N a h = 0: 78): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate BE htgt OilSpotUSDBarrel -> wageH (N a h = 0: 27): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
+LP smussate BE ltgt OilSpotUSDBarrel -> wageH (N a h = 0: 24): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+LP smussate BE hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 61): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate BE lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 56): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+1° stadio BE unsm TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> contr: F di Sanderson-Windmeijer per TTFSpotEUR
+> MWH min    7.9, max   43.5
+  SW F per h = 0,...,12:   7.9  10.1  11.0  11.8  12.9  15.8  14.8  14.1  18.2  20.9  33.8  33.0  43.5
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q3
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0
+1° stadio BE umid TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3  L1_gasAG1 L1_gasAG2 L1_gasAG3 L2_gasAG1 L2_gasAG2 L2_gasAG3 L3_
+> gasAG1 L3_gasAG2 L3_gasAG3) -> contr: F di Sanderson-Windmeijer per TTFSpotEURMWH min    9.8, max   49.8
+  SW F per h = 0,...,12:   9.8  11.5  17.4  14.8  17.7  26.6  41.1  39.0  41.0  49.8  43.7  37.7  42.3
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q3
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0
+1° stadio BE pre TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> contr: F di Sanderson-Windmeijer per TTFSpotEURM
+> WH min    0.6, max   20.2
+  SW F per h = 0,...,12:   4.1   2.7   6.5   7.7  20.2  17.1  17.0  17.7  18.1  16.1  14.7   4.2   0.6
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2019q4 (h = 0); outcome fino a 2019q4
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 11 12
+LP smussate BE base TTFSpotEURMWH -> contr (N a h = 0: 76): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate BE hinf TTFSpotEURMWH -> contr (N a h = 0: 19): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate BE linf TTFSpotEURMWH -> contr (N a h = 0: 57): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate BE htgt TTFSpotEURMWH -> contr (N a h = 0: 27): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate BE ltgt TTFSpotEURMWH -> contr (N a h = 0: 24): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate BE hbcu TTFSpotEURMWH -> contr (N a h = 0: 43): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate BE lbcu TTFSpotEURMWH -> contr (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+1° stadio BE unsm TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> wageH: F di Sanderson-Windmeijer per TTFSpotEUR
+> MWH min   10.0, max   21.9
+  SW F per h = 0,...,12:  10.5  11.0  10.9  11.6  10.0  10.5  13.5  15.9  16.2  17.9  17.4  21.9  20.7
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q1
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 4
+1° stadio BE umid TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3  L1_gasAG1 L1_gasAG2 L1_gasAG3 L2_gasAG1 L2_gasAG2 L2_gasAG3 L3_
+> gasAG1 L3_gasAG2 L3_gasAG3) -> wageH: F di Sanderson-Windmeijer per TTFSpotEURMWH min    8.1, max   27.4
+  SW F per h = 0,...,12:   8.1   9.0  10.9   9.8  12.0  15.0  16.1  21.9  25.2  24.7  27.4  19.5  18.2
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q1
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 3
+1° stadio BE pre TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> wageH: F di Sanderson-Windmeijer per TTFSpotEURM
+> WH min    0.7, max    4.1
+  SW F per h = 0,...,12:   3.3   0.7   1.1   1.1   3.4   2.5   1.6   2.3   2.4   2.2   1.4   4.1   3.1
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2019q4 (h = 0); outcome fino a 2019q4
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
+LP smussate BE base TTFSpotEURMWH -> wageH (N a h = 0: 76): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate BE hinf TTFSpotEURMWH -> wageH (N a h = 0: 19): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+LP smussate BE linf TTFSpotEURMWH -> wageH (N a h = 0: 57): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate BE htgt TTFSpotEURMWH -> wageH (N a h = 0: 27): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate BE ltgt TTFSpotEURMWH -> wageH (N a h = 0: 24): lambda relativo scelto per validazione incrociata =    .03162 (bande con lambda/10)
+LP smussate BE hbcu TTFSpotEURMWH -> wageH (N a h = 0: 43): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate BE lbcu TTFSpotEURMWH -> wageH (N a h = 0: 33): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
 (1,005 observations deleted)
 
 Time variable: timeq, 1991q1 to 2026q3
         Delta: 1 quarter
-LP smussate EA hbcu OilSpotUSDBarrel -> contr (N a h = 0: 53): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate EA lbcu OilSpotUSDBarrel -> contr (N a h = 0: 49): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate EA hbcu OilSpotUSDBarrel -> hicp (N a h = 0: 52): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA lbcu OilSpotUSDBarrel -> hicp (N a h = 0: 47): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate EA hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 53): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate EA lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 49): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate EA hbcu OilSpotUSDBarrel -> occH (N a h = 0: 53): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA lbcu OilSpotUSDBarrel -> occH (N a h = 0: 49): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA hbcu OilSpotUSDBarrel -> dur (N a h = 0: 53): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate EA lbcu OilSpotUSDBarrel -> dur (N a h = 0: 48): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate EA hbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate EA lbcu OilSpotUSDBarrel -> dtightness (N a h = 0: 32): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA hbcu TTFSpotEURMWH -> contr (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA lbcu TTFSpotEURMWH -> contr (N a h = 0: 32): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate EA hbcu TTFSpotEURMWH -> hicp (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA lbcu TTFSpotEURMWH -> hicp (N a h = 0: 32): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
-LP smussate EA hbcu TTFSpotEURMWH -> wageH (N a h = 0: 45): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate EA lbcu TTFSpotEURMWH -> wageH (N a h = 0: 32): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
-LP smussate EA hbcu TTFSpotEURMWH -> occH (N a h = 0: 45): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
-LP smussate EA lbcu TTFSpotEURMWH -> occH (N a h = 0: 32): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
-LP smussate EA hbcu TTFSpotEURMWH -> dur (N a h = 0: 45): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
-LP smussate EA lbcu TTFSpotEURMWH -> dur (N a h = 0: 32): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
-LP smussate EA hbcu TTFSpotEURMWH -> dtightness (N a h = 0: 45): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
-LP smussate EA lbcu TTFSpotEURMWH -> dtightness (N a h = 0: 32): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+1° stadio EA unsm OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> contr: F di Sanderson-Windmeijer pe
+> r OilSpotUSDBarrel min   28.1, max   44.0
+  SW F per h = 0,...,12:  32.3  31.9  33.9  37.3  39.8  43.1  44.0  39.9  43.0  41.4  36.1  36.6  28.1
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q1-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio EA umid OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3  L1_oilMP1 L1_oilMP2 L1_oilMP3 L2_oilMP1 L2_oilMP2 L
+> 2_oilMP3 L3_oilMP1 L3_oilMP2 L3_oilMP3) -> contr: F di Sanderson-Windmeijer per OilSpotUSDBarrel min   12.1, max   35.1
+  SW F per h = 0,...,12:  12.1  12.6  15.2  16.7  18.0  20.8  22.0  24.6  27.2  26.7  29.4  33.9  35.1
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q1-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio EA pre OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> contr: F di Sanderson-Windmeijer per
+>  OilSpotUSDBarrel min   52.3, max  131.2
+  SW F per h = 0,...,12:  52.3  52.9  79.4  92.7 106.0 112.7 127.0 120.8 131.2 130.8 123.3 108.5  97.3
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q1-2019q4 (h = 0); outcome fino a 2019q4
+LP smussate EA base OilSpotUSDBarrel -> contr (N a h = 0: 120): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate EA hinf OilSpotUSDBarrel -> contr (N a h = 0: 22): lambda relativo scelto per validazione incrociata =        .1 (bande con lambda/10)
+LP smussate EA linf OilSpotUSDBarrel -> contr (N a h = 0: 72): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate EA htgt OilSpotUSDBarrel -> contr (N a h = 0: 38): lambda relativo scelto per validazione incrociata =     .0001 (bande con lambda/10)
+LP smussate EA ltgt OilSpotUSDBarrel -> contr (N a h = 0: 41): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+LP smussate EA hbcu OilSpotUSDBarrel -> contr (N a h = 0: 53): lambda relativo scelto per validazione incrociata =        10 (bande con lambda/10)
+LP smussate EA lbcu OilSpotUSDBarrel -> contr (N a h = 0: 50): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+1° stadio EA unsm OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> wageH: F di Sanderson-Windmeijer pe
+> r OilSpotUSDBarrel min   38.5, max   80.3
+  SW F per h = 0,...,12:  38.5  40.3  50.4  58.6  61.8  65.7  70.0  70.9  73.7  70.5  74.7  76.7  80.3
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio EA umid OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP1 oilMP2 oilMP3  L1_oilMP1 L1_oilMP2 L1_oilMP3 L2_oilMP1 L2_oilMP2 L
+> 2_oilMP3 L3_oilMP1 L3_oilMP2 L3_oilMP3) -> wageH: F di Sanderson-Windmeijer per OilSpotUSDBarrel min   12.7, max   54.5
+  SW F per h = 0,...,12:  12.7  14.0  16.7  20.0  21.1  24.5  26.7  32.2  35.9  36.2  39.2  48.3  54.5
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio EA pre OilSpotUSDBarrel  L1_OilSpotUSDBarrel L2_OilSpotUSDBarrel L3_OilSpotUSDBarrel (strumenti oilMP  L1_oilMP L2_oilMP L3_oilMP) -> wageH: F di Sanderson-Windmeijer per
+>  OilSpotUSDBarrel min   30.8, max   52.4
+  SW F per h = 0,...,12:  32.8  30.8  38.0  40.3  40.6  42.1  44.9  42.1  45.4  52.3  52.4  51.7  50.1
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 1996q4-2019q4 (h = 0); outcome fino a 2019q4
+LP smussate EA base OilSpotUSDBarrel -> wageH (N a h = 0: 117): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate EA hinf OilSpotUSDBarrel -> wageH (N a h = 0: 22): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate EA linf OilSpotUSDBarrel -> wageH (N a h = 0: 72): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate EA htgt OilSpotUSDBarrel -> wageH (N a h = 0: 38): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate EA ltgt OilSpotUSDBarrel -> wageH (N a h = 0: 41): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate EA hbcu OilSpotUSDBarrel -> wageH (N a h = 0: 53): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate EA lbcu OilSpotUSDBarrel -> wageH (N a h = 0: 50): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+1° stadio EA unsm TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> contr: F di Sanderson-Windmeijer per TTFSpotEUR
+> MWH min    8.6, max   51.6
+  SW F per h = 0,...,12:   9.1   9.1   9.3   8.6   9.7   8.9   9.8  12.1  15.6  15.9  17.3  19.9  51.6
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4 5 6
+1° stadio EA umid TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3  L1_gasAG1 L1_gasAG2 L1_gasAG3 L2_gasAG1 L2_gasAG2 L2_gasAG3 L3_
+> gasAG1 L3_gasAG2 L3_gasAG3) -> contr: F di Sanderson-Windmeijer per TTFSpotEURMWH min   16.1, max   75.5
+  SW F per h = 0,...,12:  16.1  22.7  27.9  28.1  29.3  31.8  28.1  52.7  68.8  75.5  70.1  72.5  74.2
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+1° stadio EA pre TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> contr: F di Sanderson-Windmeijer per TTFSpotEURM
+> WH min    1.5, max   17.3
+  SW F per h = 0,...,12:   3.6   1.9   1.6   3.0   6.2   7.9  13.1  14.5  14.2  16.2  17.3   5.9   1.5
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2019q4 (h = 0); outcome fino a 2019q4
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4 5 11 12
+LP smussate EA base TTFSpotEURMWH -> contr (N a h = 0: 76): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate EA hinf TTFSpotEURMWH -> contr (N a h = 0: 18): lambda relativo scelto per validazione incrociata =     .3162 (bande con lambda/10)
+LP smussate EA linf TTFSpotEURMWH -> contr (N a h = 0: 58): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate EA htgt TTFSpotEURMWH -> contr (N a h = 0: 38): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
+LP smussate EA ltgt TTFSpotEURMWH -> contr (N a h = 0: 38): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate EA hbcu TTFSpotEURMWH -> contr (N a h = 0: 44): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+LP smussate EA lbcu TTFSpotEURMWH -> contr (N a h = 0: 32): lambda relativo scelto per validazione incrociata =      3162 (bande con lambda/10)
+1° stadio EA unsm TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> wageH: F di Sanderson-Windmeijer per TTFSpotEUR
+> MWH min    7.7, max   13.4
+  SW F per h = 0,...,12:   9.1   9.2  10.1   9.8  10.1   7.7   7.7   9.0  10.4  10.3  10.7  11.6  13.4
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 3 5 6 7
+1° stadio EA umid TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG1 gasAG2 gasAG3  L1_gasAG1 L1_gasAG2 L1_gasAG3 L2_gasAG1 L2_gasAG2 L2_gasAG3 L3_
+> gasAG1 L3_gasAG2 L3_gasAG3) -> wageH: F di Sanderson-Windmeijer per TTFSpotEURMWH min    7.7, max   31.7
+  SW F per h = 0,...,12:   7.7   7.9  10.1   9.5  10.5  12.7  14.8  19.4  27.4  26.8  31.7  29.1  25.6
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2025q4 (h = 0); outcome fino a 2026q2
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 3
+1° stadio EA pre TTFSpotEURMWH  L1_TTFSpotEURMWH L2_TTFSpotEURMWH L3_TTFSpotEURMWH (strumenti gasAG  L1_gasAG L2_gasAG L3_gasAG) -> wageH: F di Sanderson-Windmeijer per TTFSpotEURM
+> WH min    0.4, max    6.2
+  SW F per h = 0,...,12:   0.7   0.9   5.9   6.2   3.3   5.1   3.0   0.4   0.4   0.5   3.3   2.4   2.1
+  soglia (empirica):  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0  10.0
+  campione: shock 2007q1-2019q4 (h = 0); outcome fino a 2019q4
+  ATTENZIONE: strumenti deboli (SW F < 10) per h = 0 1 2 3 4 5 6 7 8 9 10 11 12
+LP smussate EA base TTFSpotEURMWH -> wageH (N a h = 0: 76): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate EA hinf TTFSpotEURMWH -> wageH (N a h = 0: 18): lambda relativo scelto per validazione incrociata =       100 (bande con lambda/10)
+LP smussate EA linf TTFSpotEURMWH -> wageH (N a h = 0: 58): lambda relativo scelto per validazione incrociata =     316.2 (bande con lambda/10)
+LP smussate EA htgt TTFSpotEURMWH -> wageH (N a h = 0: 38): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
+LP smussate EA ltgt TTFSpotEURMWH -> wageH (N a h = 0: 38): lambda relativo scelto per validazione incrociata =      1000 (bande con lambda/10)
+LP smussate EA hbcu TTFSpotEURMWH -> wageH (N a h = 0: 44): lambda relativo scelto per validazione incrociata =     31.62 (bande con lambda/10)
+LP smussate EA lbcu TTFSpotEURMWH -> wageH (N a h = 0: 32): lambda relativo scelto per validazione incrociata =     10000 (bande con lambda/10)
 . 
 .         postclose `pf'
 . 
 .         * Intervalli di confidenza (bande al 90%) ed Excel
 .         use ${out}/lp_energy_iv_ea.dta, clear
 .         * Risultati salvati + nuove stime: si sostituiscono solo le varianti stimate in questa esecuzione
-.         drop if inlist(variant, "hbcu", "lbcu")
-(2,184 observations deleted)
+.         drop if variant=="unsm"|variant=="umid"|variant=="pre"|variant=="rf"|variant=="base"|variant=="hinf"|variant=="linf"|variant=="htgt"|variant=="ltgt"|variant=="hbcu"|varia
+> nt=="lbcu"
+(11,593 observations deleted)
 .         drop lo90 hi90
-.         append using ${out}/lp_energy_iv_ea_st.dta
+.         append using ${out}/lp_energy_iv_ea_st_v3.dta
 .         
 .         * Bande centrate su bc (= b tranne che per le LP smussate: stima con undersmoothing)
 .         gen lo90 = bc - invnormal(0.95)*se
-(6 missing values generated)
 .         gen hi90 = bc + invnormal(0.95)*se
-(6 missing values generated)
-.         save ${out}/lp_energy_iv_ea.dta, replace
-file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_iv_ea.dta saved
-.         export excel using ${out}/lp_energy_iv_ea.xlsx, firstrow(var) replace
-file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_iv_ea.xlsx saved
+.         save ${out}/lp_energy_iv_ea_v3.dta, replace
+file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_iv_ea_v3.dta saved
+.         export excel using ${out}/lp_energy_iv_ea_v3.xlsx, firstrow(var) replace
+file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_iv_ea_v3.xlsx saved
 . }
 
 . 
@@ -769,7 +1375,7 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_iv_ea.x
 . * 2) Grafici, dai risultati salvati (prima petrolio e gas: EA, EA largo, paesi per le slide)
 . *******************************************************************************
 . 
-. use ${out}/lp_energy_iv_ea.dta, clear
+. use ${out}/lp_energy_iv_ea_v3.dta, clear
 
 . tempname fh
 
@@ -849,8 +1455,8 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_iv_ea.x
  39.                         qui su tmax `cg' & h == 0
  40.                         local pg1 : di %tq r(max)
  41.                         local qg1 : di %tqYY!qq r(max)
- 42.                         local pl `"(rarea lo90 hi90 h `co', color(navy%25) lwidth(none)) (rarea lo90 hi90 h `cg', color(cranberry%25) lwidth(none)) (line b h `co', lcolor(navy)
->  lwidth(medthick)) (line b h `cg', lcolor(cranberry) lp(longdash) lwidth(medthick))"'
+ 42.                         local pl `"(rarea lo90 hi90 h `co', color(navy%25) lwidth(none)) (rarea lo90 hi90 h `cg', color(cranberry%25) lwidth(none)) (line b h `co', lcolor(navy
+> ) lwidth(medthick)) (line b h `cg', lcolor(cranberry) lp(longdash) lwidth(medthick))"'
  43.                         * Grafico EA a sé stante, con legenda
 .                         if "`c'" == "EA" {
  44.                                 file open `fh' using "${gph}/smp_`px'_og_EA_`y'.tex", write replace
@@ -912,66 +1518,36 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/output/lp_energy_iv_ea.x
 .                 if "`gs'" != "" {
  75.                         local tsl ""
  76.                         if inlist("`y'", "contr", "wageH") local tsl `"title("`tts_`y''", position(12) size(medium) margin(zero))"' 
- 77.                         grc1leg `gs', legendfrom(`: word 1 of `gs'') position(6) ring(1) cols(3) imargin(tiny) `tsl' xsize(9) ysize(5) graphregion(color(white) margin(vsmall)) 
-> name(combsl, replace)
+ 77.                         grc1leg `gs', legendfrom(`: word 1 of `gs'') position(6) ring(1) cols(3) imargin(tiny) `tsl' xsize(9) ysize(5) graphregion(color(white) margin(vsmall))
+>  name(combsl, replace)
  78.                         * grc1leg non applica xsize/ysize: dimensioni imposte con graph display
 .                         graph display combsl, xsize(9) ysize(5)
  79.                         graph export ${gph}/`px'_ctry_slides_`y'.png, replace width(3000)
  80.                 }
  81.         }
  82. }
-  asse y comune: differenza tra le ampiezze delle bande  0.61
-  asse y comune: differenza tra le ampiezze delle bande  0.56
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_wide_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_contr_sq.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides_contr.png saved as PNG format
-  asse y comune: differenza tra le ampiezze delle bande  0.86
-  asse y comune: differenza tra le ampiezze delle bande  0.86
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_hicp.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_hicp.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_hicp_sq.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides_hicp.png saved as PNG format
-  asse y comune: differenza tra le ampiezze delle bande  1.23
-  asse y comune: differenza tra le ampiezze delle bande  1.21
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_wide_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_wageH_sq.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides_wageH.png saved as PNG format
   asse y comune: differenza tra le ampiezze delle bande  0.77
   asse y comune: differenza tra le ampiezze delle bande  0.77
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_occH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_occH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_occH_sq.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides_occH.png saved as PNG format
-  asse y comune: differenza tra le ampiezze delle bande  0.29
-  asse y comune: differenza tra le ampiezze delle bande  0.29
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_EA_dur.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_dur.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_og_ctry_dur_sq.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_ctry_slides_dur.png saved as PNG format
-  asse y comune: differenza tra le ampiezze delle bande  0.69
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_EA_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_contr_sq.png saved as PNG format
-  asse y comune: differenza tra le ampiezze delle bande  0.90
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_EA_hicp.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_hicp.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_hicp_sq.png saved as PNG format
-  asse y comune: differenza tra le ampiezze delle bande  1.49
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_EA_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_wageH_sq.png saved as PNG format
-  asse y per pannello, passo .5: differenza tra le ampiezze delle bande  2.85
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_EA_occH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_occH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_occH_sq.png saved as PNG format
-  asse y comune: differenza tra le ampiezze delle bande  0.33
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_EA_dur.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_dur.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_dur_sq.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_og_EA_contr.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_og_EA_wide_contr.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_og_ctry_contr.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_og_ctry_contr_sq.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_ctry_slides_contr.png saved as PNG format
+  asse y comune: differenza tra le ampiezze delle bande  0.84
+  asse y comune: differenza tra le ampiezze delle bande  0.76
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_og_EA_wageH.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_og_EA_wide_wageH.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_og_ctry_wageH.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_og_ctry_wageH_sq.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_ctry_slides_wageH.png saved as PNG format
+  asse y comune: differenza tra le ampiezze delle bande  0.98
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_rf_og_EA_contr.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_rf_og_ctry_contr.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_rf_og_ctry_contr_sq.png saved as PNG format
+  asse y comune: differenza tra le ampiezze delle bande  0.94
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_rf_og_EA_wageH.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_rf_og_ctry_wageH.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_rf_og_ctry_wageH_sq.png saved as PNG format
 
 . 
 . * --- Eterogeneità (EA, LP-IV smussate): inflazione di fondo alta/bassa (infl), mercato del lavoro
@@ -1093,54 +1669,20 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_rf_og_ctry_dur
  71.                 }
  72.         }
  73. }
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_contr_nb.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_hicp.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_hicp_nb.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_wageH_nb.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_occH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_occH_nb.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_dur.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_dur_nb.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_dtightness.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_infl_dtightness_nb.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_contr_nb.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_hicp.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_hicp_nb.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_wageH_nb.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_occH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_occH_nb.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_dur.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_dur_nb.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_dtightness.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_tight_dtightness_nb.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_contr_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_contr.png not found)
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_hicp.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_hicp_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_hicp.png not found)
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_hicp.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_wageH_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_wageH.png not found)
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_occH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_occH_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_occH.png not found)
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_occH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dur.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dur_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_dur.png not found)
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_dur.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dtightness.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_dtightness_nb.png saved as PNG format
-(file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_dtightness.png not found)
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_dtightness.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_infl_contr.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_infl_contr_nb.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_infl_wageH.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_infl_wageH_nb.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_tight_contr.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_tight_contr_nb.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_tight_wageH.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_tight_wageH_nb.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_bcu_contr.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_bcu_contr_nb.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_bcu_oil_contr.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_bcu_wageH.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_bcu_wageH_nb.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_bcu_oil_wageH.png saved as PNG format
 
 . 
 . local lab_base "Baseline (smooth LP)"
@@ -1235,53 +1777,39 @@ file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_bcu_oil_dti
  54.                 graph export ${gph}/lp_iv_rob_`s'_`y'.png, replace width(3000)
  55.         }
  56. }
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_main_OilSpotUSDBarrel_contr.png saved as PNG format
-  asse y comune: differenza tra le ampiezze delle bande  0.59
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_app_OilSpotUSDBarrel_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_rob_OilSpotUSDBarrel_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_main_OilSpotUSDBarrel_hicp.png saved as PNG format
-  asse y comune: differenza tra le ampiezze delle bande  0.95
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_app_OilSpotUSDBarrel_hicp.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_rob_OilSpotUSDBarrel_hicp.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_main_OilSpotUSDBarrel_wageH.png saved as PNG format
-  asse y comune: differenza tra le ampiezze delle bande  0.39
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_app_OilSpotUSDBarrel_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_rob_OilSpotUSDBarrel_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_main_OilSpotUSDBarrel_occH.png saved as PNG format
-  asse y comune: differenza tra le ampiezze delle bande  0.86
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_app_OilSpotUSDBarrel_occH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_rob_OilSpotUSDBarrel_occH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_main_OilSpotUSDBarrel_dur.png saved as PNG format
-  asse y comune: differenza tra le ampiezze delle bande  0.29
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_app_OilSpotUSDBarrel_dur.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_rob_OilSpotUSDBarrel_dur.png saved as PNG format
-Nessun grafico: nessuna stima EA per OilSpotUSDBarrel -> dtightness
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_main_TTFSpotEURMWH_contr.png saved as PNG format
-  asse y comune: differenza tra le ampiezze delle bande  0.49
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_app_TTFSpotEURMWH_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_rob_TTFSpotEURMWH_contr.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_main_TTFSpotEURMWH_hicp.png saved as PNG format
-  asse y comune: differenza tra le ampiezze delle bande  0.84
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_app_TTFSpotEURMWH_hicp.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_rob_TTFSpotEURMWH_hicp.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_main_TTFSpotEURMWH_wageH.png saved as PNG format
-  asse y comune: differenza tra le ampiezze delle bande  1.36
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_app_TTFSpotEURMWH_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_rob_TTFSpotEURMWH_wageH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_main_TTFSpotEURMWH_occH.png saved as PNG format
-  asse y comune: differenza tra le ampiezze delle bande  0.63
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_app_TTFSpotEURMWH_occH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_rob_TTFSpotEURMWH_occH.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_main_TTFSpotEURMWH_dur.png saved as PNG format
-  asse y comune: differenza tra le ampiezze delle bande  0.27
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_app_TTFSpotEURMWH_dur.png saved as PNG format
-file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/lp_iv_rob_TTFSpotEURMWH_dur.png saved as PNG format
-Nessun grafico: nessuna stima EA per TTFSpotEURMWH -> dtightness
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_main_OilSpotUSDBarrel_contr.png saved as PNG format
+  asse y comune: differenza tra le ampiezze delle bande  0.77
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_app_OilSpotUSDBarrel_contr.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_rob_OilSpotUSDBarrel_contr.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_main_OilSpotUSDBarrel_wageH.png saved as PNG format
+  asse y comune: differenza tra le ampiezze delle bande  0.87
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_app_OilSpotUSDBarrel_wageH.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_rob_OilSpotUSDBarrel_wageH.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_main_TTFSpotEURMWH_contr.png saved as PNG format
+  asse y comune: differenza tra le ampiezze delle bande  0.45
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_app_TTFSpotEURMWH_contr.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_rob_TTFSpotEURMWH_contr.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_main_TTFSpotEURMWH_wageH.png saved as PNG format
+  asse y comune: differenza tra le ampiezze delle bande  0.44
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_app_TTFSpotEURMWH_wageH.png saved as PNG format
+file /home/group/main/892fl/policy/2026/2026_nota_drift/graphs/v3/lp_iv_rob_TTFSpotEURMWH_wageH.png saved as PNG format
+
+. 
+. * rc3: ripristina il numero di ritardi di master.do
+. global lp_lags = `lp_lags_master'
+
+. global gph = "`gph_master'"
+
+. global lp_outcomes = "`lp_outcomes_master'"
+
+. global covid_dum = `covid_dum_master'
+
+. global lp_controls = "`lp_controls_master'"
 
 . 
 . log close
       name:  <unnamed>
        log:  /home/group/main/892fl/policy/2026/2026_nota_drift/logfiles/log_an_lpiv_energy_ea.txt
   log type:  text
- closed on:  20 Oct 2026, 12:45:37
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ closed on:  22 Oct 2026, 12:38:17
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

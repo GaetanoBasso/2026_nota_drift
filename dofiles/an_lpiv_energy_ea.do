@@ -321,7 +321,7 @@ if $lp_ivest == 1 {
 						local ctrl "`ctrl' L`l'_`v'"
 					}
 				}
-				foreach vr in /*unsm umid pre rf base hinf linf htgt ltgt*/ hbcu lbcu {
+				foreach vr in /*unsm umid pre*/ rf base /*hinf linf htgt ltgt hbcu lbcu*/ {
 					* Strumenti: media trimestrale (tutte tranne umid) o shock mensili separati (umid)
 					local zi "`z'"
 					if "`vr'" == "umid" local zi "`z'1 `z'2 `z'3"
@@ -451,7 +451,7 @@ if $lp_ivest == 1 {
 	* Intervalli di confidenza (bande al 90%) ed Excel
 	use ${out}/lp_energy_iv_ea.dta, clear
 	* Risultati salvati + nuove stime: si sostituiscono solo le varianti stimate in questa esecuzione
-	drop if inlist(variant, "hbcu", "lbcu")
+	drop if inlist(variant, "rf", "base")
 	drop lo90 hi90
 	append using ${out}/lp_energy_iv_ea_st.dta
 	
