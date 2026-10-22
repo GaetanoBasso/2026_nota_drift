@@ -12,6 +12,8 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
 - **`master.do` is the only entry point.** It defines all paths and parameters as
   globals and runs every dofile in order. A new dofile must be added to `master.do`
   in the right section (1 = data creation, 2 = analysis), with a one-line comment.
+  Exception: the robustness dofile `an_lpiv_energy_ea_rc3.do` is run by hand after `master.do`
+  and sets its own globals (see below). `dofiles/old/` holds archived versions, not run.
 - **Dofiles never define paths or parameters.** They use the globals from `master.do`:
   `${stem} ${home} ${do} ${log} ${data} ${out} ${gph} ${source_na} ${source_contr}`,
   `$countries`, `$hmax`, `$covid_dum`, `$lp_*`.
@@ -79,12 +81,21 @@ euro area countries at quarterly frequency (Stata). See `README.md`.
   smooth LP-IV on the shock dates in each state (= all regressors interacted), graphs `lp_iv_infl_*`/
   `lp_iv_tight_*`/`lp_iv_bcu_*` (EA, 4 lines, `_nb` without bands; `lp_iv_bcu_oil_*` = oil only, 2 lines with
   bands) in Appendix E of `main_graphs.tex`;
-  variants estimated = those active in the `foreach vr` loop (now only `hbcu lbcu`), saved to
+  variants estimated = those active in the `foreach vr` loop (now only `rf base`), saved to
   `lp_energy_iv_ea_st.dta` and replacing only the same variants (`drop if inlist(variant, ...)`) in
   `lp_energy_iv_ea.dta`; unsmoothed: `ivreg2 ..., robust kernel(bartlett) bw(h+2)` (= Newey–West lag h+1); lags of y, s and controls in both stages; first-stage
   effective F of Montiel Olea–Pflueger (`weakivtest`) only in the log, weak if below the critical
   value for a `$lp_ivtau`% maximum bias;
   outputs prefixed `lp_iv_`.
+- IV robustness (`an_lpiv_energy_ea_rc3.do`, main robustness, outside `master.do`): changes and then
+  restores the globals `lp_lags` = 3, `lp_outcomes` = "contr wageH", `covid_dum` = 0, `lp_controls` = "",
+  `gph` = `${home}/graphs/v3`; price lags endogenous, instrumented with the lags of the instrument
+  (`lp_slp()` with extra argument `nw`), Sanderson–Windmeijer F (threshold 10) instead of the effective F;
+  all variants; results `${out}/lp_energy_iv_ea_v3.dta`; final block (after `log close`) with EA
+  reduced-form LPs on the contemporaneous shocks (`eststo`/`esttab`). Archived, not run, in `dofiles/old/`:
+  rc1 (COVID dummy 2020q1–2021q1) and rc2 (rc1 + instrumented price lags). Notes: rc3 writes the same log
+  file as the main IV dofile; `estout` is not in the `master.do` install list; its global changes are an
+  exception to "dofiles never define parameters".
 - Graphs: no titles or notes in Stata (they go in the `.tex` files; exception: the Word-page graphs
   `lp_iv_og_EA_wide_*`, with the title inside the plot area, and `lp_iv_ctry_slides_contr`/`_wageH`, with
   the title on one line at the top left); 90% bands only;
