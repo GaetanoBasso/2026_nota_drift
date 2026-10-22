@@ -23,6 +23,9 @@ dofiles/
   cr_dataset_ea.do       builds the quarterly country panel  -> data/dataset_ea.dta
   an_lp_energy_ea.do     OLS Local Projections of energy shocks -> output/, graphs/ (switched off in master.do)
   an_lpiv_energy_ea.do   IV Local Projections, oil and gas, time series -> output/, graphs/lp_iv_*
+  an_lpiv_energy_ea_rc3.do  main robustness of the IV LPs, run by hand outside master.do
+                         -> output/lp_energy_iv_ea_v3.dta, graphs/v3/
+  old/                   archived versions, not run (incl. the robustness steps rc1 and rc2)
 logfiles/                one text log per dofile (log_<dofile name>.txt)
 main_graphs.tex          LaTeX file collecting the graphs (compile in ${home}, next to graphs/)
 nota_drift.tex           2-page policy note (English): results (placeholders), methodology, discussion
@@ -44,6 +47,9 @@ in order:
 
 1. `cr_dataset_ea.do`: builds the dataset;
 2. `an_lp_energy_ea.do`: estimates the Local Projections.
+
+The robustness dofile `an_lpiv_energy_ea_rc3.do` is not in this sequence: run it by hand after
+`master.do` (see "Robustness of the IV LPs" below).
 
 Requirements:
 
@@ -246,8 +252,8 @@ the robustness variant `unsm`.
   others commented out, e.g. `/*unsm umid pre rf base hinf linf htgt ltgt*/ hbcu lbcu`) and list the
   same variants in the `drop if inlist(variant, ...)` line after `postclose`: the new estimates
   are saved in `${out}/lp_energy_iv_ea_st.dta` and replace only those variants in
-  `${out}/lp_energy_iv_ea.dta`, which keeps the other saved results. Currently only `hbcu`/`lbcu`
-  are estimated.
+  `${out}/lp_energy_iv_ea.dta`, which keeps the other saved results. Currently only `rf` and
+  `base` are estimated.
 - **Graphs only.** With `$lp_ivest = 0` in `master.do` the estimation is skipped and all graphs
   are redrawn from the saved `${out}/lp_energy_iv_ea.dta` (much faster). The oil+gas graphs (EA,
   EA wide, country slides) are drawn first.
@@ -261,6 +267,42 @@ the robustness variant `unsm`.
   unsmoothed, monthly instruments and pre-Covid) and `lp_rf_` (reduced form, `og_EA`, `og_ctry`). The `.tex` files and the slides use the IV graphs; the
   OLS graphs of the last OLS run are shown in an appendix of `main_graphs.tex` for
   comparison (including electricity, which has no instrument).
+
+## Robustness of the IV LPs (`an_lpiv_energy_ea_rc3.do`)
+
+Main robustness check. It is **not called by `master.do`**: run it by hand after `master.do`
+has set the paths and parameters. It changes some globals at the top (its own "macro") and
+restores the `master.do` values at the end:
+
+- `lp_lags = 3`: three lags of the outcome, of the price and of the instrument (instead of 2);
+- `lp_outcomes = "contr wageH"`;
+- `covid_dum = 0` and `lp_controls = ""`: no COVID dummy and no macro controls;
+- `gph = ${home}/graphs/v3`: graphs in `graphs/v3/`, with the same names as the main version.
+
+Specification (as rc2 below): the lags of the price change are not exogenous controls but
+endogenous regressors, instrumented with the lags of the same instrument (oilMP for oil, gasAG
+for gas; in `umid` the lags of the three monthly shocks). In the smooth LP-IV (`lp_slp()`, extra
+argument `nw` = number of instrumented price lags) these lags have horizon-specific,
+unpenalised coefficients; the reduced form includes the lags of the instrument. Instrument
+strength: conditional F of Sanderson and Windmeijer (2016) for the price in t (`ivreg2, ffirst`),
+flagged as weak below 10 (the Montiel Olea–Pflueger effective F does not apply with several
+endogenous regressors). All variants are estimated; results in `${out}/lp_energy_iv_ea_v3.dta`
+(and `_st_v3.dta`, `.xlsx`). A final block, after the log is closed, runs reduced-form LPs for
+the EA of `contr` on the contemporaneous oilMP and gasAG shocks and their lags (`newey`, shown
+with `esttab`).
+
+Additional robustness steps, kept in `dofiles/old/` and not run: `an_lpiv_energy_ea_rc1.do`
+(as the main version, with the COVID dummy only for 2020q1–2021q1) and `an_lpiv_energy_ea_rc2.do`
+(rc1 with the price lags instrumented, as described above; 2 lags).
+
+Notes:
+
+- rc3 writes its log to `logfiles/log_an_lpiv_energy_ea.txt`, the same file as the main
+  version: each run overwrites the other's log.
+- The final block uses `eststo`/`esttab` (package `estout`, SSC), which is not in the
+  `master.do` install list, and runs after `log close`, so its output is not logged.
+- Setting globals inside a dofile is an exception to the project rule (parameters only in
+  `master.do`), limited to this robustness run, which restores them at the end.
 
 Caveat (OLS): the "shocks" are observed energy price changes, conditioned on their own lags
 and on lags of the outcome. They are not identified structural shocks, so the
